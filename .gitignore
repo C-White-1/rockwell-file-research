@@ -1,0 +1,45 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.test-artifacts/
+.pytest_cache/
+.ruff_cache/
+.test-artifacts/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv
+
+# Vendor-supplied, login-gated, and private reference material
+/src/
+/PV800_PumpControl_V2.1/
+/Project5/
+/private-fixtures/
+
+# Experiments and outputs derived from private source material
+/cha-experiments/
+/outputs/
+/private-outputs/
+
+# Industrial project and report artifacts require explicit provenance review.
+# Synthetic fixtures may be force-added only after that review is documented.
+*.ACD
+*.acd
+*.RSS
+*.rss
+*.CHA
+*.cha
+*.ccwsln
+*.ccwsuo
+*.acfproj
+*.pvc
+*.xlsx
+*.docx
+*.pdf
+*.dwg
+*.7z
