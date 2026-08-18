@@ -55,6 +55,8 @@ report sections. Unsupported top-level sections remain available under
 workbooks missing the required CCW tag, screen, or communication reports fail
 with a concise command-line error. Worksheets are located by their semantic
 report headings rather than incidental names such as `Sheet1` or `Sheet7`.
+Tables are likewise mapped from their visible header labels, including CCW's
+two-level tag headings, rather than fixed row and column coordinates.
 
 The CCW workbook remains the authoritative source. Normalized fields are
 convenience views and do not replace the retained raw evidence.
