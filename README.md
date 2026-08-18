@@ -95,3 +95,13 @@ uv run pytest
 VS Code recommends the Python, Pylance, Ruff, and TOML extensions when this
 folder is opened. Pylance provides editor diagnostics; Pyright performs the
 equivalent reproducible command-line and CI type check.
+
+Before committing or publishing, verify that Git is not tracking private
+industrial artifacts:
+
+```powershell
+uv run publication-check
+```
+
+The guard inspects the Git index, including staged files. It does not inspect
+or reject legitimate local files that remain ignored by Git.

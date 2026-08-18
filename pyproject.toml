@@ -15,6 +15,7 @@ validation = [
 
 [project.scripts]
 ccw-report = "rockwell_file_research.ccw.cli:main"
+publication-check = "rockwell_file_research.publication:main"
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -40,5 +40,8 @@ jobs:
       - name: Type check
         run: uv run pyright
 
+      - name: Check publication policy
+        run: uv run publication-check
+
       - name: Test
         run: uv run pytest
