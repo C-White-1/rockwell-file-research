@@ -66,6 +66,21 @@ class RSSDataFileTextRegion(TypedDict):
     text: str | None
 
 
+class RSSDataFileRecordEvidence(TypedDict):
+    """Cross-section evidence for one candidate data-file record."""
+
+    file_number: int
+    standard_offset: int
+    extensional_offset: int
+    standard_marker_offset: int
+    extensional_marker_offset: int
+    description_sha256: str
+    name_sha256: str
+    description: str | None
+    name: str | None
+    element_count_candidate: int
+
+
 class RSSDataFileSectionEvidence(TypedDict):
     """Verified compression evidence for one RSS data-file section."""
 
@@ -83,6 +98,15 @@ class RSSDataFileSectionEvidence(TypedDict):
     diagnostics: list[str]
 
 
+class RSSDataFileCatalogueEvidence(TypedDict):
+    """Record catalogue corroborated across both RSS data-file sections."""
+
+    record_count: int
+    sections_consistent: bool
+    records: list[RSSDataFileRecordEvidence]
+    diagnostics: list[str]
+
+
 class RSSInventory(TypedDict):
     """Lossless-at-the-container-boundary inventory of an RSS project."""
 
@@ -96,3 +120,4 @@ class RSSInventory(TypedDict):
     unrecognized_streams: list[str]
     processor: RSSProcessorEvidence
     data_file_sections: list[RSSDataFileSectionEvidence]
+    data_file_catalogue: RSSDataFileCatalogueEvidence

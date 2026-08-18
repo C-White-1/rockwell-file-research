@@ -135,6 +135,13 @@ classification, and SHA-256; text remains redacted unless
 and PanelView address resolution are intentionally deferred until their binary
 record boundaries are supported by repeatable evidence.
 
+Data-file catalogue candidates use independently decoded standard and
+extensional sections. A record is identified by its length-prefixed file number,
+description, name, and nearby `03 80` marker. TwinForge reports whether both
+sections produce the same ordered identities and count candidates. Names and
+descriptions remain private-text fields; their hashes allow comparison in the
+redacted inventory.
+
 ## Development
 
 Install the project and development tools with:

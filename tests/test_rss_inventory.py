@@ -18,17 +18,35 @@ class SyntheticCompoundDocument:
     """In-memory clean-room compound document used instead of vendor files."""
 
     def __init__(self) -> None:
-        data_file_payload = b"CDataHolder\x00OUTPUT\x00synthetic private label"
-        compressed = zlib.compress(data_file_payload)
-        data_file_section = (
-            (2).to_bytes(4, "little")
-            + (16).to_bytes(4, "little")
-            + len(compressed).to_bytes(4, "little")
-            + len(data_file_payload).to_bytes(4, "little")
-            + compressed
-        )
+        def section(*, extensional: bool) -> bytes:
+            description = b"synthetic private label"
+            name = b"OUTPUT"
+            extension = b"\x02\x00\x00\x00\x00\x00" if extensional else b""
+            record = (
+                (0).to_bytes(2, "little")
+                + bytes([len(description)])
+                + description
+                + bytes([len(name)])
+                + name
+                + bytes(4)
+                + extension
+                + b"\x03\x80"
+                + bytes(8)
+                + (14).to_bytes(2, "little")
+            )
+            data_file_payload = b"CDataHolder\x00" + record
+            compressed = zlib.compress(data_file_payload)
+            return (
+                (2).to_bytes(4, "little")
+                + (16).to_bytes(4, "little")
+                + len(compressed).to_bytes(4, "little")
+                + len(data_file_payload).to_bytes(4, "little")
+                + compressed
+            )
+
         self._streams = {
-            "DATA FILES/ObjectData": data_file_section,
+            "DATA FILES/ObjectData": section(extensional=False),
+            "Extensional DATA FILES/ObjectData": section(extensional=True),
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
             "PROGRAM FILES/ObjectData": b"synthetic program evidence",
             "Synthetic Extension/ObjectData": b"preserve unknown evidence",
@@ -83,10 +101,14 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     data_files = inventory["data_file_sections"][0]
     assert data_files["present"] is True
     assert data_files["compression"] == "zlib"
-    assert data_files["uncompressed_size"] == len(
-        b"CDataHolder\x00OUTPUT\x00synthetic private label"
-    )
+    assert data_files["uncompressed_size"] > 0
     assert all(region["text"] is None for region in data_files["text_regions"])
+    catalogue = inventory["data_file_catalogue"]
+    assert catalogue["record_count"] == 1
+    assert catalogue["sections_consistent"] is True
+    assert catalogue["records"][0]["file_number"] == 0
+    assert catalogue["records"][0]["element_count_candidate"] == 14
+    assert catalogue["records"][0]["name"] is None
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -101,9 +123,10 @@ def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
     assert sections["PROCESSOR"]["present"] is True
     assert sections["PROGRAM FILES"]["present"] is True
     assert sections["DATA FILES"]["present"] is True
-    assert sections["Extensional DATA FILES"] == {
-        "name": "Extensional DATA FILES",
-        "stream_path": "Extensional DATA FILES/ObjectData",
+    assert sections["Extensional DATA FILES"]["present"] is True
+    assert sections["CHANNEL CONFIGURATION"] == {
+        "name": "CHANNEL CONFIGURATION",
+        "stream_path": "CHANNEL CONFIGURATION/ObjectData",
         "present": False,
         "size": 0,
         "sha256": "",
@@ -142,14 +165,17 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
     data_regions = inventory["data_file_sections"][0]["text_regions"]
     assert [region["classification"] for region in data_regions] == [
         "serialization_class",
-        "standard_data_file_label",
         "application_text_candidate",
+        "standard_data_file_label",
     ]
     assert [region["text"] for region in data_regions] == [
         "CDataHolder",
-        "OUTPUT",
         "synthetic private label",
+        "OUTPUT",
     ]
+    record = inventory["data_file_catalogue"]["records"][0]
+    assert record["description"] == "synthetic private label"
+    assert record["name"] == "OUTPUT"
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

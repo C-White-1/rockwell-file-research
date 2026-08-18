@@ -11,9 +11,13 @@ from rockwell_file_research.rss.container import (
     OleCompoundDocument,
     verify_ole_signature,
 )
-from rockwell_file_research.rss.data_files import inspect_data_file_section
+from rockwell_file_research.rss.data_files import (
+    DataFileRecord,
+    inspect_data_file_section,
+)
 from rockwell_file_research.rss.models import (
     RSSCompoundMetadata,
+    RSSDataFileRecordEvidence,
     RSSDataFileSectionEvidence,
     RSSDataFileTextRegion,
     RSSInventory,
@@ -116,6 +120,7 @@ def build_inventory(
             )
         ]
     data_file_sections: list[RSSDataFileSectionEvidence] = []
+    records_by_section: dict[str, list[DataFileRecord]] = {}
     for path in DATA_FILE_SECTION_STREAMS:
         payload = stream_payloads.get(path)
         if payload is None:
@@ -141,6 +146,7 @@ def build_inventory(
             section_name=path.removesuffix("/ObjectData"),
             include_private_text=include_private_text,
         )
+        records_by_section[path] = inspected.records
         text_regions: list[RSSDataFileTextRegion] = [
             {
                 "classification": region.classification,
@@ -172,6 +178,47 @@ def build_inventory(
                 ],
             }
         )
+    standard_records = records_by_section.get("DATA FILES/ObjectData", [])
+    extensional_records = records_by_section.get(
+        "Extensional DATA FILES/ObjectData", []
+    )
+
+    def identity(record: DataFileRecord) -> tuple[int, str, str, int]:
+        return (
+            record.file_number,
+            record.description,
+            record.name,
+            record.element_count_candidate,
+        )
+
+    sections_consistent = (
+        bool(standard_records)
+        and bool(extensional_records)
+        and [identity(record) for record in standard_records]
+        == [identity(record) for record in extensional_records]
+    )
+    extensional_by_number = {
+        record.file_number: record for record in extensional_records
+    }
+    catalogue_records: list[RSSDataFileRecordEvidence] = []
+    for record in standard_records:
+        extensional = extensional_by_number.get(record.file_number)
+        catalogue_records.append(
+            {
+                "file_number": record.file_number,
+                "standard_offset": record.offset,
+                "extensional_offset": extensional.offset if extensional else -1,
+                "standard_marker_offset": record.marker_offset,
+                "extensional_marker_offset": (
+                    extensional.marker_offset if extensional else -1
+                ),
+                "description_sha256": record.description_sha256,
+                "name_sha256": record.name_sha256,
+                "description": (record.description if include_private_text else None),
+                "name": record.name if include_private_text else None,
+                "element_count_candidate": record.element_count_candidate,
+            }
+        )
     return {
         "schema_version": SCHEMA_VERSION,
         "format": RSS_FORMAT,
@@ -201,6 +248,21 @@ def build_inventory(
             ],
         },
         "data_file_sections": data_file_sections,
+        "data_file_catalogue": {
+            "record_count": len(catalogue_records),
+            "sections_consistent": sections_consistent,
+            "records": catalogue_records,
+            "diagnostics": [
+                (
+                    "Record identities and count candidates are accepted only when "
+                    "the standard and extensional sections agree in order."
+                ),
+                (
+                    "The count field remains labelled as a candidate until a "
+                    "second independent RSS project confirms its semantics."
+                ),
+            ],
+        },
     }
 
 
