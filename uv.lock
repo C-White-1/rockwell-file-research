@@ -123,7 +123,7 @@ wheels = [
 [[package]]
 name = "rockwell-file-research"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "acd-tools" },
 ]

@@ -8,8 +8,19 @@ dependencies = [
     "acd-tools>=0.2a8",
 ]
 
+[project.scripts]
+ccw-report = "rockwell_file_research.ccw.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["rockwell_file_research*"]
+
 [tool.pyright]
 include = [
+    "rockwell_file_research",
     "ccw_report.py",
     "convert.py",
     "main.py",

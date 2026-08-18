@@ -2,19 +2,23 @@
 
 import csv
 
-from ccw_report import _alarms, _column, _write_csv, build_report
+from rockwell_file_research.ccw.export import write_csv
+from rockwell_file_research.ccw.normalize import alarms
+from rockwell_file_research.ccw.reporting import build_report
+from rockwell_file_research.ccw.types import Workbook
+from rockwell_file_research.ccw.xlsx import column_name
 from tests.fixture_factory import build_synthetic_ccw_workbook
 
 
 def test_column_returns_excel_column_letters() -> None:
-    assert _column("A1") == "A"
-    assert _column("BC42") == "BC"
+    assert column_name("A1") == "A"
+    assert column_name("BC42") == "BC"
 
 
 def test_write_csv_uses_union_of_row_fields(tmp_path) -> None:
     destination = tmp_path / "rows.csv"
 
-    _write_csv(destination, [{"name": "Pump"}, {"value": "Running"}])
+    write_csv(destination, [{"name": "Pump"}, {"value": "Running"}])
 
     with destination.open(encoding="utf-8-sig", newline="") as handle:
         rows = list(csv.DictReader(handle))
@@ -26,7 +30,7 @@ def test_write_csv_uses_union_of_row_fields(tmp_path) -> None:
 
 
 def test_alarms_are_discovered_by_report_headers_and_not_trigger_name() -> None:
-    sheets = {
+    sheets: Workbook = {
         "SyntheticSheet": [
             {"row": 1, "cells": {"G": "ALARM REPORT"}},
             {
@@ -54,7 +58,7 @@ def test_alarms_are_discovered_by_report_headers_and_not_trigger_name() -> None:
         ]
     }
 
-    assert _alarms(sheets) == [
+    assert alarms(sheets) == [
         {
             "trigger": "MotorFault",
             "alarm_type": "Bit",

@@ -32,6 +32,14 @@ uv run python ccw_report.py `
   --output "private-outputs\ccw-report"
 ```
 
+The installed console command is equivalent:
+
+```powershell
+uv run ccw-report `
+  "private-fixtures\ccw-report.xlsx" `
+  --output "private-outputs\ccw-report"
+```
+
 The command writes:
 
 - `report.json`, containing normalized inventories and every non-empty source
@@ -55,8 +63,8 @@ uv sync --locked
 Run the same quality checks used by CI:
 
 ```powershell
-uv run ruff check ccw_report.py convert.py main.py tests
-uv run ruff format --check ccw_report.py convert.py main.py tests
+uv run ruff check rockwell_file_research ccw_report.py convert.py main.py tests
+uv run ruff format --check rockwell_file_research ccw_report.py convert.py main.py tests
 uv run pyright
 uv run pytest
 ```
