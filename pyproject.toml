@@ -18,6 +18,7 @@ validation = [
 ccw-report = "rockwell_file_research.ccw.cli:main"
 publication-check = "rockwell_file_research.publication:main"
 rss-inventory = "rockwell_file_research.rss.cli:main"
+plc-hmi-cross-reference = "rockwell_file_research.integration.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]

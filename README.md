@@ -142,6 +142,25 @@ sections produce the same ordered identities and count candidates. Names and
 descriptions remain private-text fields; their hashes allow comparison in the
 redacted inventory.
 
+## PLC–HMI cross-reference
+
+Correlate PanelView tag addresses from a CCW XLSX report with the data-file
+catalogue recovered from an RSLogix 500 RSS project:
+
+```powershell
+uv run plc-hmi-cross-reference panelview-report.xlsx controller.RSS `
+  --output private-outputs/plc-hmi-cross-reference.json `
+  --hmi-source-label hmi-001 `
+  --plc-source-label plc-001
+```
+
+The output resolves explicit data files such as `N17:0` and standard implicit
+files such as `O:0/1`. Tag names, addresses, and RSS record names are replaced
+by SHA-256 evidence by default. Use `--include-private-text` only for output
+that will remain private. Unsupported and unresolved addresses are retained
+with an explicit status; resolution proves the shared data-file number, not
+yet element-level use by ladder logic.
+
 ## Development
 
 Install the project and development tools with:
