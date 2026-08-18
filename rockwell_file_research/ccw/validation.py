@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from rockwell_file_research.ccw.contracts import SECTION_CONTRACTS, SectionContract
 from rockwell_file_research.ccw.errors import UnsupportedWorkbookError
+from rockwell_file_research.ccw.models import Diagnostics, SectionContractResult
 from rockwell_file_research.ccw.sections import section_rows
 from rockwell_file_research.ccw.tables import find_header
 from rockwell_file_research.ccw.types import Workbook
@@ -34,7 +33,7 @@ def report_titles(sheets: Workbook) -> set[str]:
     }
 
 
-def validate_workbook(sheets: Workbook) -> dict[str, Any]:
+def validate_workbook(sheets: Workbook) -> Diagnostics:
     """Reject unsupported layouts and return non-destructive diagnostics."""
 
     titles = report_titles(sheets)
@@ -85,7 +84,7 @@ def validate_workbook(sheets: Workbook) -> dict[str, Any]:
 def _assess_contract(
     sheets: Workbook,
     contract: SectionContract,
-) -> dict[str, Any]:
+) -> SectionContractResult:
     rows = section_rows(sheets, contract.title)
     if not rows:
         return {
@@ -115,7 +114,7 @@ def _assess_contract(
     }
 
 
-def _contract_failure_text(result: dict[str, Any]) -> str:
+def _contract_failure_text(result: SectionContractResult) -> str:
     details: list[str] = []
     missing_tables = result["missing_table_headers"]
     if missing_tables:

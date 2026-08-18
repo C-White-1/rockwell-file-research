@@ -3,14 +3,14 @@
 import hashlib
 from collections import Counter
 from pathlib import Path
-from typing import Any
 
 from rockwell_file_research.ccw import normalize
+from rockwell_file_research.ccw.models import CCWReport
 from rockwell_file_research.ccw.validation import validate_workbook
 from rockwell_file_research.ccw.xlsx import read_workbook
 
 
-def build_report(path: Path) -> dict[str, Any]:
+def build_report(path: Path) -> CCWReport:
     """Build normalized views while retaining every non-empty source cell."""
 
     sheets = read_workbook(path)

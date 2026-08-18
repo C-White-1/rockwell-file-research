@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from rockwell_file_research.ccw.contracts import (
     ALARM_HEADERS,
     CONTROLLER_HEADERS,
     SCREEN_LIST_HEADERS,
     SCREEN_OBJECT_HEADERS,
     TAG_HEADERS,
+)
+from rockwell_file_research.ccw.models import (
+    AlarmRecord,
+    ApplicationIdentity,
+    Communications,
+    ControllerRecord,
+    ScreenObjectRecord,
+    ScreenRecord,
+    TagRecord,
 )
 from rockwell_file_research.ccw.sections import section_rows
 from rockwell_file_research.ccw.tables import (
@@ -23,7 +30,7 @@ from rockwell_file_research.ccw.tables import (
 from rockwell_file_research.ccw.types import Workbook
 
 
-def application(sheets: Workbook) -> dict[str, str]:
+def application(sheets: Workbook) -> ApplicationIdentity:
     """Extract application identity from the main report worksheet."""
 
     rows = section_rows(sheets, "TAG REPORT")
@@ -65,10 +72,10 @@ def application(sheets: Workbook) -> dict[str, str]:
     return {"name": name, "target": target, "version": version}
 
 
-def tags(sheets: Workbook) -> list[dict[str, str]]:
+def tags(sheets: Workbook) -> list[TagRecord]:
     """Extract known external-tag fields."""
 
-    result: list[dict[str, str]] = []
+    result: list[TagRecord] = []
     data_types = {"Boolean", "16 bit integer", "Real", "String"}
     rows = section_rows(sheets, "TAG REPORT")
     found = find_header(
@@ -116,11 +123,11 @@ def tags(sheets: Workbook) -> list[dict[str, str]]:
 
 def screens(
     sheets: Workbook,
-) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+) -> tuple[list[ScreenRecord], list[ScreenObjectRecord]]:
     """Extract screen inventory and screen-object bindings."""
 
-    screen_rows: list[dict[str, str]] = []
-    objects: list[dict[str, str]] = []
+    screen_rows: list[ScreenRecord] = []
+    objects: list[ScreenObjectRecord] = []
     rows = section_rows(sheets, "SCREEN REPORT")
     list_header = find_header(rows, set(SCREEN_LIST_HEADERS))
     if list_header is not None:
@@ -184,10 +191,10 @@ def screens(
     return screen_rows, objects
 
 
-def alarms(sheets: Workbook) -> list[dict[str, str]]:
+def alarms(sheets: Workbook) -> list[AlarmRecord]:
     """Extract basic alarms by report headings rather than trigger naming."""
 
-    result: list[dict[str, str]] = []
+    result: list[AlarmRecord] = []
     rows = section_rows(sheets, "ALARM REPORT")
     found = find_header(rows, set(ALARM_HEADERS))
     if found is None:
@@ -214,11 +221,11 @@ def alarms(sheets: Workbook) -> list[dict[str, str]]:
     return result
 
 
-def communications(sheets: Workbook) -> dict[str, Any]:
+def communications(sheets: Workbook) -> Communications:
     """Extract protocol and configured controller evidence."""
 
     rows = section_rows(sheets, "COMMUNICATION REPORT")
-    controllers: list[dict[str, str]] = []
+    controllers: list[ControllerRecord] = []
     found = find_header(rows, set(CONTROLLER_HEADERS))
     if found is not None:
         index, columns = found
