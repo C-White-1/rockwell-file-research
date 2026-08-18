@@ -57,6 +57,9 @@ with a concise command-line error. Worksheets are located by their semantic
 report headings rather than incidental names such as `Sheet1` or `Sheet7`.
 Tables are likewise mapped from their visible header labels, including CCW's
 two-level tag headings, rather than fixed row and column coordinates.
+Declarative section contracts distinguish a genuinely empty table from an
+unsupported table layout. Required tag, screen, and communication schema drift
+is rejected; optional alarm drift is retained with an explicit warning.
 
 The CCW workbook remains the authoritative source. Normalized fields are
 convenience views and do not replace the retained raw evidence.

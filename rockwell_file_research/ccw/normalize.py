@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
+from rockwell_file_research.ccw.contracts import (
+    ALARM_HEADERS,
+    CONTROLLER_HEADERS,
+    SCREEN_LIST_HEADERS,
+    SCREEN_OBJECT_HEADERS,
+    TAG_HEADERS,
+)
 from rockwell_file_research.ccw.sections import section_rows
 from rockwell_file_research.ccw.tables import (
     compound_headers,
@@ -66,7 +73,7 @@ def tags(sheets: Workbook) -> list[dict[str, str]]:
     rows = section_rows(sheets, "TAG REPORT")
     found = find_header(
         rows,
-        {"Name", "Data Type", "Address", "Controller", "Access"},
+        set(TAG_HEADERS),
     )
     if found is None:
         return result
@@ -115,7 +122,7 @@ def screens(
     screen_rows: list[dict[str, str]] = []
     objects: list[dict[str, str]] = []
     rows = section_rows(sheets, "SCREEN REPORT")
-    list_header = find_header(rows, {"Name", "Number", "Description", "Rights"})
+    list_header = find_header(rows, set(SCREEN_LIST_HEADERS))
     if list_header is not None:
         index, columns = list_header
         for row in rows_until(rows, index + 1, {"Screen Shots"}):
@@ -144,7 +151,7 @@ def screens(
             current = following[0] if following else ""
             continue
         labels = {item: column for column, item in cells.items()}
-        required = {"Object Name", "Tag", "Position", "Size"}
+        required = set(SCREEN_OBJECT_HEADERS)
         if required <= labels.keys():
             object_columns = labels
             continue
@@ -182,7 +189,7 @@ def alarms(sheets: Workbook) -> list[dict[str, str]]:
 
     result: list[dict[str, str]] = []
     rows = section_rows(sheets, "ALARM REPORT")
-    found = find_header(rows, {"Trigger", "Alarm Type", "Message"})
+    found = find_header(rows, set(ALARM_HEADERS))
     if found is None:
         return result
     index, columns = found
@@ -212,7 +219,7 @@ def communications(sheets: Workbook) -> dict[str, Any]:
 
     rows = section_rows(sheets, "COMMUNICATION REPORT")
     controllers: list[dict[str, str]] = []
-    found = find_header(rows, {"Name", "Controller Type", "Address"})
+    found = find_header(rows, set(CONTROLLER_HEADERS))
     if found is not None:
         index, columns = found
     else:

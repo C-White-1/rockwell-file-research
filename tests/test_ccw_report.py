@@ -103,18 +103,21 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
         "alarm_count": 1,
     }
     assert report["communications"]["controllers"][0]["address"] == "192.0.2.10"
-    assert report["diagnostics"] == {
-        "worksheet_count": 7,
-        "worksheet_names": [f"Sheet{index}" for index in range(1, 8)],
-        "recognized_report_sections": [
-            "ALARM REPORT",
-            "COMMUNICATION REPORT",
-            "SCREEN REPORT",
-            "TAG REPORT",
-        ],
-        "unrecognized_report_sections": [],
-        "warnings": [],
-    }
+    diagnostics = report["diagnostics"]
+    assert diagnostics["worksheet_count"] == 7
+    assert diagnostics["worksheet_names"] == [f"Sheet{index}" for index in range(1, 8)]
+    assert diagnostics["recognized_report_sections"] == [
+        "ALARM REPORT",
+        "COMMUNICATION REPORT",
+        "SCREEN REPORT",
+        "TAG REPORT",
+    ]
+    assert diagnostics["unrecognized_report_sections"] == []
+    assert diagnostics["warnings"] == []
+    assert all(
+        contract["status"] == "supported"
+        for contract in diagnostics["section_contracts"]
+    )
     assert [tag["name"] for tag in report["tags"]] == [
         "StartCommand",
         "MotorRunning",
@@ -190,24 +193,56 @@ def test_missing_required_ccw_sections_are_reported() -> None:
     assert "SCREEN REPORT" in message
 
 
-def test_unknown_report_sections_are_preserved_as_diagnostics() -> None:
-    sheets: Workbook = {
-        "Sheet1": [
-            {
-                "row": 6,
-                "cells": {
-                    "A": "TAG REPORT",
-                    "B": "SCREEN REPORT",
-                    "C": "COMMUNICATION REPORT",
-                    "D": "FUTURE REPORT",
-                },
-            }
-        ]
-    }
+def test_unknown_report_sections_are_preserved_as_diagnostics(tmp_path) -> None:
+    workbook = tmp_path / "future-section.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+    sheets = read_workbook(workbook)
+    sheets["FutureSheet"] = [{"row": 1, "cells": {"A": "FUTURE REPORT"}}]
 
     diagnostics = validate_workbook(sheets)
 
     assert diagnostics["unrecognized_report_sections"] == ["FUTURE REPORT"]
     assert diagnostics["warnings"] == [
         "unrecognized report section preserved as raw evidence: FUTURE REPORT"
+    ]
+
+
+def test_required_table_schema_drift_is_rejected(tmp_path) -> None:
+    workbook = tmp_path / "schema-drift.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+    sheets = read_workbook(workbook)
+    tag_header = next(
+        row for row in sheets["Sheet1"] if "Access" in row["cells"].values()
+    )
+    access_column = next(
+        column for column, item in tag_header["cells"].items() if item == "Access"
+    )
+    del tag_header["cells"][access_column]
+
+    with pytest.raises(UnsupportedWorkbookError, match="TAG REPORT.*Access"):
+        validate_workbook(sheets)
+
+
+def test_optional_alarm_schema_drift_becomes_a_warning(tmp_path) -> None:
+    workbook = tmp_path / "optional-schema-drift.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+    sheets = read_workbook(workbook)
+    alarm_header = next(
+        row for row in sheets["Sheet4"] if "Message" in row["cells"].values()
+    )
+    message_column = next(
+        column for column, item in alarm_header["cells"].items() if item == "Message"
+    )
+    del alarm_header["cells"][message_column]
+
+    diagnostics = validate_workbook(sheets)
+
+    alarm_contract = next(
+        contract
+        for contract in diagnostics["section_contracts"]
+        if contract["section"] == "ALARM REPORT"
+    )
+    assert alarm_contract["status"] == "unsupported"
+    assert diagnostics["warnings"] == [
+        "ALARM REPORT: missing table headers Alarm Type/Message/Trigger"
     ]
