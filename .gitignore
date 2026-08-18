@@ -8,9 +8,6 @@ wheels/
 .test-artifacts/
 .pytest_cache/
 .ruff_cache/
-.test-artifacts/
-.pytest_cache/
-.ruff_cache/
 
 # Virtual environments
 .venv

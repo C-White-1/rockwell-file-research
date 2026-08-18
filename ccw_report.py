@@ -190,23 +190,34 @@ def _screens(
 
 
 def _alarms(sheets: dict[str, list[dict[str, Any]]]) -> list[dict[str, str]]:
-    result = []
-    for row in _sheet(sheets, "Sheet4"):
-        cells = row["cells"]
-        if cells.get("C") != "Bit" or not cells.get("B", "").startswith("Alarm"):
+    result: list[dict[str, str]] = []
+    for rows in sheets.values():
+        is_alarm_report = any("ALARM REPORT" in row["cells"].values() for row in rows)
+        if not is_alarm_report:
             continue
-        result.append(
-            {
-                "trigger": cells.get("B", ""),
-                "alarm_type": cells.get("C", ""),
-                "edge_detection": cells.get("E", ""),
-                "value": cells.get("G", ""),
-                "deadband_mode": cells.get("J", ""),
-                "deadband_level": cells.get("N", ""),
-                "message": cells.get("Q", ""),
-                "source_row": str(row["row"]),
-            }
-        )
+
+        in_basic_settings = False
+        for row in rows:
+            cells = row["cells"]
+            if cells.get("B") == "Trigger" and cells.get("C") == "Alarm Type":
+                in_basic_settings = True
+                continue
+            if cells.get("B") == "Alarms Additional Settings":
+                break
+            if not in_basic_settings or not cells.get("B") or not cells.get("C"):
+                continue
+            result.append(
+                {
+                    "trigger": cells.get("B", ""),
+                    "alarm_type": cells.get("C", ""),
+                    "edge_detection": cells.get("E", ""),
+                    "value": cells.get("G", ""),
+                    "deadband_mode": cells.get("J", ""),
+                    "deadband_level": cells.get("N", ""),
+                    "message": cells.get("Q", ""),
+                    "source_row": str(row["row"]),
+                }
+            )
     return result
 
 
