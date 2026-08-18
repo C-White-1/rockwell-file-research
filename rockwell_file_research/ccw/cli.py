@@ -4,6 +4,7 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from rockwell_file_research.ccw.errors import CCWReportError
 from rockwell_file_research.ccw.export import export_report
 
 
@@ -25,7 +26,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if not args.source.is_file():
         parser.error(f"source report does not exist: {args.source}")
-    report = export_report(args.source, args.output)
+    try:
+        report = export_report(args.source, args.output)
+    except CCWReportError as error:
+        parser.error(str(error))
     summary = report["summary"]
     print(
         f"Extracted {summary['external_tag_count']} tags, "

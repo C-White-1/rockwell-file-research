@@ -1,12 +1,21 @@
 """Synthetic unit tests for the CCW report parser helpers."""
 
 import csv
+from pathlib import Path
 
+import pytest
+
+from rockwell_file_research.ccw.cli import main
+from rockwell_file_research.ccw.errors import (
+    UnsupportedWorkbookError,
+    WorkbookReadError,
+)
 from rockwell_file_research.ccw.export import write_csv
 from rockwell_file_research.ccw.normalize import alarms
 from rockwell_file_research.ccw.reporting import build_report
 from rockwell_file_research.ccw.types import Workbook
-from rockwell_file_research.ccw.xlsx import column_name
+from rockwell_file_research.ccw.validation import validate_workbook
+from rockwell_file_research.ccw.xlsx import column_name, read_workbook
 from tests.fixture_factory import build_synthetic_ccw_workbook
 
 
@@ -91,6 +100,18 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
         "alarm_count": 1,
     }
     assert report["communications"]["controllers"][0]["address"] == "192.0.2.10"
+    assert report["diagnostics"] == {
+        "worksheet_count": 7,
+        "worksheet_names": [f"Sheet{index}" for index in range(1, 8)],
+        "recognized_report_sections": [
+            "ALARM REPORT",
+            "COMMUNICATION REPORT",
+            "SCREEN REPORT",
+            "TAG REPORT",
+        ],
+        "unrecognized_report_sections": [],
+        "warnings": [],
+    }
     assert [tag["name"] for tag in report["tags"]] == [
         "StartCommand",
         "MotorRunning",
@@ -99,3 +120,61 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
         "MotorFault",
     ]
     assert report["alarms"][0]["trigger"] == "MotorFault"
+
+
+def test_non_xlsx_input_has_a_clear_domain_error(tmp_path) -> None:
+    source = tmp_path / "not-a-workbook.xlsx"
+    source.write_text("not a ZIP package", encoding="utf-8")
+
+    with pytest.raises(WorkbookReadError, match="not a valid XLSX ZIP package"):
+        read_workbook(source)
+
+
+def test_cli_reports_malformed_workbook_without_traceback(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = tmp_path / "not-a-workbook.xlsx"
+    source.write_text("not a ZIP package", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as captured:
+        main([str(source), "--output", str(tmp_path / "output")])
+
+    stderr = capsys.readouterr().err
+    assert captured.value.code == 2
+    assert "not a valid XLSX ZIP package" in stderr
+    assert "Traceback" not in stderr
+
+
+def test_missing_required_ccw_sections_are_reported() -> None:
+    sheets: Workbook = {"Sheet1": [{"row": 6, "cells": {"A": "TAG REPORT"}}]}
+
+    with pytest.raises(UnsupportedWorkbookError) as captured:
+        validate_workbook(sheets)
+
+    message = str(captured.value)
+    assert "COMMUNICATION REPORT" in message
+    assert "SCREEN REPORT" in message
+
+
+def test_unknown_report_sections_are_preserved_as_diagnostics() -> None:
+    sheets: Workbook = {
+        "Sheet1": [
+            {
+                "row": 6,
+                "cells": {
+                    "A": "TAG REPORT",
+                    "B": "SCREEN REPORT",
+                    "C": "COMMUNICATION REPORT",
+                    "D": "FUTURE REPORT",
+                },
+            }
+        ]
+    }
+
+    diagnostics = validate_workbook(sheets)
+
+    assert diagnostics["unrecognized_report_sections"] == ["FUTURE REPORT"]
+    assert diagnostics["warnings"] == [
+        "unrecognized report section preserved as raw evidence: FUTURE REPORT"
+    ]

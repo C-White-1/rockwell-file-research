@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from rockwell_file_research.ccw import normalize
+from rockwell_file_research.ccw.validation import validate_workbook
 from rockwell_file_research.ccw.xlsx import read_workbook
 
 
@@ -13,6 +14,7 @@ def build_report(path: Path) -> dict[str, Any]:
     """Build normalized views while retaining every non-empty source cell."""
 
     sheets = read_workbook(path)
+    diagnostics = validate_workbook(sheets)
     tags = normalize.tags(sheets)
     screens, objects = normalize.screens(sheets)
     alarms = normalize.alarms(sheets)
@@ -32,6 +34,7 @@ def build_report(path: Path) -> dict[str, Any]:
             "alarm_count": len(alarms),
         },
         "communications": normalize.communications(sheets),
+        "diagnostics": diagnostics,
         "tags": tags,
         "screens": screens,
         "screen_objects": objects,

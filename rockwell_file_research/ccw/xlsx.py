@@ -5,8 +5,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from zipfile import ZipFile
+from zipfile import BadZipFile, ZipFile
 
+from rockwell_file_research.ccw.errors import WorkbookReadError
 from rockwell_file_research.ccw.types import Workbook, WorksheetRow
 
 SHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -25,6 +26,21 @@ def column_name(reference: str) -> str:
 
 def read_workbook(path: Path) -> Workbook:
     """Read every non-empty cell without discarding unsupported worksheets."""
+
+    try:
+        return _read_workbook(path)
+    except BadZipFile as error:
+        raise WorkbookReadError(
+            f"input is not a valid XLSX ZIP package: {path}"
+        ) from error
+    except (ET.ParseError, KeyError, IndexError) as error:
+        raise WorkbookReadError(
+            f"input has an incomplete or malformed XLSX structure: {path}"
+        ) from error
+
+
+def _read_workbook(path: Path) -> Workbook:
+    """Read a workbook after translating package errors at the public boundary."""
 
     sheets: Workbook = {}
     with ZipFile(path) as archive:

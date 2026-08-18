@@ -49,6 +49,12 @@ The command writes:
 - `screen_objects.csv`; and
 - `alarms.csv`.
 
+`report.json` also contains diagnostics listing recognized and unrecognized
+report sections. Unsupported top-level sections remain available under
+`raw_sheets`; they are not silently discarded. Invalid XLSX packages and
+workbooks missing the required CCW tag, screen, or communication reports fail
+with a concise command-line error.
+
 The CCW workbook remains the authoritative source. Normalized fields are
 convenience views and do not replace the retained raw evidence.
 

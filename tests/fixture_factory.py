@@ -140,6 +140,7 @@ def build_synthetic_ccw_workbook(destination: Path) -> None:
     sheet1: dict[int, dict[str, str]] = {
         2: {"D": "TwinForgeSyntheticFixture"},
         3: {"H": "2711R-T7T", "L": ", 8.012"},
+        6: {"H": "TAG REPORT"},
         11: {"B": "Name", "C": "Data Type"},
     }
     for row_number, (name, data_type, address, access) in enumerate(tags, 12):
@@ -154,6 +155,7 @@ def build_synthetic_ccw_workbook(destination: Path) -> None:
         }
 
     sheet2 = {
+        6: {"M": "SCREEN REPORT"},
         8: {"B": "Name", "G": "Number"},
         9: {"B": "Main", "G": "1", "L": "Synthetic motor screen"},
         11: {"B": "Screen Shots"},
@@ -208,6 +210,7 @@ def build_synthetic_ccw_workbook(destination: Path) -> None:
         12: {"B": "Alarms Additional Settings"},
     }
     sheet7 = {
+        6: {"I": "COMMUNICATION REPORT"},
         8: {"B": "Protocol :", "D": "Allen-Bradley MicroLogix"},
         10: {"B": "Connection Type :", "D": "Ethernet"},
         16: {"B": "Name", "C": "Controller Type", "F": "Address"},
