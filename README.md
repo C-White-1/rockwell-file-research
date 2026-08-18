@@ -87,6 +87,28 @@ is rejected; optional alarm drift is retained with an explicit warning.
 The CCW workbook remains the authoritative source. Normalized fields are
 convenience views and do not replace the retained raw evidence.
 
+## RSLogix 500 RSS structural inventory
+
+RSLogix 500 `.RSS` projects are OLE compound files rather than L5X documents.
+Create a read-only structural inventory with:
+
+```powershell
+uv run rss-inventory `
+  "private-fixtures\controller.rss" `
+  --output "private-outputs\controller-inventory.json" `
+  --source-label fixture-001
+```
+
+The inventory records source and stream SHA-256 digests, standard compound-file
+timestamps, OLE storages, stream names and sizes, recognized RSS section
+presence, and unknown streams. It deliberately does not export stream payloads,
+ladder logic, data-table values, symbols, comments, controller addresses, or
+other proprietary project content. Unknown streams are listed rather than
+discarded so later research can extend the reader without losing coverage.
+
+Vendor RSS projects and verbatim extracts remain private. Tests use only an
+in-memory synthetic compound document.
+
 ## Development
 
 Install the project and development tools with:

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "acd-tools>=0.2a8",
+    "olefile>=0.47",
 ]
 
 [project.optional-dependencies]
@@ -16,6 +17,7 @@ validation = [
 [project.scripts]
 ccw-report = "rockwell_file_research.ccw.cli:main"
 publication-check = "rockwell_file_research.publication:main"
+rss-inventory = "rockwell_file_research.rss.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
