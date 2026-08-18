@@ -16,6 +16,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("source", type=Path, help="CCW-generated XLSX report")
     parser.add_argument("--output", type=Path, required=True, help="output directory")
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="validate report.json against the packaged JSON Schema",
+    )
     return parser
 
 
@@ -27,7 +32,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.source.is_file():
         parser.error(f"source report does not exist: {args.source}")
     try:
-        report = export_report(args.source, args.output)
+        report = export_report(args.source, args.output, validate=args.validate)
     except CCWReportError as error:
         parser.error(str(error))
     summary = report["summary"]

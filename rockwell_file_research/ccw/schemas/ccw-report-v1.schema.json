@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:rockwell-file-research:schema:ccw-report:v1",
+  "title": "Rockwell File Research CCW Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source",
+    "application",
+    "summary",
+    "communications",
+    "diagnostics",
+    "tags",
+    "screens",
+    "screen_objects",
+    "alarms",
+    "raw_sheets"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "rockwell-file-research.ccw-report.v1"
+    },
+    "source": { "$ref": "#/$defs/source" },
+    "application": { "$ref": "#/$defs/application" },
+    "summary": { "$ref": "#/$defs/summary" },
+    "communications": { "$ref": "#/$defs/communications" },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "tags": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/tag" }
+    },
+    "screens": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/screen" }
+    },
+    "screen_objects": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/screenObject" }
+    },
+    "alarms": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/alarm" }
+    },
+    "raw_sheets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/worksheetRow" }
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size", "sha256"],
+      "properties": {
+        "path": { "type": "string" },
+        "size": { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "target", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "target": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["external_tag_count", "tag_types", "screen_count", "screen_object_count", "alarm_count"],
+      "properties": {
+        "external_tag_count": { "type": "integer", "minimum": 0 },
+        "tag_types": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "screen_count": { "type": "integer", "minimum": 0 },
+        "screen_object_count": { "type": "integer", "minimum": 0 },
+        "alarm_count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "controller": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "controller_type", "address", "description", "response_timeout_ms", "fail_after", "connection_timeout_s", "inter_request_delay_ms", "source_row"],
+      "properties": {
+        "name": { "type": "string" },
+        "controller_type": { "type": "string" },
+        "address": { "type": "string" },
+        "description": { "type": "string" },
+        "response_timeout_ms": { "type": "string" },
+        "fail_after": { "type": "string" },
+        "connection_timeout_s": { "type": "string" },
+        "inter_request_delay_ms": { "type": "string" },
+        "source_row": { "type": "string" }
+      }
+    },
+    "communications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "connection_type", "controllers"],
+      "properties": {
+        "protocol": { "type": "string" },
+        "connection_type": { "type": "string" },
+        "controllers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/controller" }
+        }
+      }
+    },
+    "sectionContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["section", "required", "status", "missing_table_headers", "missing_setting_labels"],
+      "properties": {
+        "section": { "type": "string" },
+        "required": { "type": "boolean" },
+        "status": { "enum": ["supported", "unsupported", "absent"] },
+        "missing_table_headers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "missing_setting_labels": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worksheet_count", "worksheet_names", "recognized_report_sections", "unrecognized_report_sections", "section_contracts", "warnings"],
+      "properties": {
+        "worksheet_count": { "type": "integer", "minimum": 0 },
+        "worksheet_names": { "type": "array", "items": { "type": "string" } },
+        "recognized_report_sections": { "type": "array", "items": { "type": "string" } },
+        "unrecognized_report_sections": { "type": "array", "items": { "type": "string" } },
+        "section_contracts": { "type": "array", "items": { "$ref": "#/$defs/sectionContract" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "data_type", "address", "controller", "description", "entry_min", "entry_max", "access", "update_rate_ms", "scaling_enabled", "raw_min", "raw_max", "scaled_min", "scaled_max", "source_row"],
+      "properties": {
+        "name": { "type": "string" },
+        "data_type": { "type": "string" },
+        "address": { "type": "string" },
+        "controller": { "type": "string" },
+        "description": { "type": "string" },
+        "entry_min": { "type": "string" },
+        "entry_max": { "type": "string" },
+        "access": { "type": "string" },
+        "update_rate_ms": { "type": "string" },
+        "scaling_enabled": { "type": "string" },
+        "raw_min": { "type": "string" },
+        "raw_max": { "type": "string" },
+        "scaled_min": { "type": "string" },
+        "scaled_max": { "type": "string" },
+        "source_row": { "type": "string" }
+      }
+    },
+    "screen": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "number", "description", "rights", "source_row"],
+      "properties": {
+        "name": { "type": "string" },
+        "number": { "type": "string" },
+        "description": { "type": "string" },
+        "rights": { "type": "string" },
+        "source_row": { "type": "string" }
+      }
+    },
+    "screenObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["screen", "name", "tag_1", "tag_2", "tag_3", "position", "size", "touchscreen", "accept_focus", "function_key", "source_row"],
+      "properties": {
+        "screen": { "type": "string" },
+        "name": { "type": "string" },
+        "tag_1": { "type": "string" },
+        "tag_2": { "type": "string" },
+        "tag_3": { "type": "string" },
+        "position": { "type": "string" },
+        "size": { "type": "string" },
+        "touchscreen": { "type": "string" },
+        "accept_focus": { "type": "string" },
+        "function_key": { "type": "string" },
+        "source_row": { "type": "string" }
+      }
+    },
+    "alarm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "alarm_type", "edge_detection", "value", "deadband_mode", "deadband_level", "message", "source_row"],
+      "properties": {
+        "trigger": { "type": "string" },
+        "alarm_type": { "type": "string" },
+        "edge_detection": { "type": "string" },
+        "value": { "type": "string" },
+        "deadband_mode": { "type": "string" },
+        "deadband_level": { "type": "string" },
+        "message": { "type": "string" },
+        "source_row": { "type": "string" }
+      }
+    },
+    "worksheetRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row", "cells"],
+      "properties": {
+        "row": { "type": "integer", "minimum": 1 },
+        "cells": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Z]+$" },
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    }
+  }
+}

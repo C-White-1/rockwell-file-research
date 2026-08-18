@@ -8,6 +8,11 @@ dependencies = [
     "acd-tools>=0.2a8",
 ]
 
+[project.optional-dependencies]
+validation = [
+    "jsonschema>=4.23",
+]
+
 [project.scripts]
 ccw-report = "rockwell_file_research.ccw.cli:main"
 
@@ -17,6 +22,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["rockwell_file_research*"]
+
+[tool.setuptools.package-data]
+"rockwell_file_research.ccw.schemas" = ["*.json"]
 
 [tool.pyright]
 include = [
@@ -52,6 +60,7 @@ pythonpath = ["."]
 
 [dependency-groups]
 dev = [
+    "jsonschema>=4.23",
     "pyright>=1.1.411",
     "pytest>=8.4.1",
     "ruff>=0.15.20",

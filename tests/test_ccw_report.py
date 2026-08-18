@@ -1,18 +1,23 @@
 """Synthetic unit tests for the CCW report parser helpers."""
 
 import csv
+import json
 from pathlib import Path
+from typing import cast
 
 import pytest
 
 from rockwell_file_research.ccw.cli import main
 from rockwell_file_research.ccw.errors import (
+    ReportSchemaError,
     UnsupportedWorkbookError,
     WorkbookReadError,
 )
 from rockwell_file_research.ccw.export import write_csv
+from rockwell_file_research.ccw.models import CCWReport
 from rockwell_file_research.ccw.normalize import alarms
 from rockwell_file_research.ccw.reporting import build_report
+from rockwell_file_research.ccw.schema import load_schema, validate_report
 from rockwell_file_research.ccw.types import Workbook
 from rockwell_file_research.ccw.validation import validate_workbook
 from rockwell_file_research.ccw.xlsx import column_name, read_workbook
@@ -246,3 +251,22 @@ def test_optional_alarm_schema_drift_becomes_a_warning(tmp_path) -> None:
     assert diagnostics["warnings"] == [
         "ALARM REPORT: missing table headers Alarm Type/Message/Trigger"
     ]
+
+
+def test_clean_room_report_conforms_to_packaged_json_schema(tmp_path) -> None:
+    workbook = tmp_path / "schema-valid.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+
+    validate_report(build_report(workbook))
+
+    assert load_schema()["$id"] == "urn:rockwell-file-research:schema:ccw-report:v1"
+
+
+def test_json_schema_rejects_missing_required_report_field(tmp_path) -> None:
+    workbook = tmp_path / "schema-invalid.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+    mutable_report = json.loads(json.dumps(build_report(workbook)))
+    del mutable_report["application"]["name"]
+
+    with pytest.raises(ReportSchemaError, match="required property"):
+        validate_report(cast(CCWReport, mutable_report))

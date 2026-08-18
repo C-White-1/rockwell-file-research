@@ -8,6 +8,7 @@ from typing import cast
 
 from rockwell_file_research.ccw.models import CCWReport
 from rockwell_file_research.ccw.reporting import build_report
+from rockwell_file_research.ccw.schema import validate_report
 
 
 def write_csv(path: Path, rows: Sequence[Mapping[str, str]]) -> None:
@@ -27,10 +28,17 @@ def _csv_rows(records: Sequence[object]) -> list[Mapping[str, str]]:
     return [cast(Mapping[str, str], record) for record in records]
 
 
-def export_report(source: Path, destination: Path) -> CCWReport:
+def export_report(
+    source: Path,
+    destination: Path,
+    *,
+    validate: bool = False,
+) -> CCWReport:
     """Export JSON and CSV evidence derived from a CCW report."""
 
     report = build_report(source)
+    if validate:
+        validate_report(report)
     destination.mkdir(parents=True, exist_ok=True)
     (destination / "report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n",

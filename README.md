@@ -40,6 +40,17 @@ uv run ccw-report `
   --output "private-outputs\ccw-report"
 ```
 
+Install the optional validator and require the generated report to conform to
+the packaged JSON Schema:
+
+```powershell
+uv sync --extra validation
+uv run ccw-report `
+  "private-fixtures\ccw-report.xlsx" `
+  --output "private-outputs\ccw-report" `
+  --validate
+```
+
 The command writes:
 
 - `report.json`, containing normalized inventories and every non-empty source
