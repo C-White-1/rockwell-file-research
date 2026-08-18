@@ -107,7 +107,7 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert catalogue["record_count"] == 1
     assert catalogue["sections_consistent"] is True
     assert catalogue["records"][0]["file_number"] == 0
-    assert catalogue["records"][0]["element_count_candidate"] == 14
+    assert catalogue["records"][0]["unknown_numeric_candidate"] == 14
     assert catalogue["records"][0]["name"] is None
 
 

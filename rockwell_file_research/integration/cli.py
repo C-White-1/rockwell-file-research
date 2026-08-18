@@ -18,12 +18,22 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("hmi_source", type=Path, help="CCW-generated XLSX report")
     parser.add_argument("plc_source", type=Path, help="RSLogix 500 RSS project")
     parser.add_argument("--output", type=Path, required=True, help="output JSON file")
+    parser.add_argument(
+        "--markdown-output",
+        type=Path,
+        help="optional human-readable Markdown report",
+    )
     parser.add_argument("--hmi-source-label", help="neutral HMI source identifier")
     parser.add_argument("--plc-source-label", help="neutral PLC source identifier")
     parser.add_argument(
         "--include-private-text",
         action="store_true",
         help="include tag names, addresses, and RSS record names; keep output private",
+    )
+    parser.add_argument(
+        "--omit-hashes",
+        action="store_true",
+        help="omit SHA-256 fields from a human-readable private copy",
     )
     return parser
 
@@ -44,6 +54,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         hmi_source_label=args.hmi_source_label,
         plc_source_label=args.plc_source_label,
         include_private_text=args.include_private_text,
+        omit_hashes=args.omit_hashes,
+        markdown_destination=args.markdown_output,
     )
     summary = result["summary"]
     print(

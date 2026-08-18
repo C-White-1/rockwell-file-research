@@ -150,6 +150,7 @@ catalogue recovered from an RSLogix 500 RSS project:
 ```powershell
 uv run plc-hmi-cross-reference panelview-report.xlsx controller.RSS `
   --output private-outputs/plc-hmi-cross-reference.json `
+  --markdown-output private-outputs/plc-hmi-cross-reference.md `
   --hmi-source-label hmi-001 `
   --plc-source-label plc-001
 ```
@@ -160,6 +161,18 @@ by SHA-256 evidence by default. Use `--include-private-text` only for output
 that will remain private. Unsupported and unresolved addresses are retained
 with an explicit status; resolution proves the shared data-file number, not
 yet element-level use by ladder logic.
+
+Element selectors are also normalized into element, bit, and member fields.
+Cross-artifact evidence showed that a numeric field recovered near each RSS
+record is not the data-file element count: valid HMI element references exceed
+it. The field is therefore retained as `unknown_numeric_candidate`, with the
+contradiction recorded rather than assigning unsupported semantics.
+
+Exact tag-name references from screen objects and alarm triggers are attached
+as consumers of each PLC binding. The summary distinguishes visualization and
+alarm references and reports tags with no such consumer. CCW table labels such
+as `Read Tag` and `Write Tag`, plus `-` placeholders, are excluded as report
+structure rather than treated as unresolved project references.
 
 ## Development
 

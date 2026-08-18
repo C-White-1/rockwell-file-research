@@ -188,7 +188,7 @@ def build_inventory(
             record.file_number,
             record.description,
             record.name,
-            record.element_count_candidate,
+            record.unknown_numeric_candidate,
         )
 
     sections_consistent = (
@@ -216,7 +216,7 @@ def build_inventory(
                 "name_sha256": record.name_sha256,
                 "description": (record.description if include_private_text else None),
                 "name": record.name if include_private_text else None,
-                "element_count_candidate": record.element_count_candidate,
+                "unknown_numeric_candidate": record.unknown_numeric_candidate,
             }
         )
     return {
@@ -258,8 +258,8 @@ def build_inventory(
                     "the standard and extensional sections agree in order."
                 ),
                 (
-                    "The count field remains labelled as a candidate until a "
-                    "second independent RSS project confirms its semantics."
+                    "The recovered numeric field has unknown semantics; PLC–HMI "
+                    "cross-reference evidence disproves data-file element count."
                 ),
             ],
         },

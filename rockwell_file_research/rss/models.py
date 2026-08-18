@@ -78,7 +78,7 @@ class RSSDataFileRecordEvidence(TypedDict):
     name_sha256: str
     description: str | None
     name: str | None
-    element_count_candidate: int
+    unknown_numeric_candidate: int
 
 
 class RSSDataFileSectionEvidence(TypedDict):

@@ -11,18 +11,36 @@ class CrossReferenceSource(TypedDict):
     sha256: str
 
 
+class HMIConsumer(TypedDict):
+    """One exact HMI screen-object or alarm reference to a tag."""
+
+    kind: str
+    field: str
+    source_row: str
+    screen_sha256: str | None
+    label_sha256: str
+    screen: str | None
+    label: str | None
+
+
 class AddressBinding(TypedDict):
     """One HMI tag address resolved against an RSS data-file record."""
 
     status: str
     prefix: str
     file_number: int | None
+    selector: str | None
+    element_number: int | None
+    bit_number: int | None
+    member: str | None
+    exceeds_rss_numeric_candidate: bool | None
     tag_name_sha256: str
     address_sha256: str
     rss_record_name_sha256: str | None
     tag_name: str | None
     address: str | None
     rss_record_name: str | None
+    consumers: list[HMIConsumer]
 
 
 class FileUsage(TypedDict):
@@ -31,6 +49,10 @@ class FileUsage(TypedDict):
     file_number: int
     prefixes: list[str]
     binding_count: int
+    consumer_reference_count: int
+    distinct_element_count: int
+    highest_element_number: int | None
+    rss_numeric_candidate: int | None
     rss_record_name_sha256: str | None
     rss_record_name: str | None
 
@@ -44,6 +66,12 @@ class CrossReferenceSummary(TypedDict):
     unresolved_count: int
     unsupported_count: int
     rss_catalogue_record_count: int
+    address_elements_exceeding_rss_numeric_candidate: int
+    consumer_reference_count: int
+    screen_object_reference_count: int
+    alarm_reference_count: int
+    tags_with_consumers: int
+    tags_without_consumers: int
 
 
 class PLCHMICrossReference(TypedDict):

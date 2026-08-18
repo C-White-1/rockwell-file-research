@@ -7,8 +7,25 @@ from rockwell_file_research.ccw.reporting import build_report
 from rockwell_file_research.integration.cross_reference import (
     build_plc_hmi_cross_reference,
 )
+from rockwell_file_research.integration.markdown import (
+    render_cross_reference_markdown,
+)
 from rockwell_file_research.integration.models import PLCHMICrossReference
 from rockwell_file_research.rss.inventory import inventory_rss
+
+
+def _omit_sha256_fields(value: object) -> object:
+    """Return a JSON-compatible copy without integrity-hash fields."""
+
+    if isinstance(value, dict):
+        return {
+            key: _omit_sha256_fields(item)
+            for key, item in value.items()
+            if not key.endswith("sha256")
+        }
+    if isinstance(value, list):
+        return [_omit_sha256_fields(item) for item in value]
+    return value
 
 
 def export_plc_hmi_cross_reference(
@@ -19,6 +36,8 @@ def export_plc_hmi_cross_reference(
     hmi_source_label: str | None = None,
     plc_source_label: str | None = None,
     include_private_text: bool = False,
+    omit_hashes: bool = False,
+    markdown_destination: Path | None = None,
 ) -> PLCHMICrossReference:
     """Parse both sources and write one deterministic cross-reference."""
 
@@ -34,8 +53,14 @@ def export_plc_hmi_cross_reference(
         include_private_text=include_private_text,
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
+    serialized: object = _omit_sha256_fields(result) if omit_hashes else result
     destination.write_text(
-        json.dumps(result, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(serialized, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    if markdown_destination is not None:
+        markdown_destination.parent.mkdir(parents=True, exist_ok=True)
+        markdown_destination.write_text(
+            render_cross_reference_markdown(result), encoding="utf-8"
+        )
     return result

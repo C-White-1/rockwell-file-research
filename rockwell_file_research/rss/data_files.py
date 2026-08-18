@@ -47,7 +47,7 @@ class DataFileRecord:
     name: str
     description_sha256: str
     name_sha256: str
-    element_count_candidate: int
+    unknown_numeric_candidate: int
     marker_offset: int
 
 
@@ -119,7 +119,7 @@ def scan_data_file_records(payload: bytes) -> list[DataFileRecord]:
                 name=name,
                 description_sha256=_sha256_text(description),
                 name_sha256=_sha256_text(name),
-                element_count_candidate=int.from_bytes(
+                unknown_numeric_candidate=int.from_bytes(
                     payload[marker_offset + 10 : marker_offset + 12], "little"
                 ),
                 marker_offset=marker_offset,
