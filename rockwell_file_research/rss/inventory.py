@@ -11,8 +11,11 @@ from rockwell_file_research.rss.container import (
     OleCompoundDocument,
     verify_ole_signature,
 )
+from rockwell_file_research.rss.data_files import inspect_data_file_section
 from rockwell_file_research.rss.models import (
     RSSCompoundMetadata,
+    RSSDataFileSectionEvidence,
+    RSSDataFileTextRegion,
     RSSInventory,
     RSSProcessorTextRegion,
     RSSSectionEvidence,
@@ -41,6 +44,10 @@ RECOGNIZED_SECTION_STREAMS = (
     "REVISION NOTES/ObjectData",
     "TRENDS/ObjectData",
     "Version/ObjectData",
+)
+DATA_FILE_SECTION_STREAMS = (
+    "DATA FILES/ObjectData",
+    "Extensional DATA FILES/ObjectData",
 )
 
 
@@ -108,6 +115,63 @@ def build_inventory(
                 include_private_text=include_private_text,
             )
         ]
+    data_file_sections: list[RSSDataFileSectionEvidence] = []
+    for path in DATA_FILE_SECTION_STREAMS:
+        payload = stream_payloads.get(path)
+        if payload is None:
+            data_file_sections.append(
+                {
+                    "name": path.removesuffix("/ObjectData"),
+                    "present": False,
+                    "envelope_version": 0,
+                    "header_size": 0,
+                    "compression": "",
+                    "compressed_size": 0,
+                    "uncompressed_size": 0,
+                    "compressed_sha256": "",
+                    "uncompressed_sha256": "",
+                    "private_text_included": include_private_text,
+                    "text_regions": [],
+                    "diagnostics": [],
+                }
+            )
+            continue
+        inspected = inspect_data_file_section(
+            payload,
+            section_name=path.removesuffix("/ObjectData"),
+            include_private_text=include_private_text,
+        )
+        text_regions: list[RSSDataFileTextRegion] = [
+            {
+                "classification": region.classification,
+                "offset": region.offset,
+                "length": region.length,
+                "sha256": region.sha256,
+                "text": region.text,
+            }
+            for region in inspected.text_regions
+        ]
+        data_file_sections.append(
+            {
+                "name": path.removesuffix("/ObjectData"),
+                "present": True,
+                "envelope_version": inspected.envelope_version,
+                "header_size": inspected.header_size,
+                "compression": "zlib",
+                "compressed_size": inspected.compressed_size,
+                "uncompressed_size": inspected.uncompressed_size,
+                "compressed_sha256": inspected.compressed_sha256,
+                "uncompressed_sha256": inspected.uncompressed_sha256,
+                "private_text_included": include_private_text,
+                "text_regions": text_regions,
+                "diagnostics": [
+                    (
+                        "Data-file record numbers, element counts, and values remain "
+                        "uninterpreted pending repeatable boundary evidence."
+                    )
+                ],
+            }
+        )
     return {
         "schema_version": SCHEMA_VERSION,
         "format": RSS_FORMAT,
@@ -136,6 +200,7 @@ def build_inventory(
                 ),
             ],
         },
+        "data_file_sections": data_file_sections,
     }
 
 

@@ -1,9 +1,11 @@
 """Tests for privacy-preserving RSS structural inventorying."""
 
+import zlib
 from datetime import UTC, datetime
 
 import pytest
 
+from rockwell_file_research.rss.compressed_section import decompress_section
 from rockwell_file_research.rss.container import (
     CompoundMetadata,
     verify_ole_signature,
@@ -16,7 +18,17 @@ class SyntheticCompoundDocument:
     """In-memory clean-room compound document used instead of vendor files."""
 
     def __init__(self) -> None:
+        data_file_payload = b"CDataHolder\x00OUTPUT\x00synthetic private label"
+        compressed = zlib.compress(data_file_payload)
+        data_file_section = (
+            (2).to_bytes(4, "little")
+            + (16).to_bytes(4, "little")
+            + len(compressed).to_bytes(4, "little")
+            + len(data_file_payload).to_bytes(4, "little")
+            + compressed
+        )
         self._streams = {
+            "DATA FILES/ObjectData": data_file_section,
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
             "PROGRAM FILES/ObjectData": b"synthetic program evidence",
             "Synthetic Extension/ObjectData": b"preserve unknown evidence",
@@ -68,6 +80,13 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert all(
         region["text"] is None for region in inventory["processor"]["text_regions"]
     )
+    data_files = inventory["data_file_sections"][0]
+    assert data_files["present"] is True
+    assert data_files["compression"] == "zlib"
+    assert data_files["uncompressed_size"] == len(
+        b"CDataHolder\x00OUTPUT\x00synthetic private label"
+    )
+    assert all(region["text"] is None for region in data_files["text_regions"])
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -81,9 +100,10 @@ def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
 
     assert sections["PROCESSOR"]["present"] is True
     assert sections["PROGRAM FILES"]["present"] is True
-    assert sections["DATA FILES"] == {
-        "name": "DATA FILES",
-        "stream_path": "DATA FILES/ObjectData",
+    assert sections["DATA FILES"]["present"] is True
+    assert sections["Extensional DATA FILES"] == {
+        "name": "Extensional DATA FILES",
+        "stream_path": "Extensional DATA FILES/ObjectData",
         "present": False,
         "size": 0,
         "sha256": "",
@@ -119,3 +139,28 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
             "text": "synthetic processor evidence",
         }
     ]
+    data_regions = inventory["data_file_sections"][0]["text_regions"]
+    assert [region["classification"] for region in data_regions] == [
+        "serialization_class",
+        "standard_data_file_label",
+        "application_text_candidate",
+    ]
+    assert [region["text"] for region in data_regions] == [
+        "CDataHolder",
+        "OUTPUT",
+        "synthetic private label",
+    ]
+
+
+def test_compressed_section_rejects_declared_length_mismatch() -> None:
+    compressed = zlib.compress(b"synthetic")
+    malformed = (
+        (2).to_bytes(4, "little")
+        + (16).to_bytes(4, "little")
+        + (len(compressed) + 1).to_bytes(4, "little")
+        + len(b"synthetic").to_bytes(4, "little")
+        + compressed
+    )
+
+    with pytest.raises(RSSInventoryError, match="compressed length mismatch"):
+        decompress_section(malformed, section_name="DATA FILES")

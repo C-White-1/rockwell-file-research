@@ -126,6 +126,15 @@ workstation names, communication drivers, routes, and controller addresses.
 The classifications are observed evidence, not a claimed complete Rockwell
 format specification.
 
+The `DATA FILES` and `Extensional DATA FILES` sections use a verified 16-byte
+length envelope followed by zlib-compressed data. The reader validates both
+declared compressed and uncompressed lengths before cataloguing evidence.
+Standard data-file labels and application text are recorded by offset, length,
+classification, and SHA-256; text remains redacted unless
+`--include-private-text` is supplied. Data-file numbers, element counts, values,
+and PanelView address resolution are intentionally deferred until their binary
+record boundaries are supported by repeatable evidence.
+
 ## Development
 
 Install the project and development tools with:

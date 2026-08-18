@@ -56,6 +56,33 @@ class RSSProcessorEvidence(TypedDict):
     diagnostics: list[str]
 
 
+class RSSDataFileTextRegion(TypedDict):
+    """Offset and integrity evidence for data-file-section text."""
+
+    classification: str
+    offset: int
+    length: int
+    sha256: str
+    text: str | None
+
+
+class RSSDataFileSectionEvidence(TypedDict):
+    """Verified compression evidence for one RSS data-file section."""
+
+    name: str
+    present: bool
+    envelope_version: int
+    header_size: int
+    compression: str
+    compressed_size: int
+    uncompressed_size: int
+    compressed_sha256: str
+    uncompressed_sha256: str
+    private_text_included: bool
+    text_regions: list[RSSDataFileTextRegion]
+    diagnostics: list[str]
+
+
 class RSSInventory(TypedDict):
     """Lossless-at-the-container-boundary inventory of an RSS project."""
 
@@ -68,3 +95,4 @@ class RSSInventory(TypedDict):
     recognized_sections: list[RSSSectionEvidence]
     unrecognized_streams: list[str]
     processor: RSSProcessorEvidence
+    data_file_sections: list[RSSDataFileSectionEvidence]
