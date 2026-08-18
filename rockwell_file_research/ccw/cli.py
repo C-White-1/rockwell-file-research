@@ -21,6 +21,10 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="validate report.json against the packaged JSON Schema",
     )
+    parser.add_argument(
+        "--source-label",
+        help="neutral source identifier stored instead of the workbook filename",
+    )
     return parser
 
 
@@ -32,7 +36,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.source.is_file():
         parser.error(f"source report does not exist: {args.source}")
     try:
-        report = export_report(args.source, args.output, validate=args.validate)
+        report = export_report(
+            args.source,
+            args.output,
+            source_label=args.source_label,
+            validate=args.validate,
+        )
     except CCWReportError as error:
         parser.error(str(error))
     summary = report["summary"]

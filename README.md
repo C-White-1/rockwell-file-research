@@ -51,6 +51,18 @@ uv run ccw-report `
   --validate
 ```
 
+For privacy, source provenance stores only the workbook filename, never its
+absolute directory path. Replace even that filename with a neutral identifier
+when sharing a report:
+
+```powershell
+uv run ccw-report INPUT.xlsx `
+  --output OUTPUT `
+  --source-label fixture-001
+```
+
+The source size and SHA-256 digest remain available for integrity comparison.
+
 The command writes:
 
 - `report.json`, containing normalized inventories and every non-empty source

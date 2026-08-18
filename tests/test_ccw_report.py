@@ -13,7 +13,7 @@ from rockwell_file_research.ccw.errors import (
     UnsupportedWorkbookError,
     WorkbookReadError,
 )
-from rockwell_file_research.ccw.export import write_csv
+from rockwell_file_research.ccw.export import export_report, write_csv
 from rockwell_file_research.ccw.models import CCWReport
 from rockwell_file_research.ccw.normalize import alarms
 from rockwell_file_research.ccw.reporting import build_report
@@ -95,6 +95,7 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
 
     report = build_report(workbook)
 
+    assert report["source"]["path"] == "synthetic.xlsx"
     assert report["application"] == {
         "name": "TwinForgeSyntheticFixture",
         "target": "2711R-T7T",
@@ -131,6 +132,24 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
         "MotorFault",
     ]
     assert report["alarms"][0]["trigger"] == "MotorFault"
+
+
+def test_source_label_can_replace_even_the_workbook_filename(tmp_path) -> None:
+    private_directory = tmp_path / "customer-name" / "site-name"
+    workbook = private_directory / "sensitive-controller-name.xlsx"
+    build_synthetic_ccw_workbook(workbook)
+
+    report = export_report(
+        workbook,
+        tmp_path / "output",
+        source_label="fixture-001",
+    )
+
+    assert report["source"]["path"] == "fixture-001"
+    serialized = (tmp_path / "output" / "report.json").read_text(encoding="utf-8")
+    assert "customer-name" not in serialized
+    assert "site-name" not in serialized
+    assert "sensitive-controller-name" not in serialized
 
 
 def test_report_sections_survive_worksheet_renaming_and_reordering(tmp_path) -> None:

@@ -10,7 +10,11 @@ from rockwell_file_research.ccw.validation import validate_workbook
 from rockwell_file_research.ccw.xlsx import read_workbook
 
 
-def build_report(path: Path) -> CCWReport:
+def build_report(
+    path: Path,
+    *,
+    source_label: str | None = None,
+) -> CCWReport:
     """Build normalized views while retaining every non-empty source cell."""
 
     sheets = read_workbook(path)
@@ -21,7 +25,7 @@ def build_report(path: Path) -> CCWReport:
     return {
         "schema_version": "rockwell-file-research.ccw-report.v1",
         "source": {
-            "path": str(path),
+            "path": source_label if source_label is not None else path.name,
             "size": path.stat().st_size,
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
         },

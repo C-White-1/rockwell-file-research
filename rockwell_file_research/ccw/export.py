@@ -32,11 +32,12 @@ def export_report(
     source: Path,
     destination: Path,
     *,
+    source_label: str | None = None,
     validate: bool = False,
 ) -> CCWReport:
     """Export JSON and CSV evidence derived from a CCW report."""
 
-    report = build_report(source)
+    report = build_report(source, source_label=source_label)
     if validate:
         validate_report(report)
     destination.mkdir(parents=True, exist_ok=True)
