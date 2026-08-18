@@ -37,6 +37,25 @@ class RSSSectionEvidence(TypedDict):
     sha256: str
 
 
+class RSSProcessorTextRegion(TypedDict):
+    """Offset and integrity evidence for printable processor metadata."""
+
+    classification: str
+    offset: int
+    length: int
+    sha256: str
+    text: str | None
+
+
+class RSSProcessorEvidence(TypedDict):
+    """Conservative interpretation of the RSS PROCESSOR section."""
+
+    present: bool
+    private_text_included: bool
+    text_regions: list[RSSProcessorTextRegion]
+    diagnostics: list[str]
+
+
 class RSSInventory(TypedDict):
     """Lossless-at-the-container-boundary inventory of an RSS project."""
 
@@ -48,3 +67,4 @@ class RSSInventory(TypedDict):
     streams: list[RSSStreamEvidence]
     recognized_sections: list[RSSSectionEvidence]
     unrecognized_streams: list[str]
+    processor: RSSProcessorEvidence

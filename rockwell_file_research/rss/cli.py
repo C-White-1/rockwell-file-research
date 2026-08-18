@@ -22,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--source-label",
         help="neutral source identifier stored instead of the RSS filename",
     )
+    parser.add_argument(
+        "--include-private-text",
+        action="store_true",
+        help="include decoded PROCESSOR text; keep the output private",
+    )
     return parser
 
 
@@ -37,6 +42,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.source,
             args.output,
             source_label=args.source_label,
+            include_private_text=args.include_private_text,
         )
     except RSSInventoryError as error:
         parser.error(str(error))

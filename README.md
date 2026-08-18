@@ -109,6 +109,23 @@ discarded so later research can extend the reader without losing coverage.
 Vendor RSS projects and verbatim extracts remain private. Tests use only an
 in-memory synthetic compound document.
 
+The `PROCESSOR` section receives conservative additional treatment. Printable
+regions are catalogued by classification, byte offset, length, and SHA-256,
+but their text is redacted by default. For authorized local research only,
+include the decoded text explicitly:
+
+```powershell
+uv run rss-inventory PRIVATE.rss `
+  --output "private-outputs\rss\private-inventory.json" `
+  --source-label private-fixture-001 `
+  --include-private-text
+```
+
+Keep that output private: processor text may include project identifiers,
+workstation names, communication drivers, routes, and controller addresses.
+The classifications are observed evidence, not a claimed complete Rockwell
+format specification.
+
 ## Development
 
 Install the project and development tools with:

@@ -12,10 +12,15 @@ def export_inventory(
     destination: Path,
     *,
     source_label: str | None = None,
+    include_private_text: bool = False,
 ) -> RSSInventory:
     """Write one deterministic RSS inventory JSON document."""
 
-    inventory = inventory_rss(source, source_label=source_label)
+    inventory = inventory_rss(
+        source,
+        source_label=source_label,
+        include_private_text=include_private_text,
+    )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
         json.dumps(inventory, indent=2, ensure_ascii=False) + "\n",

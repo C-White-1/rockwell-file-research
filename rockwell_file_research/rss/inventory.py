@@ -14,9 +14,11 @@ from rockwell_file_research.rss.container import (
 from rockwell_file_research.rss.models import (
     RSSCompoundMetadata,
     RSSInventory,
+    RSSProcessorTextRegion,
     RSSSectionEvidence,
     RSSStreamEvidence,
 )
+from rockwell_file_research.rss.processor import inspect_processor_text
 
 SCHEMA_VERSION = "rss-inventory/v1"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
@@ -55,6 +57,7 @@ def build_inventory(
     document: CompoundDocument,
     *,
     source_label: str | None = None,
+    include_private_text: bool = False,
 ) -> RSSInventory:
     """Build an inventory from a compound document without parsing payloads."""
 
@@ -89,6 +92,22 @@ def build_inventory(
         "last_saved_at": _isoformat(metadata.last_saved_at),
     }
     recognized = set(RECOGNIZED_SECTION_STREAMS)
+    processor_payload = stream_payloads.get("PROCESSOR/ObjectData")
+    processor_regions: list[RSSProcessorTextRegion] = []
+    if processor_payload is not None:
+        processor_regions = [
+            {
+                "classification": region.classification,
+                "offset": region.offset,
+                "length": region.length,
+                "sha256": region.sha256,
+                "text": region.text,
+            }
+            for region in inspect_processor_text(
+                processor_payload,
+                include_private_text=include_private_text,
+            )
+        ]
     return {
         "schema_version": SCHEMA_VERSION,
         "format": RSS_FORMAT,
@@ -102,6 +121,21 @@ def build_inventory(
         "streams": streams,
         "recognized_sections": sections,
         "unrecognized_streams": sorted(set(stream_payloads) - recognized),
+        "processor": {
+            "present": processor_payload is not None,
+            "private_text_included": include_private_text,
+            "text_regions": processor_regions,
+            "diagnostics": [
+                (
+                    "Text classifications are evidence-led candidates, not a "
+                    "complete vendor specification."
+                ),
+                (
+                    "Binary processor fields remain uninterpreted and covered by "
+                    "the section SHA-256 digest."
+                ),
+            ],
+        },
     }
 
 
@@ -109,9 +143,15 @@ def inventory_rss(
     source: Path,
     *,
     source_label: str | None = None,
+    include_private_text: bool = False,
 ) -> RSSInventory:
     """Open and structurally inventory one RSS project."""
 
     verify_ole_signature(source)
     with OleCompoundDocument(source) as document:
-        return build_inventory(source, document, source_label=source_label)
+        return build_inventory(
+            source,
+            document,
+            source_label=source_label,
+            include_private_text=include_private_text,
+        )

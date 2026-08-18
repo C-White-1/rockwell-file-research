@@ -64,6 +64,10 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert "Secret Pump.rss" not in serialized
     assert "synthetic program evidence" not in serialized
     assert all(len(stream["sha256"]) == 64 for stream in inventory["streams"])
+    assert inventory["processor"]["private_text_included"] is False
+    assert all(
+        region["text"] is None for region in inventory["processor"]["text_regions"]
+    )
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -92,3 +96,26 @@ def test_non_ole_source_is_rejected(tmp_path) -> None:
 
     with pytest.raises(RSSInventoryError, match="not an OLE compound file"):
         verify_ole_signature(source)
+
+
+def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
+    source = tmp_path / "synthetic.rss"
+    source.write_bytes(b"source")
+
+    inventory = build_inventory(
+        source,
+        SyntheticCompoundDocument(),
+        include_private_text=True,
+    )
+
+    processor = inventory["processor"]
+    assert processor["private_text_included"] is True
+    assert processor["text_regions"] == [
+        {
+            "classification": "project_identifier_candidate",
+            "offset": 0,
+            "length": len(b"synthetic processor evidence"),
+            "sha256": processor["text_regions"][0]["sha256"],
+            "text": "synthetic processor evidence",
+        }
+    ]
