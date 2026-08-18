@@ -35,15 +35,15 @@ def _worksheet(rows: dict[int, dict[str, str]]) -> bytes:
     return ET.tostring(root, encoding="utf-8", xml_declaration=True)
 
 
-def _workbook(sheet_count: int) -> bytes:
+def _workbook(sheet_names: list[str]) -> bytes:
     root = ET.Element(f"{{{SHEET_NS}}}workbook")
     sheets = ET.SubElement(root, f"{{{SHEET_NS}}}sheets")
-    for index in range(1, sheet_count + 1):
+    for index, name in enumerate(sheet_names, 1):
         ET.SubElement(
             sheets,
             f"{{{SHEET_NS}}}sheet",
             {
-                "name": f"Sheet{index}",
+                "name": name,
                 "sheetId": str(index),
                 f"{{{OFFICE_REL_NS}}}id": f"rId{index}",
             },
@@ -127,7 +127,11 @@ def _write_member(archive: ZipFile, name: str, content: bytes) -> None:
     archive.writestr(member, content)
 
 
-def build_synthetic_ccw_workbook(destination: Path) -> None:
+def build_synthetic_ccw_workbook(
+    destination: Path,
+    *,
+    semantic_sheet_names: bool = False,
+) -> None:
     """Write a deterministic, minimal workbook containing synthetic evidence."""
 
     tags = [
@@ -224,19 +228,43 @@ def build_synthetic_ccw_workbook(destination: Path) -> None:
             "T": "0",
         },
     }
-    worksheets = [sheet1, sheet2, {}, sheet4, {}, {}, sheet7]
+    if semantic_sheet_names:
+        named_worksheets = [
+            ("NetworkConfiguration", sheet7),
+            ("AlarmConfiguration", sheet4),
+            ("DisplayDefinitions", sheet2),
+            ("UnusedOne", {}),
+            ("TagDefinitions", sheet1),
+            ("UnusedTwo", {}),
+            ("UnusedThree", {}),
+        ]
+    else:
+        named_worksheets = [
+            ("Sheet1", sheet1),
+            ("Sheet2", sheet2),
+            ("Sheet3", {}),
+            ("Sheet4", sheet4),
+            ("Sheet5", {}),
+            ("Sheet6", {}),
+            ("Sheet7", sheet7),
+        ]
+    sheet_names = [name for name, _ in named_worksheets]
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(destination, "w") as archive:
-        _write_member(archive, "[Content_Types].xml", _content_types(len(worksheets)))
+        _write_member(
+            archive,
+            "[Content_Types].xml",
+            _content_types(len(named_worksheets)),
+        )
         _write_member(archive, "_rels/.rels", _package_relationships())
-        _write_member(archive, "xl/workbook.xml", _workbook(len(worksheets)))
+        _write_member(archive, "xl/workbook.xml", _workbook(sheet_names))
         _write_member(
             archive,
             "xl/_rels/workbook.xml.rels",
-            _workbook_relationships(len(worksheets)),
+            _workbook_relationships(len(named_worksheets)),
         )
-        for index, rows in enumerate(worksheets, 1):
+        for index, (_, rows) in enumerate(named_worksheets, 1):
             _write_member(
                 archive,
                 f"xl/worksheets/sheet{index}.xml",

@@ -122,6 +122,36 @@ def test_clean_room_workbook_exercises_the_complete_report(tmp_path) -> None:
     assert report["alarms"][0]["trigger"] == "MotorFault"
 
 
+def test_report_sections_survive_worksheet_renaming_and_reordering(tmp_path) -> None:
+    conventional = tmp_path / "conventional.xlsx"
+    semantic = tmp_path / "semantic.xlsx"
+    build_synthetic_ccw_workbook(conventional)
+    build_synthetic_ccw_workbook(semantic, semantic_sheet_names=True)
+
+    conventional_report = build_report(conventional)
+    semantic_report = build_report(semantic)
+
+    for field in (
+        "application",
+        "summary",
+        "communications",
+        "tags",
+        "screens",
+        "screen_objects",
+        "alarms",
+    ):
+        assert semantic_report[field] == conventional_report[field]
+    assert semantic_report["diagnostics"]["worksheet_names"] == [
+        "NetworkConfiguration",
+        "AlarmConfiguration",
+        "DisplayDefinitions",
+        "UnusedOne",
+        "TagDefinitions",
+        "UnusedTwo",
+        "UnusedThree",
+    ]
+
+
 def test_non_xlsx_input_has_a_clear_domain_error(tmp_path) -> None:
     source = tmp_path / "not-a-workbook.xlsx"
     source.write_text("not a ZIP package", encoding="utf-8")

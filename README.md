@@ -53,7 +53,8 @@ The command writes:
 report sections. Unsupported top-level sections remain available under
 `raw_sheets`; they are not silently discarded. Invalid XLSX packages and
 workbooks missing the required CCW tag, screen, or communication reports fail
-with a concise command-line error.
+with a concise command-line error. Worksheets are located by their semantic
+report headings rather than incidental names such as `Sheet1` or `Sheet7`.
 
 The CCW workbook remains the authoritative source. Normalized fields are
 convenience views and do not replace the retained raw evidence.

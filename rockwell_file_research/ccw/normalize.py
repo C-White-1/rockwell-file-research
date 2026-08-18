@@ -4,17 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from rockwell_file_research.ccw.types import Workbook, WorksheetRow
-
-
-def _sheet(sheets: Workbook, name: str) -> list[WorksheetRow]:
-    return sheets.get(name, [])
+from rockwell_file_research.ccw.sections import section_rows
+from rockwell_file_research.ccw.types import Workbook
 
 
 def application(sheets: Workbook) -> dict[str, str]:
     """Extract application identity from the main report worksheet."""
 
-    rows = _sheet(sheets, "Sheet1")
+    rows = section_rows(sheets, "TAG REPORT")
     title = next((row["cells"] for row in rows if row["row"] == 2), {})
     name = next(iter(title.values()), "")
     header = next((row["cells"] for row in rows if row["row"] == 3), {})
@@ -35,7 +32,7 @@ def tags(sheets: Workbook) -> list[dict[str, str]]:
 
     result: list[dict[str, str]] = []
     data_types = {"Boolean", "16 bit integer", "Real", "String"}
-    for row in _sheet(sheets, "Sheet1"):
+    for row in section_rows(sheets, "TAG REPORT"):
         cells = row["cells"]
         if cells.get("C") not in data_types or cells.get("B") == "Name":
             continue
@@ -70,7 +67,7 @@ def screens(
     objects: list[dict[str, str]] = []
     in_list = False
     current = ""
-    for row in _sheet(sheets, "Sheet2"):
+    for row in section_rows(sheets, "SCREEN REPORT"):
         cells = row["cells"]
         if cells.get("B") == "Name" and cells.get("G") == "Number":
             in_list = True
@@ -119,38 +116,35 @@ def alarms(sheets: Workbook) -> list[dict[str, str]]:
     """Extract basic alarms by report headings rather than trigger naming."""
 
     result: list[dict[str, str]] = []
-    for rows in sheets.values():
-        if not any("ALARM REPORT" in row["cells"].values() for row in rows):
+    in_basic_settings = False
+    for row in section_rows(sheets, "ALARM REPORT"):
+        cells = row["cells"]
+        if cells.get("B") == "Trigger" and cells.get("C") == "Alarm Type":
+            in_basic_settings = True
             continue
-        in_basic_settings = False
-        for row in rows:
-            cells = row["cells"]
-            if cells.get("B") == "Trigger" and cells.get("C") == "Alarm Type":
-                in_basic_settings = True
-                continue
-            if cells.get("B") == "Alarms Additional Settings":
-                break
-            if not in_basic_settings or not cells.get("B") or not cells.get("C"):
-                continue
-            result.append(
-                {
-                    "trigger": cells.get("B", ""),
-                    "alarm_type": cells.get("C", ""),
-                    "edge_detection": cells.get("E", ""),
-                    "value": cells.get("G", ""),
-                    "deadband_mode": cells.get("J", ""),
-                    "deadband_level": cells.get("N", ""),
-                    "message": cells.get("Q", ""),
-                    "source_row": str(row["row"]),
-                }
-            )
+        if cells.get("B") == "Alarms Additional Settings":
+            break
+        if not in_basic_settings or not cells.get("B") or not cells.get("C"):
+            continue
+        result.append(
+            {
+                "trigger": cells.get("B", ""),
+                "alarm_type": cells.get("C", ""),
+                "edge_detection": cells.get("E", ""),
+                "value": cells.get("G", ""),
+                "deadband_mode": cells.get("J", ""),
+                "deadband_level": cells.get("N", ""),
+                "message": cells.get("Q", ""),
+                "source_row": str(row["row"]),
+            }
+        )
     return result
 
 
 def communications(sheets: Workbook) -> dict[str, Any]:
     """Extract protocol and configured controller evidence."""
 
-    rows = _sheet(sheets, "Sheet7")
+    rows = section_rows(sheets, "COMMUNICATION REPORT")
     by_row = {row["row"]: row["cells"] for row in rows}
     controllers: list[dict[str, str]] = []
     for row in rows:
