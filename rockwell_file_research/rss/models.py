@@ -125,6 +125,22 @@ class RSSProgramOperandEvidence(TypedDict):
     sha256: str
     indirect: bool
     operand: str | None
+    program_file_number: int | None
+    program_file_name_sha256: str | None
+    program_file_name: str | None
+
+
+class RSSProgramFileRecordEvidence(TypedDict):
+    """One delimited ladder-file header with reference-marker evidence."""
+
+    marker_offset: int
+    file_number: int
+    header_numeric_candidate: int
+    name_sha256: str
+    description_sha256: str
+    name: str | None
+    description: str | None
+    rung_reference_marker_offsets: list[int]
 
 
 class RSSProgramFileEvidence(TypedDict):
@@ -141,6 +157,7 @@ class RSSProgramFileEvidence(TypedDict):
     private_text_included: bool
     text_regions: list[RSSProgramTextRegion]
     operands: list[RSSProgramOperandEvidence]
+    program_file_records: list[RSSProgramFileRecordEvidence]
     diagnostics: list[str]
 
 

@@ -52,7 +52,9 @@ class SyntheticCompoundDocument:
             "Extensional DATA FILES/ObjectData": section(extensional=True),
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
             "PROGRAM FILES/ObjectData": envelope(
-                b"CProgHolder\x00CLadFile\x00B3:0/0\x00#N7:1\x00synthetic rung comment"
+                b"\x03\x80\x10\x00\x01\x00MAIN\x02\x00\x00"
+                b"CProgHolder\x00CLadFile\x00\x07\x80\x09\x80"
+                b"B3:0/0\x00#N7:1\x00synthetic rung comment"
             ),
             "Synthetic Extension/ObjectData": b"preserve unknown evidence",
         }
@@ -123,6 +125,9 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
         False,
         True,
     ]
+    assert program_files["program_file_records"][0]["file_number"] == 2
+    assert program_files["program_file_records"][0]["name"] is None
+    assert program_files["program_file_records"][0]["rung_reference_marker_offsets"]
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -196,12 +201,16 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         "#N7:1",
     ]
     assert [region["classification"] for region in program_files["text_regions"]] == [
+        "application_text_candidate",
         "serialization_class",
         "serialization_class",
         "operand_candidate",
         "operand_candidate",
         "application_text_candidate",
     ]
+    program_record = program_files["program_file_records"][0]
+    assert program_record["name"] == "MAIN"
+    assert program_record["description"] == ""
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

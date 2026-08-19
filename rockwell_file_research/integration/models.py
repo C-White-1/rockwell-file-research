@@ -30,6 +30,9 @@ class LadderOperandOccurrence(TypedDict):
     indirect: bool
     operand_sha256: str
     operand: str | None
+    program_file_number: int | None
+    program_file_name_sha256: str | None
+    program_file_name: str | None
 
 
 class AddressBinding(TypedDict):

@@ -182,6 +182,12 @@ match retains the PROGRAM FILES byte offset and integrity digest. This proves
 operand occurrence in the ladder payload, but does not yet claim instruction
 type, rung scope, execution order, or runtime behavior.
 
+Observed ladder-file headers are recovered through their serialization marker,
+byte-aligned name, optional header span, file number, and length-declared
+description. Operands are scoped to the containing program file. Recurring
+`CRung`/`CBranchLeg` class-reference markers are retained by byte offset as rung
+boundary candidates, not yet asserted as a complete rung count.
+
 ## Development
 
 Install the project and development tools with:

@@ -123,6 +123,11 @@ def _ladder_occurrence_indexes(
             "indirect": operand["indirect"],
             "operand_sha256": operand["sha256"],
             "operand": raw if include_private_text else None,
+            "program_file_number": operand["program_file_number"],
+            "program_file_name_sha256": operand["program_file_name_sha256"],
+            "program_file_name": (
+                operand["program_file_name"] if include_private_text else None
+            ),
         }
         key = canonical_address_key(parsed)
         occurrences[key].append(occurrence)

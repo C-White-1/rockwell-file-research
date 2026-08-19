@@ -36,6 +36,21 @@ def _location(binding: AddressBinding) -> str:
     return ", ".join(parts) or "-"
 
 
+def _program_files(binding: AddressBinding) -> str:
+    """Summarize distinct ladder files containing exact operand matches."""
+
+    files = {
+        (
+            occurrence["program_file_number"],
+            occurrence["program_file_name"]
+            or occurrence["program_file_name_sha256"]
+            or "-",
+        )
+        for occurrence in binding["ladder_occurrences"]
+    }
+    return ", ".join(f"{number} {name}" for number, name in sorted(files))
+
+
 def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
     """Render a deterministic summary and complete binding table."""
 
@@ -88,8 +103,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "## Complete bindings",
             "",
-            "| Tag | PLC address | File | Location | RSS record | Exact ladder | Contained bits | Consumers |",
-            "| --- | --- | ---: | --- | --- | ---: | ---: | --- |",
+            "| Tag | PLC address | File | Location | RSS record | Exact ladder | Program files | Contained bits | Consumers |",
+            "| --- | --- | ---: | --- | --- | ---: | --- | ---: | --- |",
         ]
     )
     for binding in report["bindings"]:
@@ -112,6 +127,7 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     _location(binding),
                     record_name,
                     len(binding["ladder_occurrences"]),
+                    _program_files(binding),
                     len(binding["contained_bit_occurrences"]),
                     consumers,
                 )

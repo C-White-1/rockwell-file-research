@@ -236,6 +236,7 @@ def build_inventory(
             "private_text_included": include_private_text,
             "text_regions": [],
             "operands": [],
+            "program_file_records": [],
             "diagnostics": [],
         }
     else:
@@ -270,8 +271,26 @@ def build_inventory(
                     "sha256": operand.sha256,
                     "indirect": operand.indirect,
                     "operand": operand.operand,
+                    "program_file_number": operand.program_file_number,
+                    "program_file_name_sha256": operand.program_file_name_sha256,
+                    "program_file_name": operand.program_file_name,
                 }
                 for operand in inspected_program.operands
+            ],
+            "program_file_records": [
+                {
+                    "marker_offset": record.marker_offset,
+                    "file_number": record.file_number,
+                    "header_numeric_candidate": record.header_numeric_candidate,
+                    "name_sha256": record.name_sha256,
+                    "description_sha256": record.description_sha256,
+                    "name": record.name,
+                    "description": record.description,
+                    "rung_reference_marker_offsets": (
+                        record.rung_reference_marker_offsets
+                    ),
+                }
+                for record in inspected_program.program_file_records
             ],
             "diagnostics": [
                 (
