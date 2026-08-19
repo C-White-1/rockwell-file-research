@@ -174,6 +174,14 @@ alarm references and reports tags with no such consumer. CCW table labels such
 as `Read Tag` and `Write Tag`, plus `-` placeholders, are excluded as report
 structure rather than treated as unresolved project references.
 
+The RSS `PROGRAM FILES` section is validated through its declared zlib
+envelope and catalogued for length-delimited operand strings. Cross-reference
+bindings distinguish exact equivalent addresses from weaker contained-bit
+evidence, where an HMI whole-word address contains ladder bit operands. Each
+match retains the PROGRAM FILES byte offset and integrity digest. This proves
+operand occurrence in the ladder payload, but does not yet claim instruction
+type, rung scope, execution order, or runtime behavior.
+
 ## Development
 
 Install the project and development tools with:
@@ -186,7 +194,8 @@ Run the same quality checks used by CI:
 
 ```powershell
 uv run ruff check rockwell_file_research ccw_report.py convert.py main.py tests
-uv run ruff format --check rockwell_file_research ccw_report.py convert.py main.py tests
+uv run ruff format --check rockwell_file_research ccw_report.py convert.py `
+  main.py tests
 uv run pyright
 uv run pytest
 ```

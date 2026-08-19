@@ -24,7 +24,9 @@ _DEFAULT_FILE_NUMBERS = {
     "F": 8,
 }
 _SELECTOR = re.compile(
-    r"^(?:(?::(?P<element>\d+)(?:/(?P<bit>\d+)|\.(?P<member>[A-Za-z]+))?)|/(?P<file_bit>\d+))$"
+    r"^(?:(?::(?P<element>\d+)(?:\.(?P<subelement>\d+))?"
+    r"(?:/(?:(?P<bit>\d+)|(?P<slash_member>[A-Za-z]+))|"
+    r"\.(?P<member>[A-Za-z]+))?)|/(?P<file_bit>\d+))$"
 )
 
 
@@ -37,40 +39,64 @@ class DataTableAddress:
     file_number: int
     selector: str
     element_number: int | None
+    subelement_number: int | None
     bit_number: int | None
     member: str | None
 
 
-def _location(prefix: str, selector: str) -> tuple[int | None, int | None, str | None]:
+def _location(
+    prefix: str, selector: str
+) -> tuple[int | None, int | None, int | None, str | None]:
     """Interpret supported element/member selectors without value decoding."""
 
     match = _SELECTOR.fullmatch(selector)
     if match is None:
-        return None, None, None
+        return None, None, None, None
     file_bit = match["file_bit"]
     if file_bit is not None:
         bit_index = int(file_bit)
         if prefix == "B":
-            return bit_index // 16, bit_index % 16, None
-        return None, bit_index, None
+            return bit_index // 16, None, bit_index % 16, None
+        return None, None, bit_index, None
     element = int(match["element"])
+    subelement = int(match["subelement"]) if match["subelement"] is not None else None
     bit = int(match["bit"]) if match["bit"] is not None else None
-    member = match["member"].upper() if match["member"] is not None else None
-    return element, bit, member
+    member_text = match["member"] or match["slash_member"]
+    member = member_text.upper() if member_text is not None else None
+    return element, subelement, bit, member
 
 
 def _address(
     *, raw: str, prefix: str, file_number: int, selector: str
 ) -> DataTableAddress:
-    element, bit, member = _location(prefix, selector)
+    element, subelement, bit, member = _location(prefix, selector)
     return DataTableAddress(
         raw=raw,
         prefix=prefix,
         file_number=file_number,
         selector=selector,
         element_number=element,
+        subelement_number=subelement,
         bit_number=bit,
         member=member,
+    )
+
+
+def canonical_address_key(
+    address: DataTableAddress,
+) -> tuple[str, int, int | None, int | None, int | None, str | None]:
+    """Return a comparable location key for equivalent address spellings."""
+
+    subelement = address.subelement_number
+    if address.prefix in {"I", "O"} and address.element_number is not None:
+        subelement = subelement or 0
+    return (
+        address.prefix,
+        address.file_number,
+        address.element_number,
+        subelement,
+        address.bit_number,
+        address.member,
     )
 
 

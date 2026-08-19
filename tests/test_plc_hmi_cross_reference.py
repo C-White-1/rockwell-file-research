@@ -62,6 +62,28 @@ def _plc() -> RSSInventory:
                     },
                 ],
             },
+            "program_files": {
+                "operands": [
+                    {
+                        "offset": 100,
+                        "sha256": "1" * 64,
+                        "indirect": False,
+                        "operand": "B9:0/3",
+                    },
+                    {
+                        "offset": 200,
+                        "sha256": "2" * 64,
+                        "indirect": True,
+                        "operand": "#B9:0/3",
+                    },
+                    {
+                        "offset": 300,
+                        "sha256": "3" * 64,
+                        "indirect": False,
+                        "operand": "N7:1",
+                    },
+                ]
+            },
         },
     )
 
@@ -84,12 +106,29 @@ def test_address_parser_handles_explicit_and_default_file_numbers() -> None:
     )
     assert parse_data_table_address("not-an-address") is None
 
+    extended_physical = parse_data_table_address("I:0.1/3")
+    assert extended_physical is not None
+    assert (
+        extended_physical.element_number,
+        extended_physical.subelement_number,
+        extended_physical.bit_number,
+    ) == (0, 1, 3)
+
 
 def test_binary_file_level_bit_resolves_to_word_and_bit() -> None:
     address = parse_data_table_address("B9/20")
 
     assert address is not None
     assert (address.element_number, address.bit_number) == (1, 4)
+
+
+def test_timer_member_slash_and_dot_forms_are_equivalent() -> None:
+    dotted = parse_data_table_address("T4:1.DN")
+    slashed = parse_data_table_address("T4:1/DN")
+
+    assert dotted is not None
+    assert slashed is not None
+    assert dotted.member == slashed.member == "DN"
 
 
 def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> None:
@@ -108,6 +147,13 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         "alarm_reference_count": 1,
         "tags_with_consumers": 1,
         "tags_without_consumers": 3,
+        "ladder_operand_occurrence_count": 2,
+        "direct_ladder_operand_occurrence_count": 1,
+        "indirect_ladder_operand_occurrence_count": 1,
+        "bindings_with_ladder_evidence": 1,
+        "bindings_without_ladder_evidence": 3,
+        "contained_bit_occurrence_count": 0,
+        "bindings_with_contained_bit_evidence": 0,
     }
     assert [binding["status"] for binding in result["bindings"]] == [
         "resolved",
@@ -120,6 +166,11 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     assert result["file_usage"][0]["rss_record_name"] is None
     assert result["bindings"][0]["exceeds_rss_numeric_candidate"] is False
     assert result["file_usage"][1]["highest_element_number"] == 0
+    assert [
+        occurrence["operand"]
+        for occurrence in result["bindings"][0]["ladder_occurrences"]
+    ] == [None, None]
+    assert result["bindings"][0]["contained_bit_occurrences"] == []
 
 
 def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
@@ -128,6 +179,10 @@ def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
     assert result["bindings"][0]["tag_name"] == "Start"
     assert result["bindings"][0]["address"] == "B9/3"
     assert result["bindings"][0]["rss_record_name"] == "HMI Commands"
+    assert [
+        occurrence["operand"]
+        for occurrence in result["bindings"][0]["ladder_occurrences"]
+    ] == ["B9:0/3", "#B9:0/3"]
     assert result["bindings"][0]["consumers"] == [
         {
             "kind": "screen_object",
@@ -160,6 +215,20 @@ def test_readable_copy_can_omit_all_sha256_fields() -> None:
     assert "HMI Commands" in str(readable)
 
 
+def test_whole_word_binding_keeps_contained_bits_separate_from_exact_matches() -> None:
+    hmi = _hmi()
+    hmi["tags"][0]["address"] = "B9:0"
+
+    result = build_plc_hmi_cross_reference(hmi, _plc(), include_private_text=True)
+
+    binding = result["bindings"][0]
+    assert binding["ladder_occurrences"] == []
+    assert [item["operand"] for item in binding["contained_bit_occurrences"]] == [
+        "B9:0/3",
+        "#B9:0/3",
+    ]
+
+
 def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     result = build_plc_hmi_cross_reference(_hmi(), _plc(), include_private_text=True)
 
@@ -167,6 +236,6 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
 
     assert markdown.startswith("<!-- markdownlint-disable MD013 -->")
     assert "# PLC–HMI Cross-reference" in markdown
-    assert "| Start | B9/3 | 9 | element 0, bit 3 | HMI Commands |" in markdown
+    assert "| Start | B9/3 | 9 | element 0, bit 3 | HMI Commands | 2 | 0 |" in markdown
     assert "screen Main: Start button; alarm: Start alarm" in markdown
     assert "## Evidence limitations" in markdown

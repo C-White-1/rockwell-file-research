@@ -6,11 +6,15 @@ import hashlib
 from collections import defaultdict
 
 from rockwell_file_research.ccw.models import CCWReport
-from rockwell_file_research.integration.addresses import parse_data_table_address
+from rockwell_file_research.integration.addresses import (
+    canonical_address_key,
+    parse_data_table_address,
+)
 from rockwell_file_research.integration.models import (
     AddressBinding,
     FileUsage,
     HMIConsumer,
+    LadderOperandOccurrence,
     PLCHMICrossReference,
 )
 from rockwell_file_research.rss.models import RSSDataFileRecordEvidence, RSSInventory
@@ -85,6 +89,49 @@ def _consumers_by_tag(
     return consumers
 
 
+def _ladder_occurrence_indexes(
+    plc: RSSInventory, *, include_private_text: bool
+) -> tuple[
+    dict[
+        tuple[str, int, int | None, int | None, int | None, str | None],
+        list[LadderOperandOccurrence],
+    ],
+    dict[
+        tuple[str, int, int | None, int | None, int | None, str | None],
+        list[LadderOperandOccurrence],
+    ],
+]:
+    """Index exact operands and contained bit operands by normalized address."""
+
+    occurrences: dict[
+        tuple[str, int, int | None, int | None, int | None, str | None],
+        list[LadderOperandOccurrence],
+    ] = defaultdict(list)
+    contained_bits: dict[
+        tuple[str, int, int | None, int | None, int | None, str | None],
+        list[LadderOperandOccurrence],
+    ] = defaultdict(list)
+    for operand in plc["program_files"]["operands"]:
+        raw = operand["operand"]
+        if raw is None:
+            continue
+        parsed = parse_data_table_address(raw.removeprefix("#"))
+        if parsed is None:
+            continue
+        occurrence: LadderOperandOccurrence = {
+            "offset": operand["offset"],
+            "indirect": operand["indirect"],
+            "operand_sha256": operand["sha256"],
+            "operand": raw if include_private_text else None,
+        }
+        key = canonical_address_key(parsed)
+        occurrences[key].append(occurrence)
+        if parsed.bit_number is not None:
+            word_key = (key[0], key[1], key[2], key[3], None, None)
+            contained_bits[word_key].append(occurrence)
+    return occurrences, contained_bits
+
+
 def build_plc_hmi_cross_reference(
     hmi: CCWReport,
     plc: RSSInventory,
@@ -98,6 +145,9 @@ def build_plc_hmi_cross_reference(
         for record in plc["data_file_catalogue"]["records"]
     }
     consumers_by_tag = _consumers_by_tag(hmi, include_private_text=include_private_text)
+    ladder_occurrences_by_address, contained_bits_by_address = (
+        _ladder_occurrence_indexes(plc, include_private_text=include_private_text)
+    )
     bindings: list[AddressBinding] = []
     usage: dict[int, list[AddressBinding]] = defaultdict(list)
     prefixes: dict[int, set[str]] = defaultdict(set)
@@ -125,12 +175,27 @@ def build_plc_hmi_cross_reference(
         )
         if exceeds_candidate:
             numeric_candidate_exceedances += 1
+        ladder_occurrences = (
+            ladder_occurrences_by_address.get(canonical_address_key(parsed), [])
+            if parsed is not None
+            else []
+        )
+        contained_bit_occurrences = (
+            contained_bits_by_address.get(canonical_address_key(parsed), [])
+            if parsed is not None
+            and parsed.bit_number is None
+            and parsed.member is None
+            else []
+        )
         binding: AddressBinding = {
             "status": status,
             "prefix": parsed.prefix if parsed is not None else "",
             "file_number": parsed.file_number if parsed is not None else None,
             "selector": parsed.selector if parsed is not None else None,
             "element_number": (parsed.element_number if parsed is not None else None),
+            "subelement_number": (
+                parsed.subelement_number if parsed is not None else None
+            ),
             "bit_number": parsed.bit_number if parsed is not None else None,
             "member": parsed.member if parsed is not None else None,
             "exceeds_rss_numeric_candidate": exceeds_candidate,
@@ -143,6 +208,8 @@ def build_plc_hmi_cross_reference(
             "address": raw_address if include_private_text else None,
             "rss_record_name": record_name if include_private_text else None,
             "consumers": consumers_by_tag.get(tag["name"].casefold(), []),
+            "ladder_occurrences": ladder_occurrences,
+            "contained_bit_occurrences": contained_bit_occurrences,
         }
         bindings.append(binding)
         if parsed is not None:
@@ -165,6 +232,13 @@ def build_plc_hmi_cross_reference(
                 "consumer_reference_count": sum(
                     len(binding["consumers"]) for binding in usage[file_number]
                 ),
+                "ladder_operand_occurrence_count": sum(
+                    len(binding["ladder_occurrences"]) for binding in usage[file_number]
+                ),
+                "contained_bit_occurrence_count": sum(
+                    len(binding["contained_bit_occurrences"])
+                    for binding in usage[file_number]
+                ),
                 "distinct_element_count": len(elements),
                 "highest_element_number": max(elements) if elements else None,
                 "rss_numeric_candidate": (
@@ -185,6 +259,22 @@ def build_plc_hmi_cross_reference(
         consumer for consumers in consumers_by_tag.values() for consumer in consumers
     ]
     tags_with_consumers = len(consumers_by_tag)
+    all_ladder_occurrences = [
+        occurrence
+        for binding in bindings
+        for occurrence in binding["ladder_occurrences"]
+    ]
+    bindings_with_ladder_evidence = sum(
+        bool(binding["ladder_occurrences"]) for binding in bindings
+    )
+    all_contained_bit_occurrences = [
+        occurrence
+        for binding in bindings
+        for occurrence in binding["contained_bit_occurrences"]
+    ]
+    bindings_with_contained_bit_evidence = sum(
+        bool(binding["contained_bit_occurrences"]) for binding in bindings
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "private_text_included": include_private_text,
@@ -213,11 +303,27 @@ def build_plc_hmi_cross_reference(
             ),
             "tags_with_consumers": tags_with_consumers,
             "tags_without_consumers": len(hmi["tags"]) - tags_with_consumers,
+            "ladder_operand_occurrence_count": len(all_ladder_occurrences),
+            "direct_ladder_operand_occurrence_count": sum(
+                not occurrence["indirect"] for occurrence in all_ladder_occurrences
+            ),
+            "indirect_ladder_operand_occurrence_count": sum(
+                occurrence["indirect"] for occurrence in all_ladder_occurrences
+            ),
+            "bindings_with_ladder_evidence": bindings_with_ladder_evidence,
+            "bindings_without_ladder_evidence": (
+                len(bindings) - bindings_with_ladder_evidence
+            ),
+            "contained_bit_occurrence_count": len(all_contained_bit_occurrences),
+            "bindings_with_contained_bit_evidence": (
+                bindings_with_contained_bit_evidence
+            ),
         },
         "file_usage": file_usage,
         "bindings": bindings,
         "diagnostics": [
-            "Resolution proves that an HMI address names an RSS data-file number; it does not yet prove element-level ladder usage.",
+            "Ladder occurrence matches prove that equivalent operand strings occur in the validated PROGRAM FILES payload; instruction type, rung scope, and execution order remain uninterpreted.",
+            "Contained-bit evidence links a whole-word HMI address to ladder bit operands within that word; it is reported separately from exact operand matches.",
             "Unsupported and unresolved addresses are retained rather than discarded or guessed.",
             "HMI element numbers exceeding the recovered RSS numeric candidate prove that field is not the data-file element extent.",
             "Consumer relationships use exact case-insensitive tag-name matches; report placeholders and column labels are not references.",

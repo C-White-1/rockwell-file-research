@@ -18,6 +18,16 @@ class SyntheticCompoundDocument:
     """In-memory clean-room compound document used instead of vendor files."""
 
     def __init__(self) -> None:
+        def envelope(payload: bytes) -> bytes:
+            compressed = zlib.compress(payload)
+            return (
+                (2).to_bytes(4, "little")
+                + (16).to_bytes(4, "little")
+                + len(compressed).to_bytes(4, "little")
+                + len(payload).to_bytes(4, "little")
+                + compressed
+            )
+
         def section(*, extensional: bool) -> bytes:
             description = b"synthetic private label"
             name = b"OUTPUT"
@@ -35,20 +45,15 @@ class SyntheticCompoundDocument:
                 + (14).to_bytes(2, "little")
             )
             data_file_payload = b"CDataHolder\x00" + record
-            compressed = zlib.compress(data_file_payload)
-            return (
-                (2).to_bytes(4, "little")
-                + (16).to_bytes(4, "little")
-                + len(compressed).to_bytes(4, "little")
-                + len(data_file_payload).to_bytes(4, "little")
-                + compressed
-            )
+            return envelope(data_file_payload)
 
         self._streams = {
             "DATA FILES/ObjectData": section(extensional=False),
             "Extensional DATA FILES/ObjectData": section(extensional=True),
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
-            "PROGRAM FILES/ObjectData": b"synthetic program evidence",
+            "PROGRAM FILES/ObjectData": envelope(
+                b"CProgHolder\x00CLadFile\x00B3:0/0\x00#N7:1\x00synthetic rung comment"
+            ),
             "Synthetic Extension/ObjectData": b"preserve unknown evidence",
         }
 
@@ -109,6 +114,15 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert catalogue["records"][0]["file_number"] == 0
     assert catalogue["records"][0]["unknown_numeric_candidate"] == 14
     assert catalogue["records"][0]["name"] is None
+    program_files = inventory["program_files"]
+    assert program_files["present"] is True
+    assert program_files["compression"] == "zlib"
+    assert len(program_files["operands"]) == 2
+    assert all(operand["operand"] is None for operand in program_files["operands"])
+    assert [operand["indirect"] for operand in program_files["operands"]] == [
+        False,
+        True,
+    ]
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -176,6 +190,18 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
     record = inventory["data_file_catalogue"]["records"][0]
     assert record["description"] == "synthetic private label"
     assert record["name"] == "OUTPUT"
+    program_files = inventory["program_files"]
+    assert [operand["operand"] for operand in program_files["operands"]] == [
+        "B3:0/0",
+        "#N7:1",
+    ]
+    assert [region["classification"] for region in program_files["text_regions"]] == [
+        "serialization_class",
+        "serialization_class",
+        "operand_candidate",
+        "operand_candidate",
+        "application_text_candidate",
+    ]
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

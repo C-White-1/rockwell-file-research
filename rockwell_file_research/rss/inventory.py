@@ -22,10 +22,12 @@ from rockwell_file_research.rss.models import (
     RSSDataFileTextRegion,
     RSSInventory,
     RSSProcessorTextRegion,
+    RSSProgramFileEvidence,
     RSSSectionEvidence,
     RSSStreamEvidence,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
+from rockwell_file_research.rss.program_files import inspect_program_file_section
 
 SCHEMA_VERSION = "rss-inventory/v1"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
@@ -219,6 +221,66 @@ def build_inventory(
                 "unknown_numeric_candidate": record.unknown_numeric_candidate,
             }
         )
+    program_payload = stream_payloads.get("PROGRAM FILES/ObjectData")
+    program_files: RSSProgramFileEvidence
+    if program_payload is None:
+        program_files = {
+            "present": False,
+            "envelope_version": 0,
+            "header_size": 0,
+            "compression": "",
+            "compressed_size": 0,
+            "uncompressed_size": 0,
+            "compressed_sha256": "",
+            "uncompressed_sha256": "",
+            "private_text_included": include_private_text,
+            "text_regions": [],
+            "operands": [],
+            "diagnostics": [],
+        }
+    else:
+        inspected_program = inspect_program_file_section(
+            program_payload,
+            include_private_text=include_private_text,
+        )
+        program_files = {
+            "present": True,
+            "envelope_version": inspected_program.envelope_version,
+            "header_size": inspected_program.header_size,
+            "compression": "zlib",
+            "compressed_size": inspected_program.compressed_size,
+            "uncompressed_size": inspected_program.uncompressed_size,
+            "compressed_sha256": inspected_program.compressed_sha256,
+            "uncompressed_sha256": inspected_program.uncompressed_sha256,
+            "private_text_included": include_private_text,
+            "text_regions": [
+                {
+                    "classification": region.classification,
+                    "offset": region.offset,
+                    "length": region.length,
+                    "sha256": region.sha256,
+                    "text": region.text,
+                }
+                for region in inspected_program.text_regions
+            ],
+            "operands": [
+                {
+                    "offset": operand.offset,
+                    "length": operand.length,
+                    "sha256": operand.sha256,
+                    "indirect": operand.indirect,
+                    "operand": operand.operand,
+                }
+                for operand in inspected_program.operands
+            ],
+            "diagnostics": [
+                (
+                    "Operand candidates are length-delimited strings in the "
+                    "validated ladder payload; rung opcodes and execution order "
+                    "remain uninterpreted."
+                )
+            ],
+        }
     return {
         "schema_version": SCHEMA_VERSION,
         "format": RSS_FORMAT,
@@ -263,6 +325,7 @@ def build_inventory(
                 ),
             ],
         },
+        "program_files": program_files,
     }
 
 

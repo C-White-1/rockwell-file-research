@@ -107,6 +107,43 @@ class RSSDataFileCatalogueEvidence(TypedDict):
     diagnostics: list[str]
 
 
+class RSSProgramTextRegion(TypedDict):
+    """Classified text-region evidence in the PROGRAM FILES payload."""
+
+    classification: str
+    offset: int
+    length: int
+    sha256: str
+    text: str | None
+
+
+class RSSProgramOperandEvidence(TypedDict):
+    """One candidate ladder operand with byte provenance."""
+
+    offset: int
+    length: int
+    sha256: str
+    indirect: bool
+    operand: str | None
+
+
+class RSSProgramFileEvidence(TypedDict):
+    """Validated structural evidence for the PROGRAM FILES section."""
+
+    present: bool
+    envelope_version: int
+    header_size: int
+    compression: str
+    compressed_size: int
+    uncompressed_size: int
+    compressed_sha256: str
+    uncompressed_sha256: str
+    private_text_included: bool
+    text_regions: list[RSSProgramTextRegion]
+    operands: list[RSSProgramOperandEvidence]
+    diagnostics: list[str]
+
+
 class RSSInventory(TypedDict):
     """Lossless-at-the-container-boundary inventory of an RSS project."""
 
@@ -121,3 +158,4 @@ class RSSInventory(TypedDict):
     processor: RSSProcessorEvidence
     data_file_sections: list[RSSDataFileSectionEvidence]
     data_file_catalogue: RSSDataFileCatalogueEvidence
+    program_files: RSSProgramFileEvidence

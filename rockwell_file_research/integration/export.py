@@ -45,7 +45,9 @@ def export_plc_hmi_cross_reference(
     plc = inventory_rss(
         plc_source,
         source_label=plc_source_label,
-        include_private_text=include_private_text,
+        # Operand text is needed transiently for address correlation. The
+        # composed report applies its own explicit privacy boundary.
+        include_private_text=True,
     )
     result = build_plc_hmi_cross_reference(
         hmi,

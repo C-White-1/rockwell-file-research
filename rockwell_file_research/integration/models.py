@@ -23,6 +23,15 @@ class HMIConsumer(TypedDict):
     label: str | None
 
 
+class LadderOperandOccurrence(TypedDict):
+    """One matching operand occurrence in the RSS PROGRAM FILES payload."""
+
+    offset: int
+    indirect: bool
+    operand_sha256: str
+    operand: str | None
+
+
 class AddressBinding(TypedDict):
     """One HMI tag address resolved against an RSS data-file record."""
 
@@ -31,6 +40,7 @@ class AddressBinding(TypedDict):
     file_number: int | None
     selector: str | None
     element_number: int | None
+    subelement_number: int | None
     bit_number: int | None
     member: str | None
     exceeds_rss_numeric_candidate: bool | None
@@ -41,6 +51,8 @@ class AddressBinding(TypedDict):
     address: str | None
     rss_record_name: str | None
     consumers: list[HMIConsumer]
+    ladder_occurrences: list[LadderOperandOccurrence]
+    contained_bit_occurrences: list[LadderOperandOccurrence]
 
 
 class FileUsage(TypedDict):
@@ -50,6 +62,8 @@ class FileUsage(TypedDict):
     prefixes: list[str]
     binding_count: int
     consumer_reference_count: int
+    ladder_operand_occurrence_count: int
+    contained_bit_occurrence_count: int
     distinct_element_count: int
     highest_element_number: int | None
     rss_numeric_candidate: int | None
@@ -72,6 +86,13 @@ class CrossReferenceSummary(TypedDict):
     alarm_reference_count: int
     tags_with_consumers: int
     tags_without_consumers: int
+    ladder_operand_occurrence_count: int
+    direct_ladder_operand_occurrence_count: int
+    indirect_ladder_operand_occurrence_count: int
+    bindings_with_ladder_evidence: int
+    bindings_without_ladder_evidence: int
+    contained_bit_occurrence_count: int
+    bindings_with_contained_bit_evidence: int
 
 
 class PLCHMICrossReference(TypedDict):

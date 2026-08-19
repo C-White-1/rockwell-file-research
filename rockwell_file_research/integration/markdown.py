@@ -27,6 +27,8 @@ def _location(binding: AddressBinding) -> str:
     parts: list[str] = []
     if binding["element_number"] is not None:
         parts.append(f"element {binding['element_number']}")
+    if binding["subelement_number"] is not None:
+        parts.append(f"subelement {binding['subelement_number']}")
     if binding["bit_number"] is not None:
         parts.append(f"bit {binding['bit_number']}")
     if binding["member"] is not None:
@@ -51,11 +53,15 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
         f"- Alarm references: {summary['alarm_reference_count']}",
         f"- Tags with consumers: {summary['tags_with_consumers']}",
         f"- Tags without consumers: {summary['tags_without_consumers']}",
+        f"- Bindings with ladder evidence: {summary['bindings_with_ladder_evidence']}",
+        f"- Bindings without ladder evidence: {summary['bindings_without_ladder_evidence']}",
+        f"- Matching ladder operand occurrences: {summary['ladder_operand_occurrence_count']}",
+        f"- Contained-bit ladder occurrences: {summary['contained_bit_occurrence_count']}",
         "",
         "## RSS data-file usage",
         "",
-        "| File | Prefixes | Bindings | Consumers | Distinct elements | Highest element | RSS record |",
-        "| ---: | --- | ---: | ---: | ---: | ---: | --- |",
+        "| File | Prefixes | Bindings | Consumers | Exact ladder | Contained bits | Distinct elements | Highest element | RSS record |",
+        "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for usage in report["file_usage"]:
         record_name = usage["rss_record_name"] or usage["rss_record_name_sha256"]
@@ -68,6 +74,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     ", ".join(usage["prefixes"]),
                     usage["binding_count"],
                     usage["consumer_reference_count"],
+                    usage["ladder_operand_occurrence_count"],
+                    usage["contained_bit_occurrence_count"],
                     usage["distinct_element_count"],
                     usage["highest_element_number"],
                     record_name,
@@ -80,8 +88,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "## Complete bindings",
             "",
-            "| Tag | PLC address | File | Location | RSS record | Consumers |",
-            "| --- | --- | ---: | --- | --- | --- |",
+            "| Tag | PLC address | File | Location | RSS record | Exact ladder | Contained bits | Consumers |",
+            "| --- | --- | ---: | --- | --- | ---: | ---: | --- |",
         ]
     )
     for binding in report["bindings"]:
@@ -103,6 +111,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     binding["file_number"],
                     _location(binding),
                     record_name,
+                    len(binding["ladder_occurrences"]),
+                    len(binding["contained_bit_occurrences"]),
                     consumers,
                 )
             )
