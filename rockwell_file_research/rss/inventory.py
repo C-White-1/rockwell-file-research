@@ -274,12 +274,16 @@ def build_inventory(
                     "program_file_number": operand.program_file_number,
                     "program_file_name_sha256": operand.program_file_name_sha256,
                     "program_file_name": operand.program_file_name,
+                    "rung_index": operand.rung_index,
+                    "rung_start_offset": operand.rung_start_offset,
+                    "rung_end_offset": operand.rung_end_offset,
                 }
                 for operand in inspected_program.operands
             ],
             "program_file_records": [
                 {
                     "marker_offset": record.marker_offset,
+                    "end_offset": record.end_offset,
                     "file_number": record.file_number,
                     "header_numeric_candidate": record.header_numeric_candidate,
                     "name_sha256": record.name_sha256,
@@ -289,14 +293,19 @@ def build_inventory(
                     "rung_reference_marker_offsets": (
                         record.rung_reference_marker_offsets
                     ),
+                    "declared_rung_count": record.declared_rung_count,
+                    "rung_boundaries_validated": record.rung_boundaries_validated,
+                    "rung_start_offsets": record.rung_start_offsets,
                 }
                 for record in inspected_program.program_file_records
             ],
             "diagnostics": [
                 (
                     "Operand candidates are length-delimited strings in the "
-                    "validated ladder payload; rung opcodes and execution order "
-                    "remain uninterpreted."
+                    "validated ladder payload; rung boundaries are corroborated "
+                    "by declared counts and class-reference markers, while "
+                    "instruction opcodes and execution semantics remain "
+                    "uninterpreted."
                 )
             ],
         }

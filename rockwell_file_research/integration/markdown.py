@@ -37,18 +37,31 @@ def _location(binding: AddressBinding) -> str:
 
 
 def _program_files(binding: AddressBinding) -> str:
-    """Summarize distinct ladder files containing exact operand matches."""
+    """Summarize ladder files and validated rung indices for exact matches."""
 
-    files = {
-        (
+    files: dict[tuple[int | None, str], set[int]] = {}
+    for occurrence in binding["ladder_occurrences"]:
+        key = (
             occurrence["program_file_number"],
             occurrence["program_file_name"]
             or occurrence["program_file_name_sha256"]
             or "-",
         )
-        for occurrence in binding["ladder_occurrences"]
-    }
-    return ", ".join(f"{number} {name}" for number, name in sorted(files))
+        rung_index = occurrence["rung_index"]
+        if rung_index is not None:
+            files.setdefault(key, set()).add(rung_index)
+        else:
+            files.setdefault(key, set())
+
+    summaries: list[str] = []
+    for (number, name), rung_indices in sorted(
+        files.items(), key=lambda item: (item[0][0] is None, item[0][0], item[0][1])
+    ):
+        suffix = ""
+        if rung_indices:
+            suffix = " rungs " + ", ".join(str(index) for index in sorted(rung_indices))
+        summaries.append(f"{number} {name}{suffix}")
+    return "; ".join(summaries)
 
 
 def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:

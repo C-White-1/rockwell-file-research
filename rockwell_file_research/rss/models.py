@@ -128,12 +128,16 @@ class RSSProgramOperandEvidence(TypedDict):
     program_file_number: int | None
     program_file_name_sha256: str | None
     program_file_name: str | None
+    rung_index: int | None
+    rung_start_offset: int | None
+    rung_end_offset: int | None
 
 
 class RSSProgramFileRecordEvidence(TypedDict):
     """One delimited ladder-file header with reference-marker evidence."""
 
     marker_offset: int
+    end_offset: int
     file_number: int
     header_numeric_candidate: int
     name_sha256: str
@@ -141,6 +145,9 @@ class RSSProgramFileRecordEvidence(TypedDict):
     name: str | None
     description: str | None
     rung_reference_marker_offsets: list[int]
+    declared_rung_count: int
+    rung_boundaries_validated: bool
+    rung_start_offsets: list[int]
 
 
 class RSSProgramFileEvidence(TypedDict):

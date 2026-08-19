@@ -33,6 +33,9 @@ class LadderOperandOccurrence(TypedDict):
     program_file_number: int | None
     program_file_name_sha256: str | None
     program_file_name: str | None
+    rung_index: int | None
+    rung_start_offset: int | None
+    rung_end_offset: int | None
 
 
 class AddressBinding(TypedDict):

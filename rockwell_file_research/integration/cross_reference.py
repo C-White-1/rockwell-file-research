@@ -128,6 +128,9 @@ def _ladder_occurrence_indexes(
             "program_file_name": (
                 operand["program_file_name"] if include_private_text else None
             ),
+            "rung_index": operand["rung_index"],
+            "rung_start_offset": operand["rung_start_offset"],
+            "rung_end_offset": operand["rung_end_offset"],
         }
         key = canonical_address_key(parsed)
         occurrences[key].append(occurrence)

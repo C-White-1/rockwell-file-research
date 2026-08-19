@@ -52,7 +52,7 @@ class SyntheticCompoundDocument:
             "Extensional DATA FILES/ObjectData": section(extensional=True),
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
             "PROGRAM FILES/ObjectData": envelope(
-                b"\x03\x80\x10\x00\x01\x00MAIN\x02\x00\x00"
+                b"\x03\x80\x01\x00\x01\x00MAIN\x02\x00\x00"
                 b"CProgHolder\x00CLadFile\x00\x07\x80\x09\x80"
                 b"B3:0/0\x00#N7:1\x00synthetic rung comment"
             ),
@@ -128,6 +128,8 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert program_files["program_file_records"][0]["file_number"] == 2
     assert program_files["program_file_records"][0]["name"] is None
     assert program_files["program_file_records"][0]["rung_reference_marker_offsets"]
+    assert program_files["program_file_records"][0]["declared_rung_count"] == 1
+    assert program_files["program_file_records"][0]["rung_boundaries_validated"] is True
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -211,6 +213,14 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
     program_record = program_files["program_file_records"][0]
     assert program_record["name"] == "MAIN"
     assert program_record["description"] == ""
+    assert program_record["declared_rung_count"] == 1
+    assert program_record["rung_boundaries_validated"] is True
+    assert [operand["rung_index"] for operand in program_files["operands"]] == [0, 0]
+    assert all(
+        operand["rung_start_offset"] is not None
+        and operand["rung_end_offset"] is not None
+        for operand in program_files["operands"]
+    )
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

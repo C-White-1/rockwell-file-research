@@ -178,15 +178,18 @@ The RSS `PROGRAM FILES` section is validated through its declared zlib
 envelope and catalogued for length-delimited operand strings. Cross-reference
 bindings distinguish exact equivalent addresses from weaker contained-bit
 evidence, where an HMI whole-word address contains ladder bit operands. Each
-match retains the PROGRAM FILES byte offset and integrity digest. This proves
-operand occurrence in the ladder payload, but does not yet claim instruction
-type, rung scope, execution order, or runtime behavior.
+match retains the PROGRAM FILES byte offset, zero-based rung index, rung byte
+range, and integrity digest. This proves operand occurrence and rung scope in
+the ladder payload, but does not yet claim instruction type, execution order,
+or runtime behavior.
 
 Observed ladder-file headers are recovered through their serialization marker,
 byte-aligned name, optional header span, file number, and length-declared
-description. Operands are scoped to the containing program file. Recurring
-`CRung`/`CBranchLeg` class-reference markers are retained by byte offset as rung
-boundary candidates, not yet asserted as a complete rung count.
+description. Declared rung counts are corroborated against recurring
+`CRung`/`CBranchLeg` class-reference markers across the PF4 and PF525 evidence;
+the `MAIN` files additionally begin at their initial `CRung` class declaration.
+Only corroborated boundaries are used to scope operands to a rung index and
+byte range. Instruction opcodes and rung semantics remain uninterpreted.
 
 ## Development
 

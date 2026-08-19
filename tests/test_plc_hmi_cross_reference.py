@@ -72,6 +72,9 @@ def _plc() -> RSSInventory:
                         "program_file_number": 0,
                         "program_file_name_sha256": "m" * 64,
                         "program_file_name": "MAIN",
+                        "rung_index": 0,
+                        "rung_start_offset": 80,
+                        "rung_end_offset": 180,
                     },
                     {
                         "offset": 200,
@@ -81,6 +84,9 @@ def _plc() -> RSSInventory:
                         "program_file_number": 0,
                         "program_file_name_sha256": "m" * 64,
                         "program_file_name": "MAIN",
+                        "rung_index": 1,
+                        "rung_start_offset": 180,
+                        "rung_end_offset": 280,
                     },
                     {
                         "offset": 300,
@@ -90,6 +96,9 @@ def _plc() -> RSSInventory:
                         "program_file_number": 3,
                         "program_file_name_sha256": "a" * 64,
                         "program_file_name": "APP SETUP",
+                        "rung_index": 2,
+                        "rung_start_offset": 280,
+                        "rung_end_offset": 380,
                     },
                 ]
             },
@@ -247,7 +256,7 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     assert "# PLC–HMI Cross-reference" in markdown
     assert (
         "| Start | B9/3 | 9 | element 0, bit 3 | HMI Commands | 2 | "
-        "0 MAIN | 0 |" in markdown
+        "0 MAIN rungs 0, 1 | 0 |" in markdown
     )
     assert "screen Main: Start button; alarm: Start alarm" in markdown
     assert "## Evidence limitations" in markdown

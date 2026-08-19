@@ -42,6 +42,9 @@ class ProgramOperand:
     program_file_number: int | None
     program_file_name_sha256: str | None
     program_file_name: str | None
+    rung_index: int | None
+    rung_start_offset: int | None
+    rung_end_offset: int | None
 
 
 @dataclass(frozen=True)
@@ -49,6 +52,7 @@ class ProgramFileRecord:
     """One strongly delimited ladder-file header and its marker evidence."""
 
     marker_offset: int
+    end_offset: int
     file_number: int
     header_numeric_candidate: int
     name_sha256: str
@@ -56,6 +60,9 @@ class ProgramFileRecord:
     name: str | None
     description: str | None
     rung_reference_marker_offsets: list[int]
+    declared_rung_count: int
+    rung_boundaries_validated: bool
+    rung_start_offsets: list[int]
 
 
 @dataclass(frozen=True)
@@ -183,6 +190,8 @@ def scan_program_file_records(
     )
     records: list[ProgramFileRecord] = []
     rung_marker = b"\x07\x80\x09\x80"
+    rung_declaration = b"\xff\xff\x80\x00\x05\x00CRung"
+    declaration_offset = payload.find(rung_declaration)
     for index, candidate in enumerate(candidates):
         marker_offset, file_number, numeric_candidate, name, description = candidate
         end_offset = (
@@ -193,9 +202,13 @@ def scan_program_file_records(
             for offset in range(marker_offset, max(marker_offset, end_offset - 3))
             if payload.startswith(rung_marker, offset)
         ]
+        rung_starts = list(rung_offsets)
+        if marker_offset <= declaration_offset < end_offset:
+            rung_starts.insert(0, declaration_offset)
         records.append(
             ProgramFileRecord(
                 marker_offset=marker_offset,
+                end_offset=end_offset,
                 file_number=file_number,
                 header_numeric_candidate=numeric_candidate,
                 name_sha256=_sha256_text(name),
@@ -203,6 +216,9 @@ def scan_program_file_records(
                 name=name if include_private_text else None,
                 description=description if include_private_text else None,
                 rung_reference_marker_offsets=rung_offsets,
+                declared_rung_count=numeric_candidate,
+                rung_boundaries_validated=(numeric_candidate == len(rung_starts)),
+                rung_start_offsets=rung_starts,
             )
         )
     return records
@@ -238,6 +254,11 @@ def inspect_program_file_section(
         if classification == "operand_candidate":
             record_index = bisect_right(record_offsets, region.offset) - 1
             record = private_records[record_index] if record_index >= 0 else None
+            rung_index = (
+                bisect_right(record.rung_start_offsets, region.offset) - 1
+                if record is not None
+                else -1
+            )
             operands.append(
                 ProgramOperand(
                     offset=region.offset,
@@ -249,6 +270,21 @@ def inspect_program_file_section(
                     program_file_name_sha256=(record.name_sha256 if record else None),
                     program_file_name=(
                         record.name if include_private_text and record else None
+                    ),
+                    rung_index=rung_index if rung_index >= 0 else None,
+                    rung_start_offset=(
+                        record.rung_start_offsets[rung_index]
+                        if record is not None and rung_index >= 0
+                        else None
+                    ),
+                    rung_end_offset=(
+                        (
+                            record.rung_start_offsets[rung_index + 1]
+                            if rung_index + 1 < len(record.rung_start_offsets)
+                            else record.end_offset
+                        )
+                        if record is not None and rung_index >= 0
+                        else None
                     ),
                 )
             )
