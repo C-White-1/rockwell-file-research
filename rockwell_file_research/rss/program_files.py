@@ -66,6 +66,23 @@ class ProgramFileRecord:
 
 
 @dataclass(frozen=True)
+class ProgramRungRecord:
+    """One corroborated rung byte range with conservative content totals."""
+
+    program_file_number: int
+    program_file_name_sha256: str
+    program_file_name: str | None
+    rung_index: int
+    start_offset: int
+    end_offset: int
+    byte_length: int
+    sha256: str
+    operand_count: int
+    direct_operand_count: int
+    indirect_operand_count: int
+
+
+@dataclass(frozen=True)
 class ProgramFileSection:
     """Validated compression and text evidence for RSS PROGRAM FILES."""
 
@@ -78,6 +95,7 @@ class ProgramFileSection:
     text_regions: list[ProgramTextRegion]
     operands: list[ProgramOperand]
     program_file_records: list[ProgramFileRecord]
+    rung_records: list[ProgramRungRecord]
 
 
 def _classify(text: str) -> str:
@@ -288,6 +306,47 @@ def inspect_program_file_section(
                     ),
                 )
             )
+    public_records = scan_program_file_records(
+        section.payload,
+        include_private_text=include_private_text,
+    )
+    rung_records: list[ProgramRungRecord] = []
+    for record in public_records:
+        if not record.rung_boundaries_validated:
+            continue
+        for rung_index, start_offset in enumerate(record.rung_start_offsets):
+            end_offset = (
+                record.rung_start_offsets[rung_index + 1]
+                if rung_index + 1 < len(record.rung_start_offsets)
+                else record.end_offset
+            )
+            rung_operands = [
+                operand
+                for operand in operands
+                if operand.program_file_number == record.file_number
+                and operand.rung_index == rung_index
+            ]
+            rung_records.append(
+                ProgramRungRecord(
+                    program_file_number=record.file_number,
+                    program_file_name_sha256=record.name_sha256,
+                    program_file_name=record.name,
+                    rung_index=rung_index,
+                    start_offset=start_offset,
+                    end_offset=end_offset,
+                    byte_length=end_offset - start_offset,
+                    sha256=hashlib.sha256(
+                        section.payload[start_offset:end_offset]
+                    ).hexdigest(),
+                    operand_count=len(rung_operands),
+                    direct_operand_count=sum(
+                        not operand.indirect for operand in rung_operands
+                    ),
+                    indirect_operand_count=sum(
+                        operand.indirect for operand in rung_operands
+                    ),
+                )
+            )
     return ProgramFileSection(
         envelope_version=section.envelope_version,
         header_size=section.header_size,
@@ -297,8 +356,6 @@ def inspect_program_file_section(
         uncompressed_sha256=section.uncompressed_sha256,
         text_regions=text_regions,
         operands=operands,
-        program_file_records=scan_program_file_records(
-            section.payload,
-            include_private_text=include_private_text,
-        ),
+        program_file_records=public_records,
+        rung_records=rung_records,
     )

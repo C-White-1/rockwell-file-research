@@ -150,6 +150,22 @@ class RSSProgramFileRecordEvidence(TypedDict):
     rung_start_offsets: list[int]
 
 
+class RSSProgramRungEvidence(TypedDict):
+    """One corroborated rung range and privacy-safe content evidence."""
+
+    program_file_number: int
+    program_file_name_sha256: str
+    program_file_name: str | None
+    rung_index: int
+    start_offset: int
+    end_offset: int
+    byte_length: int
+    sha256: str
+    operand_count: int
+    direct_operand_count: int
+    indirect_operand_count: int
+
+
 class RSSProgramFileEvidence(TypedDict):
     """Validated structural evidence for the PROGRAM FILES section."""
 
@@ -165,6 +181,7 @@ class RSSProgramFileEvidence(TypedDict):
     text_regions: list[RSSProgramTextRegion]
     operands: list[RSSProgramOperandEvidence]
     program_file_records: list[RSSProgramFileRecordEvidence]
+    rung_records: list[RSSProgramRungEvidence]
     diagnostics: list[str]
 
 

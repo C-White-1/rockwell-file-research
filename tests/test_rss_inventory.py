@@ -221,6 +221,24 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
+    assert inventory["schema_version"] == "rss-inventory/v2"
+    assert program_files["rung_records"] == [
+        {
+            "program_file_number": 2,
+            "program_file_name_sha256": program_record["name_sha256"],
+            "program_file_name": "MAIN",
+            "rung_index": 0,
+            "start_offset": program_record["rung_start_offsets"][0],
+            "end_offset": program_record["end_offset"],
+            "byte_length": (
+                program_record["end_offset"] - program_record["rung_start_offsets"][0]
+            ),
+            "sha256": program_files["rung_records"][0]["sha256"],
+            "operand_count": 2,
+            "direct_operand_count": 1,
+            "indirect_operand_count": 1,
+        }
+    ]
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

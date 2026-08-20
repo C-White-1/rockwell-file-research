@@ -191,6 +191,12 @@ the `MAIN` files additionally begin at their initial `CRung` class declaration.
 Only corroborated boundaries are used to scope operands to a rung index and
 byte range. Instruction opcodes and rung semantics remain uninterpreted.
 
+RSS inventory schema `rss-inventory/v2` also emits one evidence-only record per
+corroborated rung. Each record contains its program-file identity, zero-based
+rung index, byte range and length, payload SHA-256, and direct/indirect operand
+counts. It deliberately contains neither reconstructed ladder source nor
+guessed instruction semantics.
+
 Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v2`
 adds rung-aware coverage metrics. It reports the number of ladder program files
 and distinct rungs referenced by exact HMI address matches, verifies how many
