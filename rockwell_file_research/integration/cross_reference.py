@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from collections import defaultdict
+from typing import Literal
 
 from rockwell_file_research.ccw.models import CCWReport
 from rockwell_file_research.integration.addresses import (
@@ -20,7 +21,7 @@ from rockwell_file_research.integration.models import (
 )
 from rockwell_file_research.rss.models import RSSDataFileRecordEvidence, RSSInventory
 
-SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v3"
+SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v4"
 
 
 def _sha256(value: str) -> str:
@@ -141,14 +142,17 @@ def _ladder_occurrence_indexes(
     return occurrences, contained_bits
 
 
-def _rung_usage(bindings: list[AddressBinding]) -> list[RungUsage]:
-    """Group exact address matches by corroborated program-file and rung."""
+def _rung_usage(
+    bindings: list[AddressBinding],
+    occurrence_field: Literal["ladder_occurrences", "contained_bit_occurrences"],
+) -> list[RungUsage]:
+    """Group one address-evidence class by corroborated file and rung."""
 
     grouped: dict[
         tuple[int, int], list[tuple[AddressBinding, LadderOperandOccurrence]]
     ] = defaultdict(list)
     for binding in bindings:
-        for occurrence in binding["ladder_occurrences"]:
+        for occurrence in binding[occurrence_field]:
             file_number = occurrence["program_file_number"]
             rung_index = occurrence["rung_index"]
             if file_number is None or rung_index is None:
@@ -357,6 +361,12 @@ def build_plc_hmi_cross_reference(
     bindings_with_contained_bit_evidence = sum(
         bool(binding["contained_bit_occurrences"]) for binding in bindings
     )
+    scoped_contained_bit_occurrences = [
+        occurrence
+        for occurrence in all_contained_bit_occurrences
+        if occurrence["program_file_number"] is not None
+        and occurrence["rung_index"] is not None
+    ]
     return {
         "schema_version": SCHEMA_VERSION,
         "private_text_included": include_private_text,
@@ -418,9 +428,28 @@ def build_plc_hmi_cross_reference(
             "bindings_with_contained_bit_evidence": (
                 bindings_with_contained_bit_evidence
             ),
+            "contained_bit_program_file_count": len(
+                {
+                    occurrence["program_file_number"]
+                    for occurrence in scoped_contained_bit_occurrences
+                }
+            ),
+            "distinct_contained_bit_rung_count": len(
+                {
+                    (
+                        occurrence["program_file_number"],
+                        occurrence["rung_index"],
+                    )
+                    for occurrence in scoped_contained_bit_occurrences
+                }
+            ),
+            "rung_scoped_contained_bit_occurrence_count": len(
+                scoped_contained_bit_occurrences
+            ),
         },
         "file_usage": file_usage,
-        "rung_usage": _rung_usage(bindings),
+        "rung_usage": _rung_usage(bindings, "ladder_occurrences"),
+        "contained_bit_rung_usage": _rung_usage(bindings, "contained_bit_occurrences"),
         "bindings": bindings,
         "diagnostics": [
             "Ladder occurrence matches prove that equivalent operand strings occur in a corroborated program-file and rung byte range; instruction type and execution semantics remain uninterpreted.",

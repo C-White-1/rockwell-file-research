@@ -153,7 +153,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     result = build_plc_hmi_cross_reference(_hmi(), _plc())
 
     assert result["schema_version"] == (
-        "rockwell-file-research.plc-hmi-cross-reference.v3"
+        "rockwell-file-research.plc-hmi-cross-reference.v4"
     )
     assert result["summary"] == {
         "hmi_tag_count": 4,
@@ -178,6 +178,9 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         "bindings_without_ladder_evidence": 3,
         "contained_bit_occurrence_count": 0,
         "bindings_with_contained_bit_evidence": 0,
+        "contained_bit_program_file_count": 0,
+        "distinct_contained_bit_rung_count": 0,
+        "rung_scoped_contained_bit_occurrence_count": 0,
     }
     assert [binding["status"] for binding in result["bindings"]] == [
         "resolved",
@@ -196,6 +199,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         for occurrence in result["bindings"][0]["ladder_occurrences"]
     ] == [None, None]
     assert result["bindings"][0]["contained_bit_occurrences"] == []
+    assert result["contained_bit_rung_usage"] == []
     assert len(result["rung_usage"]) == 2
     assert result["rung_usage"][0]["program_file_number"] == 0
     assert result["rung_usage"][0]["rung_index"] == 0
@@ -259,6 +263,9 @@ def test_whole_word_binding_keeps_contained_bits_separate_from_exact_matches() -
         "B9:0/3",
         "#B9:0/3",
     ]
+    assert result["summary"]["distinct_contained_bit_rung_count"] == 2
+    assert len(result["contained_bit_rung_usage"]) == 2
+    assert result["contained_bit_rung_usage"][0]["tag_names"] == ["Start"]
 
 
 def test_markdown_report_shows_clear_binding_and_consumers() -> None:
@@ -274,5 +281,6 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     )
     assert "screen Main: Start button; alarm: Start alarm" in markdown
     assert "## Referenced rung index" in markdown
+    assert "## Contained-bit rung index" in markdown
     assert "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start |" in markdown
     assert "## Evidence limitations" in markdown

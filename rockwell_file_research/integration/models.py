@@ -121,6 +121,9 @@ class CrossReferenceSummary(TypedDict):
     bindings_without_ladder_evidence: int
     contained_bit_occurrence_count: int
     bindings_with_contained_bit_evidence: int
+    contained_bit_program_file_count: int
+    distinct_contained_bit_rung_count: int
+    rung_scoped_contained_bit_occurrence_count: int
 
 
 class PLCHMICrossReference(TypedDict):
@@ -133,5 +136,6 @@ class PLCHMICrossReference(TypedDict):
     summary: CrossReferenceSummary
     file_usage: list[FileUsage]
     rung_usage: list[RungUsage]
+    contained_bit_rung_usage: list[RungUsage]
     bindings: list[AddressBinding]
     diagnostics: list[str]

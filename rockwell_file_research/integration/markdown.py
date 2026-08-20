@@ -88,6 +88,9 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
         f"- Distinct referenced ladder rungs: {summary['distinct_ladder_rung_count']}",
         f"- Rung-scoped ladder occurrences: {summary['rung_scoped_ladder_operand_occurrence_count']}",
         f"- Contained-bit ladder occurrences: {summary['contained_bit_occurrence_count']}",
+        f"- Contained-bit referenced program files: {summary['contained_bit_program_file_count']}",
+        f"- Distinct contained-bit referenced rungs: {summary['distinct_contained_bit_rung_count']}",
+        f"- Rung-scoped contained-bit occurrences: {summary['rung_scoped_contained_bit_occurrence_count']}",
         "",
         "## RSS data-file usage",
         "",
@@ -142,6 +145,46 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                         and usage["rung_end_offset"] is not None
                         else "-"
                     ),
+                    usage["binding_count"],
+                    usage["operand_occurrence_count"],
+                    usage["direct_operand_occurrence_count"],
+                    usage["indirect_operand_occurrence_count"],
+                    usage["consumer_reference_count"],
+                    ", ".join(tag_names),
+                )
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Contained-bit rung index",
+            "",
+            "These rows are weaker evidence: an HMI whole-word binding contains the listed ladder bit operand. They are not exact address matches.",
+            "",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        ]
+    )
+    for usage in report["contained_bit_rung_usage"]:
+        program_name = (
+            usage["program_file_name"] or usage["program_file_name_sha256"] or "-"
+        )
+        tag_names = usage["tag_names"] or usage["tag_name_sha256s"]
+        byte_range = (
+            f"{usage['rung_start_offset']}–{usage['rung_end_offset']}"
+            if usage["rung_start_offset"] is not None
+            and usage["rung_end_offset"] is not None
+            else "-"
+        )
+        lines.append(
+            "| "
+            + " | ".join(
+                _cell(value)
+                for value in (
+                    f"{usage['program_file_number']} {program_name}",
+                    usage["rung_index"],
+                    byte_range,
                     usage["binding_count"],
                     usage["operand_occurrence_count"],
                     usage["direct_operand_occurrence_count"],
