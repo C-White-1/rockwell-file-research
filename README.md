@@ -199,6 +199,10 @@ description. Declared rung counts are corroborated against recurring
 the `MAIN` files additionally begin at their initial `CRung` class declaration.
 Only corroborated boundaries are used to scope operands to a rung index and
 byte range. Instruction opcodes and rung semantics remain uninterpreted.
+The available documentation, Laddis binary-ladder findings, controlled
+differential procedure, and acceptance criteria for an evidence-backed opcode
+registry are documented in
+[RSS instruction-decoding research](RSS_INSTRUCTION_DECODING_RESEARCH.md).
 
 RSS inventory schema `rss-inventory/v3` also emits one evidence-only record per
 corroborated rung. Each record contains its program-file identity, zero-based
