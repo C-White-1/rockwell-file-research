@@ -4,6 +4,7 @@ from rockwell_file_research.integration.models import (
     AddressBinding,
     HMIConsumer,
     PLCHMICrossReference,
+    RungUsage,
 )
 
 
@@ -62,6 +63,21 @@ def _program_files(binding: AddressBinding) -> str:
             suffix = " rungs " + ", ".join(str(index) for index in sorted(rung_indices))
         summaries.append(f"{number} {name}{suffix}")
     return "; ".join(summaries)
+
+
+def _rung_text_candidates(usage: RungUsage) -> str:
+    """Show private candidate text or privacy-safe hashes for one rung."""
+
+    values: list[str] = []
+    for candidate in usage["application_text_candidates"]:
+        value = candidate["text"] or candidate["sha256"]
+        # JSON and CSV preserve the exact private text. Markdown tables need a
+        # normalized display form so expression operators and fixed-width
+        # padding cannot be parsed as table or emphasis syntax.
+        value = " ".join(value.split())
+        value = value.replace("|", "&#124;").replace("*", "&#42;")
+        values.append(value)
+    return "; ".join(values)
 
 
 def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
@@ -123,8 +139,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "## Referenced rung index",
             "",
-            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags |",
-            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags | Text candidates |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for usage in report["rung_usage"]:
@@ -151,6 +167,7 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     usage["indirect_operand_occurrence_count"],
                     usage["consumer_reference_count"],
                     ", ".join(tag_names),
+                    _rung_text_candidates(usage),
                 )
             )
             + " |"
@@ -162,8 +179,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "These rows are weaker evidence: an HMI whole-word binding contains the listed ladder bit operand. They are not exact address matches.",
             "",
-            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags |",
-            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags | Text candidates |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for usage in report["contained_bit_rung_usage"]:
@@ -191,6 +208,7 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     usage["indirect_operand_occurrence_count"],
                     usage["consumer_reference_count"],
                     ", ".join(tag_names),
+                    _rung_text_candidates(usage),
                 )
             )
             + " |"

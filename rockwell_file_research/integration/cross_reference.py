@@ -17,11 +17,16 @@ from rockwell_file_research.integration.models import (
     HMIConsumer,
     LadderOperandOccurrence,
     PLCHMICrossReference,
+    RungTextCandidate,
     RungUsage,
 )
-from rockwell_file_research.rss.models import RSSDataFileRecordEvidence, RSSInventory
+from rockwell_file_research.rss.models import (
+    RSSDataFileRecordEvidence,
+    RSSInventory,
+    RSSProgramRungEvidence,
+)
 
-SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v4"
+SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v5"
 
 
 def _sha256(value: str) -> str:
@@ -145,6 +150,9 @@ def _ladder_occurrence_indexes(
 def _rung_usage(
     bindings: list[AddressBinding],
     occurrence_field: Literal["ladder_occurrences", "contained_bit_occurrences"],
+    rung_records: dict[tuple[int, int], RSSProgramRungEvidence],
+    *,
+    include_private_text: bool,
 ) -> list[RungUsage]:
     """Group one address-evidence class by corroborated file and rung."""
 
@@ -162,10 +170,22 @@ def _rung_usage(
     result: list[RungUsage] = []
     for (file_number, rung_index), matches in sorted(grouped.items()):
         first_occurrence = matches[0][1]
+        rung_record = rung_records.get((file_number, rung_index))
         unique_bindings = {
             (binding["tag_name_sha256"], binding["address_sha256"]): binding
             for binding, _occurrence in matches
         }
+        text_candidates: list[RungTextCandidate] = []
+        if rung_record is not None:
+            text_candidates = [
+                {
+                    "offset": candidate["offset"],
+                    "length": candidate["length"],
+                    "sha256": candidate["sha256"],
+                    "text": (candidate["text"] if include_private_text else None),
+                }
+                for candidate in rung_record["application_text_candidates"]
+            ]
         result.append(
             {
                 "program_file_number": file_number,
@@ -195,6 +215,7 @@ def _rung_usage(
                     for binding in unique_bindings.values()
                     if binding["tag_name"] is not None
                 ),
+                "application_text_candidates": text_candidates,
             }
         )
     return result
@@ -211,6 +232,10 @@ def build_plc_hmi_cross_reference(
     records = {
         record["file_number"]: record
         for record in plc["data_file_catalogue"]["records"]
+    }
+    rung_records = {
+        (record["program_file_number"], record["rung_index"]): record
+        for record in plc["program_files"].get("rung_records", [])
     }
     consumers_by_tag = _consumers_by_tag(hmi, include_private_text=include_private_text)
     ladder_occurrences_by_address, contained_bits_by_address = (
@@ -448,8 +473,18 @@ def build_plc_hmi_cross_reference(
             ),
         },
         "file_usage": file_usage,
-        "rung_usage": _rung_usage(bindings, "ladder_occurrences"),
-        "contained_bit_rung_usage": _rung_usage(bindings, "contained_bit_occurrences"),
+        "rung_usage": _rung_usage(
+            bindings,
+            "ladder_occurrences",
+            rung_records,
+            include_private_text=include_private_text,
+        ),
+        "contained_bit_rung_usage": _rung_usage(
+            bindings,
+            "contained_bit_occurrences",
+            rung_records,
+            include_private_text=include_private_text,
+        ),
         "bindings": bindings,
         "diagnostics": [
             "Ladder occurrence matches prove that equivalent operand strings occur in a corroborated program-file and rung byte range; instruction type and execution semantics remain uninterpreted.",

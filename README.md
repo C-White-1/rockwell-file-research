@@ -206,7 +206,7 @@ The additional evidence required before classifying any of these strings as a
 rung comment is documented in
 [RSS rung-comment research plan](RSS_RUNG_COMMENT_RESEARCH.md).
 
-Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v4`
+Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v5`
 adds a rung index alongside rung-aware coverage metrics. It reports the number
 of ladder program files
 and distinct rungs referenced by exact HMI address matches, verifies how many
@@ -225,6 +225,11 @@ The optional rung CSV flattens both indexes for spreadsheet analysis. Its
 the distinction in filters, pivots, and downstream tools. Private names remain
 absent unless `--include-private-text` is selected; `--omit-hashes` leaves the
 hash columns blank in a deliberately human-readable private copy.
+
+Rung rows also carry the untyped application-text candidates recovered inside
+the same byte range. Their count, optional private text, and SHA-256 evidence
+remain available in JSON, Markdown, and CSV without claiming that a candidate
+is a rung comment or any other specific instruction field.
 
 ## Development
 

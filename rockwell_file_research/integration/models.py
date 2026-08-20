@@ -78,6 +78,15 @@ class FileUsage(TypedDict):
     rss_record_name: str | None
 
 
+class RungTextCandidate(TypedDict):
+    """One untyped printable region associated with a validated rung."""
+
+    offset: int
+    length: int
+    sha256: str
+    text: str | None
+
+
 class RungUsage(TypedDict):
     """Exact HMI binding evidence grouped by one corroborated ladder rung."""
 
@@ -94,6 +103,7 @@ class RungUsage(TypedDict):
     consumer_reference_count: int
     tag_name_sha256s: list[str]
     tag_names: list[str]
+    application_text_candidates: list[RungTextCandidate]
 
 
 class CrossReferenceSummary(TypedDict):

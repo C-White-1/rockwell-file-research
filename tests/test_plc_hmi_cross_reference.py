@@ -103,7 +103,26 @@ def _plc() -> RSSInventory:
                         "rung_start_offset": 280,
                         "rung_end_offset": 380,
                     },
-                ]
+                ],
+                "rung_records": [
+                    {
+                        "program_file_number": 0,
+                        "rung_index": 0,
+                        "application_text_candidates": [
+                            {
+                                "offset": 120,
+                                "length": 17,
+                                "sha256": "c" * 64,
+                                "text": "Compare threshold",
+                            }
+                        ],
+                    },
+                    {
+                        "program_file_number": 0,
+                        "rung_index": 1,
+                        "application_text_candidates": [],
+                    },
+                ],
             },
         },
     )
@@ -156,7 +175,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     result = build_plc_hmi_cross_reference(_hmi(), _plc())
 
     assert result["schema_version"] == (
-        "rockwell-file-research.plc-hmi-cross-reference.v4"
+        "rockwell-file-research.plc-hmi-cross-reference.v5"
     )
     assert result["summary"] == {
         "hmi_tag_count": 4,
@@ -209,6 +228,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     assert result["rung_usage"][0]["binding_count"] == 1
     assert result["rung_usage"][0]["operand_occurrence_count"] == 1
     assert result["rung_usage"][0]["tag_names"] == []
+    assert result["rung_usage"][0]["application_text_candidates"][0]["text"] is None
 
 
 def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
@@ -243,6 +263,9 @@ def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
     ]
     assert result["file_usage"][1]["rss_record_name"] == "HMI Commands"
     assert result["rung_usage"][0]["tag_names"] == ["Start"]
+    assert result["rung_usage"][0]["application_text_candidates"][0]["text"] == (
+        "Compare threshold"
+    )
 
 
 def test_readable_copy_can_omit_all_sha256_fields() -> None:
@@ -285,7 +308,10 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     assert "screen Main: Start button; alarm: Start alarm" in markdown
     assert "## Referenced rung index" in markdown
     assert "## Contained-bit rung index" in markdown
-    assert "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start |" in markdown
+    assert (
+        "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start | "
+        "Compare threshold |" in markdown
+    )
     assert "## Evidence limitations" in markdown
 
 
@@ -300,6 +326,8 @@ def test_rung_csv_keeps_exact_and_contained_bit_evidence_distinct() -> None:
     assert sum(row["evidence_type"] == "exact" for row in rows) == 2
     assert sum(row["evidence_type"] == "contained_bit" for row in rows) == 2
     assert all(row["program_file_name"] == "MAIN" for row in rows)
+    assert rows[0]["application_text_candidate_count"] == "1"
+    assert rows[0]["application_text_candidates"] == "Compare threshold"
 
 
 def test_rung_csv_can_omit_integrity_hash_values() -> None:
@@ -311,4 +339,5 @@ def test_rung_csv_can_omit_integrity_hash_values() -> None:
 
     assert rows[0]["program_file_name_sha256"] == ""
     assert rows[0]["tag_name_sha256s"] == ""
+    assert rows[0]["application_text_candidate_sha256s"] == ""
     assert rows[0]["tag_names"] == "Start"

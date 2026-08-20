@@ -20,6 +20,9 @@ FIELDNAMES: list[str] = [
     "consumer_reference_count",
     "tag_names",
     "tag_name_sha256s",
+    "application_text_candidate_count",
+    "application_text_candidates",
+    "application_text_candidate_sha256s",
 ]
 
 
@@ -49,6 +52,19 @@ def _row(
         "tag_names": "; ".join(usage["tag_names"]),
         "tag_name_sha256s": (
             "" if omit_hashes else "; ".join(usage["tag_name_sha256s"])
+        ),
+        "application_text_candidate_count": len(usage["application_text_candidates"]),
+        "application_text_candidates": "; ".join(
+            candidate["text"] or ""
+            for candidate in usage["application_text_candidates"]
+        ),
+        "application_text_candidate_sha256s": (
+            ""
+            if omit_hashes
+            else "; ".join(
+                candidate["sha256"]
+                for candidate in usage["application_text_candidates"]
+            )
         ),
     }
 
