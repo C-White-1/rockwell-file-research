@@ -15,8 +15,11 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
 }
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
+_TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
 
 
 @dataclass(frozen=True)
@@ -184,6 +187,73 @@ def scan_controlled_mov_instructions(
     return evidence
 
 
+def scan_controlled_ton_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize TON records matching the controlled four-field profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 24)):
+        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(4):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 4 or cursor + 10 > len(payload):
+            continue
+        try:
+            timer, time_base, preset, accumulator = (
+                value.decode("ascii") for _, value in fields
+            )
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_TIMER_OPERAND.fullmatch(timer) is None:
+            continue
+        if time_base != "1.0":
+            continue
+        if _CONTROLLED_INTEGER.fullmatch(preset) is None or accumulator != "0":
+            continue
+        if payload[cursor : cursor + 2] != b"\x00\x00":
+            continue
+        selector_offset = cursor + 2
+        if payload[selector_offset] != 0xA7:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = ("timer", "time_base", "preset", "accumulator")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="TON",
+                selector=0xA7,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_TON_PROFILE,
+            )
+        )
+    return evidence
+
+
 def scan_controlled_instructions(
     payload: bytes,
     *,
@@ -197,6 +267,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_mov_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_ton_instructions(
             payload,
             include_private_text=include_private_text,
         )

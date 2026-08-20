@@ -215,10 +215,11 @@ may represent constants, expressions, labels, configuration strings, or
 comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
-OTE, OTL, OTU, and MOV only when a record matches a controlled RSLogix Micro
+OTE, OTL, OTU, MOV, and TON only when a record matches a controlled RSLogix Micro
 Starter Lite profile. Instruction operands are ordered and assigned
-evidence-backed roles; MOV reports `source` followed by `destination`. Unknown
-or differently framed selectors stay uninterpreted.
+evidence-backed roles; MOV reports `source` followed by `destination`, while
+TON reports timer, time base, preset, and accumulator. Unknown or differently
+framed selectors stay uninterpreted.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

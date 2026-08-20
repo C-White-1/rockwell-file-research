@@ -6,6 +6,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_simple_bit_instructions,
+    scan_controlled_ton_instructions,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
@@ -45,6 +46,23 @@ def _mov_record(*, source: str, destination: str) -> bytes:
         + bytes([len(destination_bytes)])
         + destination_bytes
         + b"\x01\x3f\x00\x00\x1c"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _ton_record(
+    *, timer: str, time_base: str = "1.0", preset: str = "5", accumulator: str = "0"
+) -> bytes:
+    fields = [
+        timer.encode("ascii"),
+        time_base.encode("ascii"),
+        preset.encode("ascii"),
+        accumulator.encode("ascii"),
+    ]
+    return (
+        b"\x04\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\xa7"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -222,3 +240,53 @@ def test_combined_scanner_returns_xic_before_mov() -> None:
     )
 
     assert [item.mnemonic for item in result] == ["XIC", "MOV"]
+
+
+def test_controlled_ton_exposes_ordered_structured_fields() -> None:
+    result = scan_controlled_ton_instructions(
+        _ton_record(timer="T4:0"),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert result[0].selector == 0xA7
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("timer", "T4:0"),
+        ("time_base", "1.0"),
+        ("preset", "5"),
+        ("accumulator", "0"),
+    ]
+
+
+def test_ton_selector_is_stable_across_timer_and_preset_changes() -> None:
+    variants = [
+        _ton_record(timer="T4:0", preset="5"),
+        _ton_record(timer="T4:0", preset="7"),
+        _ton_record(timer="T4:1", preset="5"),
+    ]
+
+    evidence = [
+        scan_controlled_ton_instructions(
+            variant,
+            include_private_text=True,
+        )[0]
+        for variant in variants
+    ]
+
+    assert {item.selector for item in evidence} == {0xA7}
+    assert len({item.selector_offset for item in evidence}) == 1
+    assert [item.operands[0].value for item in evidence] == [
+        "T4:0",
+        "T4:0",
+        "T4:1",
+    ]
+    assert [item.operands[2].value for item in evidence] == ["5", "7", "5"]
+
+
+def test_ton_rejects_uncontrolled_time_base_and_nonzero_accumulator() -> None:
+    assert not scan_controlled_ton_instructions(
+        _ton_record(timer="T4:0", time_base="0.01")
+    )
+    assert not scan_controlled_ton_instructions(
+        _ton_record(timer="T4:0", accumulator="1")
+    )
