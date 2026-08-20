@@ -151,6 +151,7 @@ catalogue recovered from an RSLogix 500 RSS project:
 uv run plc-hmi-cross-reference panelview-report.xlsx controller.RSS `
   --output private-outputs/plc-hmi-cross-reference.json `
   --markdown-output private-outputs/plc-hmi-cross-reference.md `
+  --rung-csv-output private-outputs/plc-hmi-rungs.csv `
   --hmi-source-label hmi-001 `
   --plc-source-label plc-001
 ```
@@ -218,6 +219,12 @@ that every referenced rung controls an operator-facing function.
 Whole-word HMI bindings are also indexed separately where their address
 contains a ladder bit operand. The contained-bit rung index remains explicitly
 weaker evidence and is never merged with exact address matches.
+
+The optional rung CSV flattens both indexes for spreadsheet analysis. Its
+`evidence_type` column is always either `exact` or `contained_bit`, preserving
+the distinction in filters, pivots, and downstream tools. Private names remain
+absent unless `--include-private-text` is selected; `--omit-hashes` leaves the
+hash columns blank in a deliberately human-readable private copy.
 
 ## Development
 

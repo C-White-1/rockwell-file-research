@@ -23,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="optional human-readable Markdown report",
     )
+    parser.add_argument(
+        "--rung-csv-output",
+        type=Path,
+        help="optional exact and contained-bit rung evidence CSV",
+    )
     parser.add_argument("--hmi-source-label", help="neutral HMI source identifier")
     parser.add_argument("--plc-source-label", help="neutral PLC source identifier")
     parser.add_argument(
@@ -56,6 +61,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         include_private_text=args.include_private_text,
         omit_hashes=args.omit_hashes,
         markdown_destination=args.markdown_output,
+        rung_csv_destination=args.rung_csv_output,
     )
     summary = result["summary"]
     print(

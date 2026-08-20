@@ -11,6 +11,7 @@ from rockwell_file_research.integration.markdown import (
     render_cross_reference_markdown,
 )
 from rockwell_file_research.integration.models import PLCHMICrossReference
+from rockwell_file_research.integration.rung_csv import render_rung_usage_csv
 from rockwell_file_research.rss.inventory import inventory_rss
 
 
@@ -38,6 +39,7 @@ def export_plc_hmi_cross_reference(
     include_private_text: bool = False,
     omit_hashes: bool = False,
     markdown_destination: Path | None = None,
+    rung_csv_destination: Path | None = None,
 ) -> PLCHMICrossReference:
     """Parse both sources and write one deterministic cross-reference."""
 
@@ -64,5 +66,11 @@ def export_plc_hmi_cross_reference(
         markdown_destination.parent.mkdir(parents=True, exist_ok=True)
         markdown_destination.write_text(
             render_cross_reference_markdown(result), encoding="utf-8"
+        )
+    if rung_csv_destination is not None:
+        rung_csv_destination.parent.mkdir(parents=True, exist_ok=True)
+        rung_csv_destination.write_text(
+            render_rung_usage_csv(result, omit_hashes=omit_hashes),
+            encoding="utf-8",
         )
     return result

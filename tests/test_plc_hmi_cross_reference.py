@@ -1,5 +1,7 @@
 """Tests for conservative PLC–HMI address correlation."""
 
+import csv
+import io
 from typing import cast
 
 from rockwell_file_research.ccw.models import CCWReport
@@ -9,6 +11,7 @@ from rockwell_file_research.integration.cross_reference import (
 )
 from rockwell_file_research.integration.export import _omit_sha256_fields
 from rockwell_file_research.integration.markdown import render_cross_reference_markdown
+from rockwell_file_research.integration.rung_csv import render_rung_usage_csv
 from rockwell_file_research.rss.models import RSSInventory
 
 
@@ -284,3 +287,28 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     assert "## Contained-bit rung index" in markdown
     assert "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start |" in markdown
     assert "## Evidence limitations" in markdown
+
+
+def test_rung_csv_keeps_exact_and_contained_bit_evidence_distinct() -> None:
+    hmi = _hmi()
+    hmi["tags"][1]["address"] = "B9:0"
+    result = build_plc_hmi_cross_reference(hmi, _plc(), include_private_text=True)
+
+    rows = list(csv.DictReader(io.StringIO(render_rung_usage_csv(result))))
+
+    assert {row["evidence_type"] for row in rows} == {"exact", "contained_bit"}
+    assert sum(row["evidence_type"] == "exact" for row in rows) == 2
+    assert sum(row["evidence_type"] == "contained_bit" for row in rows) == 2
+    assert all(row["program_file_name"] == "MAIN" for row in rows)
+
+
+def test_rung_csv_can_omit_integrity_hash_values() -> None:
+    result = build_plc_hmi_cross_reference(_hmi(), _plc(), include_private_text=True)
+
+    rows = list(
+        csv.DictReader(io.StringIO(render_rung_usage_csv(result, omit_hashes=True)))
+    )
+
+    assert rows[0]["program_file_name_sha256"] == ""
+    assert rows[0]["tag_name_sha256s"] == ""
+    assert rows[0]["tag_names"] == "Start"
