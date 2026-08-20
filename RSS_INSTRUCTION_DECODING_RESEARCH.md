@@ -252,6 +252,21 @@ direct concatenation for these two framed records. An earlier structural byte
 changed from `0x03` in each standalone fixture to `0x04` in the serial fixture;
 its meaning remains unresolved and it is not exposed as an instruction count.
 
+A three-instruction serial control was then compared with a parallel fixture
+containing the same two XIC operands and OTE operand. The parallel payload was
+95 bytes longer, introduced the serialized class name `CBranch`, and retained
+all three known instruction records. Selector offsets changed from
+156/175/194 in series to 199/246/289 in parallel because branch framing occurs
+around and between the records.
+
+Swapping only the upper and lower branch operands exchanged the corresponding
+operand digits at offsets 196 and 243. All framing bytes, selectors, offsets,
+payload lengths, and the OTE record remained unchanged. This confirms that
+recognized instruction byte order follows displayed top-to-bottom branch-leg
+order for the controlled profile. Full branch-boundary semantics remain
+unimplemented; `CBranch` evidence is preserved without inferring a generic
+branch graph.
+
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer
 requires the observed length-prefixed `B` bit operand and invariant record

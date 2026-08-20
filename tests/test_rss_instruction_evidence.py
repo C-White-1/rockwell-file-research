@@ -120,3 +120,29 @@ def test_serial_records_preserve_source_order_by_byte_offset() -> None:
     assert [item.mnemonic for item in instructions] == ["XIC", "OTE"]
     assert [item.operand for item in instructions] == ["B3:0/0", "B3:0/1"]
     assert instructions[0].selector_offset < instructions[1].selector_offset
+
+
+def test_branch_framing_does_not_hide_ordered_instruction_records() -> None:
+    branch_prefix = b"\xff\xff\x80\x00\x07\x00CBranch" + bytes(24)
+    leg_separator = bytes(28)
+    output_separator = bytes(24)
+    payload = (
+        branch_prefix
+        + _record(operand="B3:0/1", selector=0x39)
+        + leg_separator
+        + _record(operand="B3:0/0", selector=0x39)
+        + output_separator
+        + _record(operand="B3:0/2", selector=0x2F)
+    )
+
+    instructions = scan_controlled_simple_bit_instructions(
+        payload,
+        include_private_text=True,
+    )
+
+    assert [item.operand for item in instructions] == [
+        "B3:0/1",
+        "B3:0/0",
+        "B3:0/2",
+    ]
+    assert [item.mnemonic for item in instructions] == ["XIC", "XIC", "OTE"]
