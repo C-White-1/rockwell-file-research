@@ -245,6 +245,13 @@ record length, and all observed framing bytes remained fixed. Together with
 the XIC-to-XIO mnemonic-only comparison, this satisfies both identity and
 operand-separation controls for XIC within the named profile.
 
+A serial-rung fixture containing `XIC B3:0/0` followed by `OTE B3:0/1`
+preserved both standalone instruction records unchanged and in source order.
+Their selector offsets were 156 and 175, a 19-byte interval. This supports
+direct concatenation for these two framed records. An earlier structural byte
+changed from `0x03` in each standalone fixture to `0x04` in the serial fixture;
+its meaning remains unresolved and it is not exposed as an instruction count.
+
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer
 requires the observed length-prefixed `B` bit operand and invariant record

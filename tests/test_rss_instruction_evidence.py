@@ -105,3 +105,18 @@ def test_program_file_section_exposes_controlled_instruction_evidence() -> None:
     assert [(item.mnemonic, item.operand) for item in section.instructions] == [
         ("OTL", "B3:0/1")
     ]
+
+
+def test_serial_records_preserve_source_order_by_byte_offset() -> None:
+    payload = _record(operand="B3:0/0", selector=0x39) + _record(
+        operand="B3:0/1", selector=0x2F
+    )
+
+    instructions = scan_controlled_simple_bit_instructions(
+        payload,
+        include_private_text=True,
+    )
+
+    assert [item.mnemonic for item in instructions] == ["XIC", "OTE"]
+    assert [item.operand for item in instructions] == ["B3:0/0", "B3:0/1"]
+    assert instructions[0].selector_offset < instructions[1].selector_offset
