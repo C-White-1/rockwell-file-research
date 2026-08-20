@@ -197,12 +197,15 @@ rung index, byte range and length, payload SHA-256, and direct/indirect operand
 counts. It deliberately contains neither reconstructed ladder source nor
 guessed instruction semantics.
 
-Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v2`
-adds rung-aware coverage metrics. It reports the number of ladder program files
+Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v3`
+adds a rung index alongside rung-aware coverage metrics. It reports the number
+of ladder program files
 and distinct rungs referenced by exact HMI address matches, verifies how many
 matched occurrences have rung scope, and provides a distinct-rung count for
-each RSS data-file usage row. These are evidence-coverage measurements, not a
-claim that every referenced rung controls an operator-facing function.
+each RSS data-file usage row. Each rung-index row groups exact bindings,
+operand occurrences, direct/indirect counts, HMI consumer totals, and privacy-
+aware tag identities. These are evidence-coverage measurements, not a claim
+that every referenced rung controls an operator-facing function.
 
 ## Development
 

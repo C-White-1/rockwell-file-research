@@ -118,6 +118,43 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
     lines.extend(
         [
             "",
+            "## Referenced rung index",
+            "",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+        ]
+    )
+    for usage in report["rung_usage"]:
+        program_name = (
+            usage["program_file_name"] or usage["program_file_name_sha256"] or "-"
+        )
+        tag_names = usage["tag_names"] or usage["tag_name_sha256s"]
+        lines.append(
+            "| "
+            + " | ".join(
+                _cell(value)
+                for value in (
+                    f"{usage['program_file_number']} {program_name}",
+                    usage["rung_index"],
+                    (
+                        f"{usage['rung_start_offset']}–{usage['rung_end_offset']}"
+                        if usage["rung_start_offset"] is not None
+                        and usage["rung_end_offset"] is not None
+                        else "-"
+                    ),
+                    usage["binding_count"],
+                    usage["operand_occurrence_count"],
+                    usage["direct_operand_occurrence_count"],
+                    usage["indirect_operand_occurrence_count"],
+                    usage["consumer_reference_count"],
+                    ", ".join(tag_names),
+                )
+            )
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
             "## Complete bindings",
             "",
             "| Tag | PLC address | File | Location | RSS record | Exact ladder | Program files | Contained bits | Consumers |",

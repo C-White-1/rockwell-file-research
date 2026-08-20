@@ -78,6 +78,24 @@ class FileUsage(TypedDict):
     rss_record_name: str | None
 
 
+class RungUsage(TypedDict):
+    """Exact HMI binding evidence grouped by one corroborated ladder rung."""
+
+    program_file_number: int
+    program_file_name_sha256: str
+    program_file_name: str | None
+    rung_index: int
+    rung_start_offset: int | None
+    rung_end_offset: int | None
+    binding_count: int
+    operand_occurrence_count: int
+    direct_operand_occurrence_count: int
+    indirect_operand_occurrence_count: int
+    consumer_reference_count: int
+    tag_name_sha256s: list[str]
+    tag_names: list[str]
+
+
 class CrossReferenceSummary(TypedDict):
     """Resolution totals for a cross-reference document."""
 
@@ -114,5 +132,6 @@ class PLCHMICrossReference(TypedDict):
     plc_source: CrossReferenceSource
     summary: CrossReferenceSummary
     file_usage: list[FileUsage]
+    rung_usage: list[RungUsage]
     bindings: list[AddressBinding]
     diagnostics: list[str]

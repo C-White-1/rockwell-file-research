@@ -153,7 +153,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     result = build_plc_hmi_cross_reference(_hmi(), _plc())
 
     assert result["schema_version"] == (
-        "rockwell-file-research.plc-hmi-cross-reference.v2"
+        "rockwell-file-research.plc-hmi-cross-reference.v3"
     )
     assert result["summary"] == {
         "hmi_tag_count": 4,
@@ -196,6 +196,12 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         for occurrence in result["bindings"][0]["ladder_occurrences"]
     ] == [None, None]
     assert result["bindings"][0]["contained_bit_occurrences"] == []
+    assert len(result["rung_usage"]) == 2
+    assert result["rung_usage"][0]["program_file_number"] == 0
+    assert result["rung_usage"][0]["rung_index"] == 0
+    assert result["rung_usage"][0]["binding_count"] == 1
+    assert result["rung_usage"][0]["operand_occurrence_count"] == 1
+    assert result["rung_usage"][0]["tag_names"] == []
 
 
 def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
@@ -229,6 +235,7 @@ def test_cross_reference_private_opt_in_exposes_join_evidence() -> None:
         },
     ]
     assert result["file_usage"][1]["rss_record_name"] == "HMI Commands"
+    assert result["rung_usage"][0]["tag_names"] == ["Start"]
 
 
 def test_readable_copy_can_omit_all_sha256_fields() -> None:
@@ -266,4 +273,6 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
         "0 MAIN rungs 0, 1 | 0 |" in markdown
     )
     assert "screen Main: Start button; alarm: Start alarm" in markdown
+    assert "## Referenced rung index" in markdown
+    assert "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start |" in markdown
     assert "## Evidence limitations" in markdown

@@ -21,7 +21,7 @@ def _omit_sha256_fields(value: object) -> object:
         return {
             key: _omit_sha256_fields(item)
             for key, item in value.items()
-            if not key.endswith("sha256")
+            if not key.endswith(("sha256", "sha256s"))
         }
     if isinstance(value, list):
         return [_omit_sha256_fields(item) for item in value]

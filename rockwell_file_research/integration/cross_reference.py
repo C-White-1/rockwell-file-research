@@ -16,10 +16,11 @@ from rockwell_file_research.integration.models import (
     HMIConsumer,
     LadderOperandOccurrence,
     PLCHMICrossReference,
+    RungUsage,
 )
 from rockwell_file_research.rss.models import RSSDataFileRecordEvidence, RSSInventory
 
-SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v2"
+SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v3"
 
 
 def _sha256(value: str) -> str:
@@ -138,6 +139,61 @@ def _ladder_occurrence_indexes(
             word_key = (key[0], key[1], key[2], key[3], None, None)
             contained_bits[word_key].append(occurrence)
     return occurrences, contained_bits
+
+
+def _rung_usage(bindings: list[AddressBinding]) -> list[RungUsage]:
+    """Group exact address matches by corroborated program-file and rung."""
+
+    grouped: dict[
+        tuple[int, int], list[tuple[AddressBinding, LadderOperandOccurrence]]
+    ] = defaultdict(list)
+    for binding in bindings:
+        for occurrence in binding["ladder_occurrences"]:
+            file_number = occurrence["program_file_number"]
+            rung_index = occurrence["rung_index"]
+            if file_number is None or rung_index is None:
+                continue
+            grouped[(file_number, rung_index)].append((binding, occurrence))
+
+    result: list[RungUsage] = []
+    for (file_number, rung_index), matches in sorted(grouped.items()):
+        first_occurrence = matches[0][1]
+        unique_bindings = {
+            (binding["tag_name_sha256"], binding["address_sha256"]): binding
+            for binding, _occurrence in matches
+        }
+        result.append(
+            {
+                "program_file_number": file_number,
+                "program_file_name_sha256": (
+                    first_occurrence["program_file_name_sha256"] or ""
+                ),
+                "program_file_name": first_occurrence["program_file_name"],
+                "rung_index": rung_index,
+                "rung_start_offset": first_occurrence["rung_start_offset"],
+                "rung_end_offset": first_occurrence["rung_end_offset"],
+                "binding_count": len(unique_bindings),
+                "operand_occurrence_count": len(matches),
+                "direct_operand_occurrence_count": sum(
+                    not occurrence["indirect"] for _binding, occurrence in matches
+                ),
+                "indirect_operand_occurrence_count": sum(
+                    occurrence["indirect"] for _binding, occurrence in matches
+                ),
+                "consumer_reference_count": sum(
+                    len(binding["consumers"]) for binding in unique_bindings.values()
+                ),
+                "tag_name_sha256s": sorted(
+                    binding["tag_name_sha256"] for binding in unique_bindings.values()
+                ),
+                "tag_names": sorted(
+                    binding["tag_name"]
+                    for binding in unique_bindings.values()
+                    if binding["tag_name"] is not None
+                ),
+            }
+        )
+    return result
 
 
 def build_plc_hmi_cross_reference(
@@ -364,6 +420,7 @@ def build_plc_hmi_cross_reference(
             ),
         },
         "file_usage": file_usage,
+        "rung_usage": _rung_usage(bindings),
         "bindings": bindings,
         "diagnostics": [
             "Ladder occurrence matches prove that equivalent operand strings occur in a corroborated program-file and rung byte range; instruction type and execution semantics remain uninterpreted.",
