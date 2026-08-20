@@ -191,11 +191,15 @@ the `MAIN` files additionally begin at their initial `CRung` class declaration.
 Only corroborated boundaries are used to scope operands to a rung index and
 byte range. Instruction opcodes and rung semantics remain uninterpreted.
 
-RSS inventory schema `rss-inventory/v2` also emits one evidence-only record per
+RSS inventory schema `rss-inventory/v3` also emits one evidence-only record per
 corroborated rung. Each record contains its program-file identity, zero-based
 rung index, byte range and length, payload SHA-256, and direct/indirect operand
-counts. It deliberately contains neither reconstructed ladder source nor
-guessed instruction semantics.
+counts. Printable non-operand regions within the same byte range are attached
+as untyped application-text candidates with their own offsets and hashes. They
+may represent constants, expressions, labels, configuration strings, or
+comments; TwinForge does not collapse those possibilities into a guessed
+meaning. The record deliberately contains neither reconstructed ladder source
+nor guessed instruction semantics.
 
 Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v3`
 adds a rung index alongside rung-aware coverage metrics. It reports the number

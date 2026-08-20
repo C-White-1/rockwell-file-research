@@ -80,6 +80,8 @@ class ProgramRungRecord:
     operand_count: int
     direct_operand_count: int
     indirect_operand_count: int
+    application_text_candidate_count: int
+    application_text_candidates: list[ProgramTextRegion]
 
 
 @dataclass(frozen=True)
@@ -326,6 +328,12 @@ def inspect_program_file_section(
                 if operand.program_file_number == record.file_number
                 and operand.rung_index == rung_index
             ]
+            rung_text_candidates = [
+                region
+                for region in text_regions
+                if region.classification == "application_text_candidate"
+                and start_offset <= region.offset < end_offset
+            ]
             rung_records.append(
                 ProgramRungRecord(
                     program_file_number=record.file_number,
@@ -345,6 +353,8 @@ def inspect_program_file_section(
                     indirect_operand_count=sum(
                         operand.indirect for operand in rung_operands
                     ),
+                    application_text_candidate_count=len(rung_text_candidates),
+                    application_text_candidates=rung_text_candidates,
                 )
             )
     return ProgramFileSection(

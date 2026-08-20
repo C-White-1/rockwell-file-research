@@ -29,7 +29,7 @@ from rockwell_file_research.rss.models import (
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v2"
+SCHEMA_VERSION = "rss-inventory/v3"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -313,6 +313,19 @@ def build_inventory(
                     "operand_count": rung.operand_count,
                     "direct_operand_count": rung.direct_operand_count,
                     "indirect_operand_count": rung.indirect_operand_count,
+                    "application_text_candidate_count": (
+                        rung.application_text_candidate_count
+                    ),
+                    "application_text_candidates": [
+                        {
+                            "classification": candidate.classification,
+                            "offset": candidate.offset,
+                            "length": candidate.length,
+                            "sha256": candidate.sha256,
+                            "text": candidate.text,
+                        }
+                        for candidate in rung.application_text_candidates
+                    ],
                 }
                 for rung in inspected_program.rung_records
             ],

@@ -130,6 +130,11 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert program_files["program_file_records"][0]["rung_reference_marker_offsets"]
     assert program_files["program_file_records"][0]["declared_rung_count"] == 1
     assert program_files["program_file_records"][0]["rung_boundaries_validated"] is True
+    assert program_files["rung_records"][0]["application_text_candidate_count"] == 1
+    assert (
+        program_files["rung_records"][0]["application_text_candidates"][0]["text"]
+        is None
+    )
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -221,7 +226,7 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
-    assert inventory["schema_version"] == "rss-inventory/v2"
+    assert inventory["schema_version"] == "rss-inventory/v3"
     assert program_files["rung_records"] == [
         {
             "program_file_number": 2,
@@ -237,6 +242,20 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
             "operand_count": 2,
             "direct_operand_count": 1,
             "indirect_operand_count": 1,
+            "application_text_candidate_count": 1,
+            "application_text_candidates": [
+                {
+                    "classification": "application_text_candidate",
+                    "offset": program_files["rung_records"][0][
+                        "application_text_candidates"
+                    ][0]["offset"],
+                    "length": len("synthetic rung comment"),
+                    "sha256": program_files["rung_records"][0][
+                        "application_text_candidates"
+                    ][0]["sha256"],
+                    "text": "synthetic rung comment",
+                }
+            ],
         }
     ]
 

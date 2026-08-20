@@ -164,6 +164,8 @@ class RSSProgramRungEvidence(TypedDict):
     operand_count: int
     direct_operand_count: int
     indirect_operand_count: int
+    application_text_candidate_count: int
+    application_text_candidates: list[RSSProgramTextRegion]
 
 
 class RSSProgramFileEvidence(TypedDict):
