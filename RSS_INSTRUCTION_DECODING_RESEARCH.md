@@ -240,6 +240,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTU` | `0x31` | `B3:0/1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
+| `RES` | `0x13` | Timer `T4:0` or counter `C5:0` |
 
 An operand-only XIC comparison changed `B3:0/0` to `B3:1/2`. Only the two
 corresponding ASCII operand digits changed; selector `0x39`, selector offset,
@@ -283,6 +284,12 @@ digit. Selector `0xA7`, selector offset 181, all other fields, and framing
 remained fixed. The implemented profile currently requires the observed time
 base `1.0` and offline accumulator `0`; other encodings remain uninterpreted
 until controlled fixtures establish them.
+
+The controlled RES comparison changed only its operand from timer `T4:0` to
+counter `C5:0`. Selector `0x13`, selector offset 173, length prefix, and all
+framing remained fixed. RES is therefore recognized for these two operand
+families under profile
+`rslogix-micro-starter-lite/ml1100-series-b/res/v1`.
 
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer

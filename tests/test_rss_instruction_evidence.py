@@ -5,6 +5,7 @@ import zlib
 from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
+    scan_controlled_res_instructions,
     scan_controlled_simple_bit_instructions,
     scan_controlled_ton_instructions,
 )
@@ -63,6 +64,17 @@ def _ton_record(
         b"\x04\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\xa7"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _res_record(operand: str) -> bytes:
+    encoded = operand.encode("ascii")
+    return (
+        b"\x01\x00"
+        + bytes([len(encoded)])
+        + encoded
+        + b"\x00\x00\x13"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -290,3 +302,24 @@ def test_ton_rejects_uncontrolled_time_base_and_nonzero_accumulator() -> None:
     assert not scan_controlled_ton_instructions(
         _ton_record(timer="T4:0", accumulator="1")
     )
+
+
+def test_controlled_res_supports_timer_and_counter_operands() -> None:
+    timer = scan_controlled_res_instructions(
+        _res_record("T4:0"),
+        include_private_text=True,
+    )[0]
+    counter = scan_controlled_res_instructions(
+        _res_record("C5:0"),
+        include_private_text=True,
+    )[0]
+
+    assert timer.mnemonic == counter.mnemonic == "RES"
+    assert timer.selector == counter.selector == 0x13
+    assert timer.selector_offset == counter.selector_offset
+    assert timer.operands[0].value == "T4:0"
+    assert counter.operands[0].value == "C5:0"
+
+
+def test_res_rejects_uncontrolled_operand_family() -> None:
+    assert not scan_controlled_res_instructions(_res_record("N7:0"))

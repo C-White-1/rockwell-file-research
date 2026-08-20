@@ -16,10 +16,12 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
+_RES_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/res/v1"
 
 
 @dataclass(frozen=True)
@@ -254,6 +256,55 @@ def scan_controlled_ton_instructions(
     return evidence
 
 
+def scan_controlled_res_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize RES records for controlled timer and counter operands."""
+
+    evidence: list[InstructionEvidence] = []
+    for operand_offset in range(3, len(payload)):
+        operand_length = payload[operand_offset - 1]
+        if not operand_length or operand_offset + operand_length + 9 > len(payload):
+            continue
+        if payload[operand_offset - 3 : operand_offset - 1] != b"\x01\x00":
+            continue
+        operand_bytes = payload[operand_offset : operand_offset + operand_length]
+        try:
+            operand = operand_bytes.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_RESET_OPERAND.fullmatch(operand) is None:
+            continue
+        selector_offset = operand_offset + operand_length + 2
+        if payload[operand_offset + operand_length : selector_offset] != b"\x00\x00":
+            continue
+        if payload[selector_offset] != 0x13:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="RES",
+                selector=0x13,
+                selector_offset=selector_offset,
+                operands=(
+                    _operand(
+                        role="operand",
+                        offset=operand_offset,
+                        value=operand_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=_RES_PROFILE,
+            )
+        )
+    return evidence
+
+
 def scan_controlled_instructions(
     payload: bytes,
     *,
@@ -273,6 +324,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_ton_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_res_instructions(
             payload,
             include_private_text=include_private_text,
         )
