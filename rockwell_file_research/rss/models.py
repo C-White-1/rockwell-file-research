@@ -133,6 +133,19 @@ class RSSProgramOperandEvidence(TypedDict):
     rung_end_offset: int | None
 
 
+class RSSProgramInstructionEvidence(TypedDict):
+    """Instruction identity supported by a controlled binary profile."""
+
+    mnemonic: str
+    selector: int
+    selector_offset: int
+    operand_offset: int
+    operand_length: int
+    operand_sha256: str
+    operand: str | None
+    evidence_profile: str
+
+
 class RSSProgramFileRecordEvidence(TypedDict):
     """One delimited ladder-file header with reference-marker evidence."""
 
@@ -182,6 +195,7 @@ class RSSProgramFileEvidence(TypedDict):
     private_text_included: bool
     text_regions: list[RSSProgramTextRegion]
     operands: list[RSSProgramOperandEvidence]
+    instructions: list[RSSProgramInstructionEvidence]
     program_file_records: list[RSSProgramFileRecordEvidence]
     rung_records: list[RSSProgramRungEvidence]
     diagnostics: list[str]

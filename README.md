@@ -203,8 +203,10 @@ The available documentation, Laddis binary-ladder findings, controlled
 differential procedure, and acceptance criteria for an evidence-backed opcode
 registry are documented in
 [RSS instruction-decoding research](RSS_INSTRUCTION_DECODING_RESEARCH.md).
+The corresponding engineer-facing creation and delivery contract is the
+[controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 
-RSS inventory schema `rss-inventory/v3` also emits one evidence-only record per
+RSS inventory schema `rss-inventory/v4` also emits one evidence-only record per
 corroborated rung. Each record contains its program-file identity, zero-based
 rung index, byte range and length, payload SHA-256, and direct/indirect operand
 counts. Printable non-operand regions within the same byte range are attached
@@ -212,7 +214,10 @@ as untyped application-text candidates with their own offsets and hashes. They
 may represent constants, expressions, labels, configuration strings, or
 comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
-nor guessed instruction semantics.
+nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
+OTE, OTL, and OTU only when a record matches the controlled RSLogix Micro
+Starter Lite simple-bit profile. Unknown or differently framed selectors stay
+uninterpreted.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

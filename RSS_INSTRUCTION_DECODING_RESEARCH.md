@@ -106,6 +106,10 @@ Examples of valid tests inspired by the paper include:
 
 ## Required differential procedure
 
+The exact project settings, fixture names, instruction matrix, save discipline,
+manifest, and delivery checks are defined in the
+[controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
+
 ### 1. Establish tooling and provenance
 
 Use an authorized RSLogix 500 or RSLogix Micro installation that can create and
@@ -219,6 +223,27 @@ The Laddis findings may corroborate a mapping, but similarity to its reported
 PLC bytecode structure is not sufficient on its own.
 
 ## Evidence-backed opcode registry
+
+### Confirmed controlled-profile simple-bit selectors
+
+The first controlled RSLogix Micro Starter Lite fixtures used a MicroLogix
+1100 Series B project. Each fixture contained one instruction and a direct
+`B3` bit operand. After decompression, mnemonic-only comparisons changed one
+selector byte while the operand and surrounding record bytes remained fixed.
+
+| Mnemonic | Selector | Controlled operand comparison |
+| --- | ---: | --- |
+| `XIC` | `0x39` | `B3:0/0` |
+| `XIO` | `0x3A` | `B3:0/0` |
+| `OTE` | `0x2F` | `B3:0/1` |
+| `OTL` | `0x30` | `B3:0/1` |
+| `OTU` | `0x31` | `B3:0/1` |
+
+These are implemented as the profile
+`rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer
+requires the observed length-prefixed `B` bit operand and invariant record
+framing; it does not interpret the selector byte in isolation or generalize
+the mapping to untested operand families and RSS producers.
 
 The future registry should preserve both conclusions and their proof. Suggested
 fields are:

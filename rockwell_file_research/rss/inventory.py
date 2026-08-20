@@ -29,7 +29,7 @@ from rockwell_file_research.rss.models import (
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v3"
+SCHEMA_VERSION = "rss-inventory/v4"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -236,6 +236,7 @@ def build_inventory(
             "private_text_included": include_private_text,
             "text_regions": [],
             "operands": [],
+            "instructions": [],
             "program_file_records": [],
             "rung_records": [],
             "diagnostics": [],
@@ -280,6 +281,19 @@ def build_inventory(
                     "rung_end_offset": operand.rung_end_offset,
                 }
                 for operand in inspected_program.operands
+            ],
+            "instructions": [
+                {
+                    "mnemonic": instruction.mnemonic,
+                    "selector": instruction.selector,
+                    "selector_offset": instruction.selector_offset,
+                    "operand_offset": instruction.operand_offset,
+                    "operand_length": instruction.operand_length,
+                    "operand_sha256": instruction.operand_sha256,
+                    "operand": instruction.operand,
+                    "evidence_profile": instruction.evidence_profile,
+                }
+                for instruction in inspected_program.instructions
             ],
             "program_file_records": [
                 {
@@ -334,8 +348,9 @@ def build_inventory(
                     "Operand candidates are length-delimited strings in the "
                     "validated ladder payload; rung boundaries are corroborated "
                     "by declared counts and class-reference markers, while "
-                    "instruction opcodes and execution semantics remain "
-                    "uninterpreted."
+                    "only controlled-profile simple-bit instructions are "
+                    "identified; all other instruction bytes and execution "
+                    "semantics remain uninterpreted."
                 )
             ],
         }

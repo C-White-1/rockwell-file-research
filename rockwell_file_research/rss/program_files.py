@@ -8,6 +8,10 @@ from bisect import bisect_right
 from dataclasses import dataclass
 
 from rockwell_file_research.rss.compressed_section import decompress_section
+from rockwell_file_research.rss.instruction_evidence import (
+    InstructionEvidence,
+    scan_controlled_simple_bit_instructions,
+)
 from rockwell_file_research.rss.processor import inspect_processor_text
 
 SERIALIZATION_CLASSES = frozenset(
@@ -96,6 +100,7 @@ class ProgramFileSection:
     uncompressed_sha256: str
     text_regions: list[ProgramTextRegion]
     operands: list[ProgramOperand]
+    instructions: list[InstructionEvidence]
     program_file_records: list[ProgramFileRecord]
     rung_records: list[ProgramRungRecord]
 
@@ -366,6 +371,10 @@ def inspect_program_file_section(
         uncompressed_sha256=section.uncompressed_sha256,
         text_regions=text_regions,
         operands=operands,
+        instructions=scan_controlled_simple_bit_instructions(
+            section.payload,
+            include_private_text=include_private_text,
+        ),
         program_file_records=public_records,
         rung_records=rung_records,
     )
