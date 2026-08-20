@@ -152,6 +152,9 @@ def test_timer_member_slash_and_dot_forms_are_equivalent() -> None:
 def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> None:
     result = build_plc_hmi_cross_reference(_hmi(), _plc())
 
+    assert result["schema_version"] == (
+        "rockwell-file-research.plc-hmi-cross-reference.v2"
+    )
     assert result["summary"] == {
         "hmi_tag_count": 4,
         "address_count": 4,
@@ -166,6 +169,9 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         "tags_with_consumers": 1,
         "tags_without_consumers": 3,
         "ladder_operand_occurrence_count": 2,
+        "ladder_program_file_count": 1,
+        "distinct_ladder_rung_count": 2,
+        "rung_scoped_ladder_operand_occurrence_count": 2,
         "direct_ladder_operand_occurrence_count": 1,
         "indirect_ladder_operand_occurrence_count": 1,
         "bindings_with_ladder_evidence": 1,
@@ -184,6 +190,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     assert result["file_usage"][0]["rss_record_name"] is None
     assert result["bindings"][0]["exceeds_rss_numeric_candidate"] is False
     assert result["file_usage"][1]["highest_element_number"] == 0
+    assert result["file_usage"][1]["distinct_ladder_rung_count"] == 2
     assert [
         occurrence["operand"]
         for occurrence in result["bindings"][0]["ladder_occurrences"]

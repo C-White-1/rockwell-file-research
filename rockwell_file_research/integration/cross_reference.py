@@ -19,7 +19,7 @@ from rockwell_file_research.integration.models import (
 )
 from rockwell_file_research.rss.models import RSSDataFileRecordEvidence, RSSInventory
 
-SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v1"
+SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v2"
 
 
 def _sha256(value: str) -> str:
@@ -243,6 +243,18 @@ def build_plc_hmi_cross_reference(
                 "ladder_operand_occurrence_count": sum(
                     len(binding["ladder_occurrences"]) for binding in usage[file_number]
                 ),
+                "distinct_ladder_rung_count": len(
+                    {
+                        (
+                            occurrence["program_file_number"],
+                            occurrence["rung_index"],
+                        )
+                        for binding in usage[file_number]
+                        for occurrence in binding["ladder_occurrences"]
+                        if occurrence["program_file_number"] is not None
+                        and occurrence["rung_index"] is not None
+                    }
+                ),
                 "contained_bit_occurrence_count": sum(
                     len(binding["contained_bit_occurrences"])
                     for binding in usage[file_number]
@@ -275,6 +287,12 @@ def build_plc_hmi_cross_reference(
     bindings_with_ladder_evidence = sum(
         bool(binding["ladder_occurrences"]) for binding in bindings
     )
+    scoped_ladder_occurrences = [
+        occurrence
+        for occurrence in all_ladder_occurrences
+        if occurrence["program_file_number"] is not None
+        and occurrence["rung_index"] is not None
+    ]
     all_contained_bit_occurrences = [
         occurrence
         for binding in bindings
@@ -312,6 +330,24 @@ def build_plc_hmi_cross_reference(
             "tags_with_consumers": tags_with_consumers,
             "tags_without_consumers": len(hmi["tags"]) - tags_with_consumers,
             "ladder_operand_occurrence_count": len(all_ladder_occurrences),
+            "ladder_program_file_count": len(
+                {
+                    occurrence["program_file_number"]
+                    for occurrence in scoped_ladder_occurrences
+                }
+            ),
+            "distinct_ladder_rung_count": len(
+                {
+                    (
+                        occurrence["program_file_number"],
+                        occurrence["rung_index"],
+                    )
+                    for occurrence in scoped_ladder_occurrences
+                }
+            ),
+            "rung_scoped_ladder_operand_occurrence_count": len(
+                scoped_ladder_occurrences
+            ),
             "direct_ladder_operand_occurrence_count": sum(
                 not occurrence["indirect"] for occurrence in all_ladder_occurrences
             ),
@@ -330,7 +366,7 @@ def build_plc_hmi_cross_reference(
         "file_usage": file_usage,
         "bindings": bindings,
         "diagnostics": [
-            "Ladder occurrence matches prove that equivalent operand strings occur in the validated PROGRAM FILES payload; instruction type, rung scope, and execution order remain uninterpreted.",
+            "Ladder occurrence matches prove that equivalent operand strings occur in a corroborated program-file and rung byte range; instruction type and execution semantics remain uninterpreted.",
             "Contained-bit evidence links a whole-word HMI address to ladder bit operands within that word; it is reported separately from exact operand matches.",
             "Unsupported and unresolved addresses are retained rather than discarded or guessed.",
             "HMI element numbers exceeding the recovered RSS numeric candidate prove that field is not the data-file element extent.",

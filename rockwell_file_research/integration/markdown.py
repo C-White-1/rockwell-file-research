@@ -84,12 +84,15 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
         f"- Bindings with ladder evidence: {summary['bindings_with_ladder_evidence']}",
         f"- Bindings without ladder evidence: {summary['bindings_without_ladder_evidence']}",
         f"- Matching ladder operand occurrences: {summary['ladder_operand_occurrence_count']}",
+        f"- Referenced ladder program files: {summary['ladder_program_file_count']}",
+        f"- Distinct referenced ladder rungs: {summary['distinct_ladder_rung_count']}",
+        f"- Rung-scoped ladder occurrences: {summary['rung_scoped_ladder_operand_occurrence_count']}",
         f"- Contained-bit ladder occurrences: {summary['contained_bit_occurrence_count']}",
         "",
         "## RSS data-file usage",
         "",
-        "| File | Prefixes | Bindings | Consumers | Exact ladder | Contained bits | Distinct elements | Highest element | RSS record |",
-        "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        "| File | Prefixes | Bindings | Consumers | Exact ladder | Distinct rungs | Contained bits | Distinct elements | Highest element | RSS record |",
+        "| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ]
     for usage in report["file_usage"]:
         record_name = usage["rss_record_name"] or usage["rss_record_name_sha256"]
@@ -103,6 +106,7 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     usage["binding_count"],
                     usage["consumer_reference_count"],
                     usage["ladder_operand_occurrence_count"],
+                    usage["distinct_ladder_rung_count"],
                     usage["contained_bit_occurrence_count"],
                     usage["distinct_element_count"],
                     usage["highest_element_number"],

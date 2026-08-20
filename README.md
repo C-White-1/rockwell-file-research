@@ -191,6 +191,13 @@ the `MAIN` files additionally begin at their initial `CRung` class declaration.
 Only corroborated boundaries are used to scope operands to a rung index and
 byte range. Instruction opcodes and rung semantics remain uninterpreted.
 
+Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v2`
+adds rung-aware coverage metrics. It reports the number of ladder program files
+and distinct rungs referenced by exact HMI address matches, verifies how many
+matched occurrences have rung scope, and provides a distinct-rung count for
+each RSS data-file usage row. These are evidence-coverage measurements, not a
+claim that every referenced rung controls an operator-facing function.
+
 ## Development
 
 Install the project and development tools with:

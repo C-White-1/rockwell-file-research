@@ -69,6 +69,7 @@ class FileUsage(TypedDict):
     binding_count: int
     consumer_reference_count: int
     ladder_operand_occurrence_count: int
+    distinct_ladder_rung_count: int
     contained_bit_occurrence_count: int
     distinct_element_count: int
     highest_element_number: int | None
@@ -93,6 +94,9 @@ class CrossReferenceSummary(TypedDict):
     tags_with_consumers: int
     tags_without_consumers: int
     ladder_operand_occurrence_count: int
+    ladder_program_file_count: int
+    distinct_ladder_rung_count: int
+    rung_scoped_ladder_operand_occurrence_count: int
     direct_ladder_operand_occurrence_count: int
     indirect_ladder_operand_occurrence_count: int
     bindings_with_ladder_evidence: int
