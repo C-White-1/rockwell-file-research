@@ -201,6 +201,10 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics.
 
+The additional evidence required before classifying any of these strings as a
+rung comment is documented in
+[RSS rung-comment research plan](RSS_RUNG_COMMENT_RESEARCH.md).
+
 Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v3`
 adds a rung index alongside rung-aware coverage metrics. It reports the number
 of ladder program files
