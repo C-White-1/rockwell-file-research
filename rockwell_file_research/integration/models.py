@@ -96,8 +96,14 @@ class RungUsage(TypedDict):
     rung_index: int
     rung_start_offset: int | None
     rung_end_offset: int | None
+    rung_byte_length: int | None
+    rung_sha256: str | None
+    rung_operand_count: int | None
+    rung_direct_operand_count: int | None
+    rung_indirect_operand_count: int | None
     binding_count: int
     operand_occurrence_count: int
+    distinct_matched_operand_count: int
     direct_operand_occurrence_count: int
     indirect_operand_occurrence_count: int
     consumer_reference_count: int
@@ -122,6 +128,7 @@ class CrossReferenceSummary(TypedDict):
     tags_with_consumers: int
     tags_without_consumers: int
     ladder_operand_occurrence_count: int
+    distinct_ladder_operand_count: int
     ladder_program_file_count: int
     distinct_ladder_rung_count: int
     rung_scoped_ladder_operand_occurrence_count: int
@@ -130,6 +137,7 @@ class CrossReferenceSummary(TypedDict):
     bindings_with_ladder_evidence: int
     bindings_without_ladder_evidence: int
     contained_bit_occurrence_count: int
+    distinct_contained_bit_operand_count: int
     bindings_with_contained_bit_evidence: int
     contained_bit_program_file_count: int
     distinct_contained_bit_rung_count: int

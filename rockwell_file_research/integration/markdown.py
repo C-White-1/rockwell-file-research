@@ -100,10 +100,12 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
         f"- Bindings with ladder evidence: {summary['bindings_with_ladder_evidence']}",
         f"- Bindings without ladder evidence: {summary['bindings_without_ladder_evidence']}",
         f"- Matching ladder operand occurrences: {summary['ladder_operand_occurrence_count']}",
+        f"- Distinct matching ladder operands: {summary['distinct_ladder_operand_count']}",
         f"- Referenced ladder program files: {summary['ladder_program_file_count']}",
         f"- Distinct referenced ladder rungs: {summary['distinct_ladder_rung_count']}",
         f"- Rung-scoped ladder occurrences: {summary['rung_scoped_ladder_operand_occurrence_count']}",
         f"- Contained-bit ladder occurrences: {summary['contained_bit_occurrence_count']}",
+        f"- Distinct contained-bit ladder operands: {summary['distinct_contained_bit_operand_count']}",
         f"- Contained-bit referenced program files: {summary['contained_bit_program_file_count']}",
         f"- Distinct contained-bit referenced rungs: {summary['distinct_contained_bit_rung_count']}",
         f"- Rung-scoped contained-bit occurrences: {summary['rung_scoped_contained_bit_occurrence_count']}",
@@ -139,8 +141,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "## Referenced rung index",
             "",
-            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags | Text candidates |",
-            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Distinct matched | Rung operands | Direct | Indirect | Consumers | Tags | Text candidates |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for usage in report["rung_usage"]:
@@ -163,6 +165,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     ),
                     usage["binding_count"],
                     usage["operand_occurrence_count"],
+                    usage["distinct_matched_operand_count"],
+                    usage["rung_operand_count"],
                     usage["direct_operand_occurrence_count"],
                     usage["indirect_operand_occurrence_count"],
                     usage["consumer_reference_count"],
@@ -179,8 +183,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
             "",
             "These rows are weaker evidence: an HMI whole-word binding contains the listed ladder bit operand. They are not exact address matches.",
             "",
-            "| Program file | Rung | Byte range | Bindings | Occurrences | Direct | Indirect | Consumers | Tags | Text candidates |",
-            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+            "| Program file | Rung | Byte range | Bindings | Occurrences | Distinct matched | Rung operands | Direct | Indirect | Consumers | Tags | Text candidates |",
+            "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
         ]
     )
     for usage in report["contained_bit_rung_usage"]:
@@ -204,6 +208,8 @@ def render_cross_reference_markdown(report: PLCHMICrossReference) -> str:
                     byte_range,
                     usage["binding_count"],
                     usage["operand_occurrence_count"],
+                    usage["distinct_matched_operand_count"],
+                    usage["rung_operand_count"],
                     usage["direct_operand_occurrence_count"],
                     usage["indirect_operand_occurrence_count"],
                     usage["consumer_reference_count"],

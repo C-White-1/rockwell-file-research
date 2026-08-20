@@ -26,7 +26,7 @@ from rockwell_file_research.rss.models import (
     RSSProgramRungEvidence,
 )
 
-SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v5"
+SCHEMA_VERSION = "rockwell-file-research.plc-hmi-cross-reference.v6"
 
 
 def _sha256(value: str) -> str:
@@ -196,8 +196,32 @@ def _rung_usage(
                 "rung_index": rung_index,
                 "rung_start_offset": first_occurrence["rung_start_offset"],
                 "rung_end_offset": first_occurrence["rung_end_offset"],
+                "rung_byte_length": (
+                    rung_record.get("byte_length") if rung_record is not None else None
+                ),
+                "rung_sha256": (
+                    rung_record.get("sha256") if rung_record is not None else None
+                ),
+                "rung_operand_count": (
+                    rung_record.get("operand_count")
+                    if rung_record is not None
+                    else None
+                ),
+                "rung_direct_operand_count": (
+                    rung_record.get("direct_operand_count")
+                    if rung_record is not None
+                    else None
+                ),
+                "rung_indirect_operand_count": (
+                    rung_record.get("indirect_operand_count")
+                    if rung_record is not None
+                    else None
+                ),
                 "binding_count": len(unique_bindings),
                 "operand_occurrence_count": len(matches),
+                "distinct_matched_operand_count": len(
+                    {occurrence["offset"] for _binding, occurrence in matches}
+                ),
                 "direct_operand_occurrence_count": sum(
                     not occurrence["indirect"] for _binding, occurrence in matches
                 ),
@@ -421,6 +445,12 @@ def build_plc_hmi_cross_reference(
             "tags_with_consumers": tags_with_consumers,
             "tags_without_consumers": len(hmi["tags"]) - tags_with_consumers,
             "ladder_operand_occurrence_count": len(all_ladder_occurrences),
+            "distinct_ladder_operand_count": len(
+                {
+                    (occurrence["program_file_number"], occurrence["offset"])
+                    for occurrence in all_ladder_occurrences
+                }
+            ),
             "ladder_program_file_count": len(
                 {
                     occurrence["program_file_number"]
@@ -450,6 +480,12 @@ def build_plc_hmi_cross_reference(
                 len(bindings) - bindings_with_ladder_evidence
             ),
             "contained_bit_occurrence_count": len(all_contained_bit_occurrences),
+            "distinct_contained_bit_operand_count": len(
+                {
+                    (occurrence["program_file_number"], occurrence["offset"])
+                    for occurrence in all_contained_bit_occurrences
+                }
+            ),
             "bindings_with_contained_bit_evidence": (
                 bindings_with_contained_bit_evidence
             ),

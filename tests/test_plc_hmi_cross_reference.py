@@ -108,6 +108,11 @@ def _plc() -> RSSInventory:
                     {
                         "program_file_number": 0,
                         "rung_index": 0,
+                        "byte_length": 100,
+                        "sha256": "r" * 64,
+                        "operand_count": 2,
+                        "direct_operand_count": 2,
+                        "indirect_operand_count": 0,
                         "application_text_candidates": [
                             {
                                 "offset": 120,
@@ -120,6 +125,11 @@ def _plc() -> RSSInventory:
                     {
                         "program_file_number": 0,
                         "rung_index": 1,
+                        "byte_length": 100,
+                        "sha256": "s" * 64,
+                        "operand_count": 1,
+                        "direct_operand_count": 0,
+                        "indirect_operand_count": 1,
                         "application_text_candidates": [],
                     },
                 ],
@@ -175,7 +185,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     result = build_plc_hmi_cross_reference(_hmi(), _plc())
 
     assert result["schema_version"] == (
-        "rockwell-file-research.plc-hmi-cross-reference.v5"
+        "rockwell-file-research.plc-hmi-cross-reference.v6"
     )
     assert result["summary"] == {
         "hmi_tag_count": 4,
@@ -191,6 +201,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         "tags_with_consumers": 1,
         "tags_without_consumers": 3,
         "ladder_operand_occurrence_count": 2,
+        "distinct_ladder_operand_count": 2,
         "ladder_program_file_count": 1,
         "distinct_ladder_rung_count": 2,
         "rung_scoped_ladder_operand_occurrence_count": 2,
@@ -199,6 +210,7 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
         "bindings_with_ladder_evidence": 1,
         "bindings_without_ladder_evidence": 3,
         "contained_bit_occurrence_count": 0,
+        "distinct_contained_bit_operand_count": 0,
         "bindings_with_contained_bit_evidence": 0,
         "contained_bit_program_file_count": 0,
         "distinct_contained_bit_rung_count": 0,
@@ -227,6 +239,9 @@ def test_cross_reference_redacts_private_text_and_preserves_uncertainty() -> Non
     assert result["rung_usage"][0]["rung_index"] == 0
     assert result["rung_usage"][0]["binding_count"] == 1
     assert result["rung_usage"][0]["operand_occurrence_count"] == 1
+    assert result["rung_usage"][0]["distinct_matched_operand_count"] == 1
+    assert result["rung_usage"][0]["rung_operand_count"] == 2
+    assert result["rung_usage"][0]["rung_sha256"] == "r" * 64
     assert result["rung_usage"][0]["tag_names"] == []
     assert result["rung_usage"][0]["application_text_candidates"][0]["text"] is None
 
@@ -309,7 +324,7 @@ def test_markdown_report_shows_clear_binding_and_consumers() -> None:
     assert "## Referenced rung index" in markdown
     assert "## Contained-bit rung index" in markdown
     assert (
-        "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 0 | 2 | Start | "
+        "| 0 MAIN | 0 | 80–180 | 1 | 1 | 1 | 2 | 1 | 0 | 2 | Start | "
         "Compare threshold |" in markdown
     )
     assert "## Evidence limitations" in markdown
@@ -328,6 +343,8 @@ def test_rung_csv_keeps_exact_and_contained_bit_evidence_distinct() -> None:
     assert all(row["program_file_name"] == "MAIN" for row in rows)
     assert rows[0]["application_text_candidate_count"] == "1"
     assert rows[0]["application_text_candidates"] == "Compare threshold"
+    assert rows[0]["rung_operand_count"] == "2"
+    assert rows[0]["distinct_matched_operand_count"] == "1"
 
 
 def test_rung_csv_can_omit_integrity_hash_values() -> None:
@@ -340,4 +357,5 @@ def test_rung_csv_can_omit_integrity_hash_values() -> None:
     assert rows[0]["program_file_name_sha256"] == ""
     assert rows[0]["tag_name_sha256s"] == ""
     assert rows[0]["application_text_candidate_sha256s"] == ""
+    assert rows[0]["rung_sha256"] == ""
     assert rows[0]["tag_names"] == "Start"

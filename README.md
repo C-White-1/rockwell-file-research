@@ -206,7 +206,7 @@ The additional evidence required before classifying any of these strings as a
 rung comment is documented in
 [RSS rung-comment research plan](RSS_RUNG_COMMENT_RESEARCH.md).
 
-Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v5`
+Cross-reference schema `rockwell-file-research.plc-hmi-cross-reference.v6`
 adds a rung index alongside rung-aware coverage metrics. It reports the number
 of ladder program files
 and distinct rungs referenced by exact HMI address matches, verifies how many
@@ -230,6 +230,12 @@ Rung rows also carry the untyped application-text candidates recovered inside
 the same byte range. Their count, optional private text, and SHA-256 evidence
 remain available in JSON, Markdown, and CSV without claiming that a candidate
 is a rung comment or any other specific instruction field.
+
+Each rung relationship also carries the source rung's byte length, payload
+SHA-256, and total direct/indirect operand counts. Relationship occurrences and
+distinct matched operand offsets are reported separately because multiple HMI
+tags can legitimately resolve to the same ladder operand. No coverage
+percentage is inferred from those different measures.
 
 ## Development
 
