@@ -63,6 +63,24 @@ def test_private_operand_text_is_redacted_by_default() -> None:
     assert len(result[0].operand_sha256) == 64
 
 
+def test_xic_selector_is_stable_across_controlled_operand_change() -> None:
+    first = scan_controlled_simple_bit_instructions(
+        _record(operand="B3:0/0", selector=0x39),
+        include_private_text=True,
+    )[0]
+    second = scan_controlled_simple_bit_instructions(
+        _record(operand="B3:1/2", selector=0x39),
+        include_private_text=True,
+    )[0]
+
+    assert first.mnemonic == second.mnemonic == "XIC"
+    assert first.selector == second.selector == 0x39
+    assert first.selector_offset == second.selector_offset
+    assert first.operand == "B3:0/0"
+    assert second.operand == "B3:1/2"
+    assert first.operand_sha256 != second.operand_sha256
+
+
 def test_unknown_selector_and_incomplete_frame_remain_uninterpreted() -> None:
     assert not scan_controlled_simple_bit_instructions(
         _record(operand="B3:0/1", selector=0x99)

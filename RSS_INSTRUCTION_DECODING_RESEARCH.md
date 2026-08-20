@@ -239,6 +239,12 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
 
+An operand-only XIC comparison changed `B3:0/0` to `B3:1/2`. Only the two
+corresponding ASCII operand digits changed; selector `0x39`, selector offset,
+record length, and all observed framing bytes remained fixed. Together with
+the XIC-to-XIO mnemonic-only comparison, this satisfies both identity and
+operand-separation controls for XIC within the named profile.
+
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer
 requires the observed length-prefixed `B` bit operand and invariant record
