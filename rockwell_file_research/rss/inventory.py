@@ -29,7 +29,7 @@ from rockwell_file_research.rss.models import (
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v4"
+SCHEMA_VERSION = "rss-inventory/v5"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -287,10 +287,16 @@ def build_inventory(
                     "mnemonic": instruction.mnemonic,
                     "selector": instruction.selector,
                     "selector_offset": instruction.selector_offset,
-                    "operand_offset": instruction.operand_offset,
-                    "operand_length": instruction.operand_length,
-                    "operand_sha256": instruction.operand_sha256,
-                    "operand": instruction.operand,
+                    "operands": [
+                        {
+                            "role": operand.role,
+                            "offset": operand.offset,
+                            "length": operand.length,
+                            "sha256": operand.sha256,
+                            "value": operand.value,
+                        }
+                        for operand in instruction.operands
+                    ],
                     "evidence_profile": instruction.evidence_profile,
                 }
                 for instruction in inspected_program.instructions

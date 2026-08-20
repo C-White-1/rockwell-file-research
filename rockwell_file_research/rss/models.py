@@ -133,16 +133,23 @@ class RSSProgramOperandEvidence(TypedDict):
     rung_end_offset: int | None
 
 
+class RSSProgramInstructionOperandEvidence(TypedDict):
+    """One ordered instruction operand with an evidence-backed role."""
+
+    role: str
+    offset: int
+    length: int
+    sha256: str
+    value: str | None
+
+
 class RSSProgramInstructionEvidence(TypedDict):
     """Instruction identity supported by a controlled binary profile."""
 
     mnemonic: str
     selector: int
     selector_offset: int
-    operand_offset: int
-    operand_length: int
-    operand_sha256: str
-    operand: str | None
+    operands: list[RSSProgramInstructionOperandEvidence]
     evidence_profile: str
 
 

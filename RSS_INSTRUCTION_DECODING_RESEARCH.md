@@ -238,6 +238,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTE` | `0x2F` | `B3:0/1` |
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
+| `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 
 An operand-only XIC comparison changed `B3:0/0` to `B3:1/2`. Only the two
 corresponding ASCII operand digits changed; selector `0x39`, selector offset,
@@ -266,6 +267,13 @@ recognized instruction byte order follows displayed top-to-bottom branch-leg
 order for the controlled profile. Full branch-boundary semantics remain
 unimplemented; `CBranch` evidence is preserved without inferring a generic
 branch graph.
+
+The controlled MOV record stores source before destination. Source-only
+(`N7:0` to `N7:2`) and destination-only (`N7:1` to `N7:3`) comparisons changed
+only the expected ASCII digit. Selector `0x1C`, selector offset 182, operand
+offsets 167 and 174, qualifiers, and all surrounding bytes remained fixed.
+MOV is therefore exposed with ordered `source` and `destination` operands under
+profile `rslogix-micro-starter-lite/ml1100-series-b/mov/v1`.
 
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer

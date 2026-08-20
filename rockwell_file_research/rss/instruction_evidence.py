@@ -14,7 +14,20 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
     0x3A: "XIO",
 }
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
-_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
+_CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
+_SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
+_MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
+
+
+@dataclass(frozen=True)
+class InstructionOperandEvidence:
+    """One ordered instruction operand with an evidence-backed role."""
+
+    role: str
+    offset: int
+    length: int
+    sha256: str
+    value: str | None
 
 
 @dataclass(frozen=True)
@@ -24,11 +37,25 @@ class InstructionEvidence:
     mnemonic: str
     selector: int
     selector_offset: int
-    operand_offset: int
-    operand_length: int
-    operand_sha256: str
-    operand: str | None
+    operands: tuple[InstructionOperandEvidence, ...]
     evidence_profile: str
+
+
+def _operand(
+    *,
+    role: str,
+    offset: int,
+    value: bytes,
+    include_private_text: bool,
+) -> InstructionOperandEvidence:
+    decoded = value.decode("ascii")
+    return InstructionOperandEvidence(
+        role=role,
+        offset=offset,
+        length=len(value),
+        sha256=hashlib.sha256(value).hexdigest(),
+        value=decoded if include_private_text else None,
+    )
 
 
 def scan_controlled_simple_bit_instructions(
@@ -73,11 +100,105 @@ def scan_controlled_simple_bit_instructions(
                 mnemonic=mnemonic,
                 selector=selector,
                 selector_offset=selector_offset,
-                operand_offset=operand_offset,
-                operand_length=operand_length,
-                operand_sha256=hashlib.sha256(operand_bytes).hexdigest(),
-                operand=operand if include_private_text else None,
-                evidence_profile=_PROFILE,
+                operands=(
+                    _operand(
+                        role="operand",
+                        offset=operand_offset,
+                        value=operand_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=_SIMPLE_BIT_PROFILE,
             )
         )
     return evidence
+
+
+def scan_controlled_mov_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize MOV records matching the controlled two-word profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 20)):
+        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+            continue
+        source_length = payload[record_offset + 2]
+        source_offset = record_offset + 3
+        source_end = source_offset + source_length
+        if source_end + 3 >= len(payload):
+            continue
+        source_bytes = payload[source_offset:source_end]
+        if payload[source_end : source_end + 2] != b"\x01\x3f":
+            continue
+        destination_length_offset = source_end + 2
+        destination_length = payload[destination_length_offset]
+        destination_offset = destination_length_offset + 1
+        destination_end = destination_offset + destination_length
+        if destination_end + 11 > len(payload):
+            continue
+        destination_bytes = payload[destination_offset:destination_end]
+        try:
+            source = source_bytes.decode("ascii")
+            destination = destination_bytes.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if (
+            _CONTROLLED_WORD_OPERAND.fullmatch(source) is None
+            or _CONTROLLED_WORD_OPERAND.fullmatch(destination) is None
+        ):
+            continue
+        selector_offset = destination_end + 4
+        if payload[destination_end:selector_offset] != b"\x01\x3f\x00\x00":
+            continue
+        if payload[selector_offset] != 0x1C:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="MOV",
+                selector=0x1C,
+                selector_offset=selector_offset,
+                operands=(
+                    _operand(
+                        role="source",
+                        offset=source_offset,
+                        value=source_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                    _operand(
+                        role="destination",
+                        offset=destination_offset,
+                        value=destination_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=_MOV_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize every implemented controlled profile in source byte order."""
+
+    evidence = scan_controlled_simple_bit_instructions(
+        payload,
+        include_private_text=include_private_text,
+    )
+    evidence.extend(
+        scan_controlled_mov_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    return sorted(evidence, key=lambda item: item.selector_offset)

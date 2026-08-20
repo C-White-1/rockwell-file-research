@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from rockwell_file_research.rss.compressed_section import decompress_section
 from rockwell_file_research.rss.instruction_evidence import (
     InstructionEvidence,
-    scan_controlled_simple_bit_instructions,
+    scan_controlled_instructions,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
 
@@ -371,7 +371,7 @@ def inspect_program_file_section(
         uncompressed_sha256=section.uncompressed_sha256,
         text_regions=text_regions,
         operands=operands,
-        instructions=scan_controlled_simple_bit_instructions(
+        instructions=scan_controlled_instructions(
             section.payload,
             include_private_text=include_private_text,
         ),

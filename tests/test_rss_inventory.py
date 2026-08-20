@@ -229,7 +229,7 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
-    assert inventory["schema_version"] == "rss-inventory/v4"
+    assert inventory["schema_version"] == "rss-inventory/v5"
     assert program_files["instructions"] == []
     assert program_files["rung_records"] == [
         {
