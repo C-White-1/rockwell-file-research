@@ -5,6 +5,7 @@ from pathlib import Path
 
 from rockwell_file_research.rss.inventory import inventory_rss
 from rockwell_file_research.rss.models import RSSInventory
+from rockwell_file_research.rss.operand_csv import render_operand_inventory_csv
 
 
 def export_inventory(
@@ -13,6 +14,7 @@ def export_inventory(
     *,
     source_label: str | None = None,
     include_private_text: bool = False,
+    operand_csv_destination: Path | None = None,
 ) -> RSSInventory:
     """Write one deterministic RSS inventory JSON document."""
 
@@ -26,4 +28,10 @@ def export_inventory(
         json.dumps(inventory, indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
+    if operand_csv_destination is not None:
+        operand_csv_destination.parent.mkdir(parents=True, exist_ok=True)
+        operand_csv_destination.write_text(
+            render_operand_inventory_csv(inventory),
+            encoding="utf-8",
+        )
     return inventory

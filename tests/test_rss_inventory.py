@@ -1,5 +1,7 @@
 """Tests for privacy-preserving RSS structural inventorying."""
 
+import csv
+import io
 import zlib
 from datetime import UTC, datetime
 
@@ -12,6 +14,7 @@ from rockwell_file_research.rss.container import (
 )
 from rockwell_file_research.rss.errors import RSSInventoryError
 from rockwell_file_research.rss.inventory import build_inventory
+from rockwell_file_research.rss.operand_csv import render_operand_inventory_csv
 
 
 class SyntheticCompoundDocument:
@@ -272,3 +275,34 @@ def test_compressed_section_rejects_declared_length_mismatch() -> None:
 
     with pytest.raises(RSSInventoryError, match="compressed length mismatch"):
         decompress_section(malformed, section_name="DATA FILES")
+
+
+def test_operand_csv_lists_every_exact_source_operand_string(tmp_path) -> None:
+    source = tmp_path / "synthetic.rss"
+    source.write_bytes(b"source")
+    inventory = build_inventory(
+        source,
+        SyntheticCompoundDocument(),
+        include_private_text=True,
+    )
+
+    rows = list(csv.DictReader(io.StringIO(render_operand_inventory_csv(inventory))))
+
+    assert [row["operand"] for row in rows] == ["#N7:1", "B3:0/0"]
+    assert sum(int(row["occurrence_count"]) for row in rows) == 2
+    assert sum(int(row["direct_occurrence_count"]) for row in rows) == 1
+    assert sum(int(row["indirect_occurrence_count"]) for row in rows) == 1
+    assert all(row["program_files"] == "2 MAIN" for row in rows)
+    assert all(row["rung_locations"] == "2:0" for row in rows)
+
+
+def test_operand_csv_redacts_operand_and_program_names_by_default(tmp_path) -> None:
+    source = tmp_path / "synthetic.rss"
+    source.write_bytes(b"source")
+    inventory = build_inventory(source, SyntheticCompoundDocument())
+
+    rows = list(csv.DictReader(io.StringIO(render_operand_inventory_csv(inventory))))
+
+    assert all(row["operand"] == "" for row in rows)
+    assert all(len(row["operand_sha256"]) == 64 for row in rows)
+    assert all("MAIN" not in row["program_files"] for row in rows)

@@ -96,6 +96,7 @@ Create a read-only structural inventory with:
 uv run rss-inventory `
   "private-fixtures\controller.rss" `
   --output "private-outputs\controller-inventory.json" `
+  --operand-csv-output "private-outputs\controller-operands.csv" `
   --source-label fixture-001
 ```
 
@@ -108,6 +109,13 @@ discarded so later research can extend the reader without losing coverage.
 
 Vendor RSS projects and verbatim extracts remain private. Tests use only an
 in-memory synthetic compound document.
+
+The optional operand CSV contains one aggregate row per exact recovered source
+operand string. It reports total, direct, and indirect occurrences, program
+file coverage, distinct rung coverage, and all rung locations. Operand text and
+program names remain blank or hashed unless `--include-private-text` is used.
+This is an exact-string inventory rather than a claim that alternate address
+spellings are semantically equivalent.
 
 The `PROCESSOR` section receives conservative additional treatment. Printable
 regions are catalogued by classification, byte offset, length, and SHA-256,
