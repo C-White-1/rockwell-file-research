@@ -242,6 +242,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
+| `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -301,6 +302,11 @@ uses the shared qualified two-word recognizer under its own evidence profile.
 
 The field-identical SQR and MOV instruction records also differ only at their
 selectors: SQR uses `0x46`, while MOV uses `0x1C`. SQR therefore uses the same
+qualified two-word recognizer and ordered source/destination roles under its
+own evidence profile.
+
+The field-identical ABS and MOV instruction records differ only at their
+selectors: ABS uses `0x98`, while MOV uses `0x1C`. ABS therefore uses the same
 qualified two-word recognizer and ordered source/destination roles under its
 own evidence profile.
 

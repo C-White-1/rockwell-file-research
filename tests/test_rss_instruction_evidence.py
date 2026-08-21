@@ -3,6 +3,7 @@
 import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
+    scan_controlled_abs_instructions,
     scan_controlled_add_instructions,
     scan_controlled_clr_instructions,
     scan_controlled_ctd_instructions,
@@ -369,6 +370,24 @@ def test_sqr_differs_from_mov_only_by_controlled_selector() -> None:
     assert (sqr.mnemonic, sqr.selector) == ("SQR", 0x46)
     assert mov.selector_offset == sqr.selector_offset
     assert mov.operands == sqr.operands
+
+
+def test_abs_differs_from_mov_only_by_controlled_selector() -> None:
+    mov = scan_controlled_mov_instructions(
+        _mov_record(source="N7:0", destination="N7:1"),
+        include_private_text=True,
+    )[0]
+    abs_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    abs_payload[-8] = 0x98
+    absolute = scan_controlled_abs_instructions(
+        bytes(abs_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (mov.mnemonic, mov.selector) == ("MOV", 0x1C)
+    assert (absolute.mnemonic, absolute.selector) == ("ABS", 0x98)
+    assert mov.selector_offset == absolute.selector_offset
+    assert mov.operands == absolute.operands
 
 
 def test_add_selector_is_stable_across_independent_operand_changes() -> None:

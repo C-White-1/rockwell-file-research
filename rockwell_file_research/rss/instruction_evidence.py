@@ -22,6 +22,7 @@ _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
+_ABS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/abs/v1"
 _CLR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/clr/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
@@ -71,6 +72,7 @@ _QUALIFIED_WORD_IDENTITIES = {
         0x06,
     ),
     0x46: ("SQR", _SQR_PROFILE, ("source", "destination"), 0x04),
+    0x98: ("ABS", _ABS_PROFILE, ("source", "destination"), 0x04),
 }
 
 
@@ -303,6 +305,23 @@ def scan_controlled_sqr_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SQR"
+    ]
+
+
+def scan_controlled_abs_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ABS records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ABS"
     ]
 
 
