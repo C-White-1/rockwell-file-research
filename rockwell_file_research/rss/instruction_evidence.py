@@ -22,6 +22,7 @@ _CONTROLLED_MASK_OPERAND = re.compile(
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
@@ -51,6 +52,7 @@ _LFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfu/v1"
 _MVM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mvm/v1"
 _JMP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jmp/v1"
 _LBL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lbl/v1"
+_JSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jsr/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -71,9 +73,10 @@ _COUNTER_IDENTITIES = {
     0x11: ("CTU", _CTU_PROFILE),
     0x12: ("CTD", _CTD_PROFILE),
 }
-_LABEL_IDENTITIES = {
-    0x16: ("JMP", _JMP_PROFILE),
-    0x3B: ("LBL", _LBL_PROFILE),
+_SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
+    0x15: ("JSR", _JSR_PROFILE, "subroutine", _CONTROLLED_SUBROUTINE_OPERAND),
+    0x16: ("JMP", _JMP_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
+    0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -1234,12 +1237,12 @@ def scan_controlled_res_instructions(
     return evidence
 
 
-def _scan_controlled_label_instructions(
+def _scan_controlled_single_operand_program_control_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize controlled single-operand program-label records."""
+    """Recognize controlled single-operand program-control records."""
 
     evidence: list[InstructionEvidence] = []
     for operand_offset in range(3, len(payload)):
@@ -1253,19 +1256,21 @@ def _scan_controlled_label_instructions(
             operand = operand_bytes.decode("ascii")
         except UnicodeDecodeError:
             continue
-        if _CONTROLLED_LABEL_OPERAND.fullmatch(operand) is None:
-            continue
         selector_offset = operand_offset + operand_length + 2
         if payload[operand_offset + operand_length : selector_offset] != b"\x00\x00":
             continue
-        identity = _LABEL_IDENTITIES.get(payload[selector_offset])
+        identity = _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES.get(
+            payload[selector_offset]
+        )
         if identity is None:
+            continue
+        mnemonic, profile, role, pattern = identity
+        if pattern.fullmatch(operand) is None:
             continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
         ):
             continue
-        mnemonic, profile = identity
         evidence.append(
             InstructionEvidence(
                 mnemonic=mnemonic,
@@ -1273,7 +1278,7 @@ def _scan_controlled_label_instructions(
                 selector_offset=selector_offset,
                 operands=(
                     _operand(
-                        role="label",
+                        role=role,
                         offset=operand_offset,
                         value=operand_bytes,
                         include_private_text=include_private_text,
@@ -1294,7 +1299,7 @@ def scan_controlled_jmp_instructions(
 
     return [
         item
-        for item in _scan_controlled_label_instructions(
+        for item in _scan_controlled_single_operand_program_control_instructions(
             payload,
             include_private_text=include_private_text,
         )
@@ -1311,11 +1316,28 @@ def scan_controlled_lbl_instructions(
 
     return [
         item
-        for item in _scan_controlled_label_instructions(
+        for item in _scan_controlled_single_operand_program_control_instructions(
             payload,
             include_private_text=include_private_text,
         )
         if item.mnemonic == "LBL"
+    ]
+
+
+def scan_controlled_jsr_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize JSR records matching the controlled program-control profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_operand_program_control_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "JSR"
     ]
 
 
@@ -1463,7 +1485,7 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(
-        _scan_controlled_label_instructions(
+        _scan_controlled_single_operand_program_control_instructions(
             payload,
             include_private_text=include_private_text,
         )

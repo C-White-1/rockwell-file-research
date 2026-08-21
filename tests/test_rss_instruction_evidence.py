@@ -20,6 +20,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_grt_instructions,
     scan_controlled_instructions,
     scan_controlled_jmp_instructions,
+    scan_controlled_jsr_instructions,
     scan_controlled_lbl_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
@@ -1212,6 +1213,28 @@ def test_lbl_differs_from_jmp_only_by_controlled_selector() -> None:
     assert (lbl.mnemonic, lbl.selector) == ("LBL", 0x3B)
     assert jmp.selector_offset == lbl.selector_offset
     assert jmp.operands == lbl.operands
+
+
+def test_jsr_exposes_normalized_subroutine_file_operand() -> None:
+    result = scan_controlled_jsr_instructions(
+        _label_record(operand="U:3", selector=0x15),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("JSR", 0x15)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("subroutine", "U:3"),
+    ]
+
+
+def test_program_control_operands_remain_family_specific() -> None:
+    assert not scan_controlled_jsr_instructions(
+        _label_record(operand="Q2:1", selector=0x15)
+    )
+    assert not scan_controlled_jmp_instructions(
+        _label_record(operand="U:3", selector=0x16)
+    )
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:

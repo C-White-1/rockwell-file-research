@@ -247,6 +247,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
 | `CLR` | `0x14` | Destination `N7:0` |
+| `JSR` | `0x15` | Subroutine file `U:3` |
 | `JMP` | `0x16` | Label `Q2:1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
@@ -457,6 +458,11 @@ and reports it with role `label`.
 The controlled LBL record uses the same header and normalized `Q2:1` operand
 as JMP, but selector `0x3B`. The two instructions share the label-record
 recognizer while retaining separate evidence profiles.
+
+The controlled JSR instruction uses selector `0x15`, header `01 00`, and one
+unqualified subroutine-file operand. RSLogix normalized the entered file
+number `3` to `U:3`. The shared program-control scanner applies a distinct
+`U`-file grammar and `subroutine` role rather than treating it as a jump label.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
