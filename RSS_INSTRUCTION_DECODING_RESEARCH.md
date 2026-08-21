@@ -240,6 +240,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 
 | Mnemonic | Selector | Controlled operand comparison |
 | --- | ---: | --- |
+| `MCR` | `0x08` | No operands |
 | `RET` | `0x09` | No operands |
 | `XIC` | `0x39` | `B3:0/0` |
 | `XIO` | `0x3A` | `B3:0/0` |
@@ -473,6 +474,10 @@ trailer; no textual operand is present.
 The controlled RET instruction uses the same zero-operand frame and standard
 trailer as SBR, but selector `0x09`. It is retained as a distinct
 subroutine-return profile rather than inferred from SBR's semantics.
+
+The controlled MCR instruction uses the same zero-operand frame with selector
+`0x08`. This confirms record identity only: an isolated fixture does not prove
+MCR zone pairing, nesting, or execution semantics.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

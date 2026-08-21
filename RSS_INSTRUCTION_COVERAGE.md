@@ -25,6 +25,7 @@ opcodes.
 
 | Instruction | Selector | Operand roles | Status |
 | --- | ---: | --- | --- |
+| `MCR` | `0x08` | none | Confirmed |
 | `RET` | `0x09` | none | Confirmed |
 | `CTU` | `0x11` | counter, preset, accumulator | Confirmed |
 | `CTD` | `0x12` | counter, preset, accumulator | Confirmed |
@@ -75,7 +76,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **49**.
+Confirmed total: **50**.
 
 ## Unavailable instruction records
 
@@ -101,7 +102,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Program control: `MCR`, `SUS`, `TND`,
+- Program control: `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.

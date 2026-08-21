@@ -27,6 +27,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_lfl_instructions,
     scan_controlled_lfu_instructions,
     scan_controlled_lim_instructions,
+    scan_controlled_mcr_instructions,
     scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
@@ -1259,6 +1260,16 @@ def test_ret_differs_from_sbr_only_by_controlled_selector() -> None:
     assert (sbr.mnemonic, sbr.selector) == ("SBR", 0x3D)
     assert ret.selector_offset == sbr.selector_offset
     assert ret.operands == sbr.operands == ()
+
+
+def test_mcr_differs_from_other_zero_operand_markers_by_selector() -> None:
+    mcr = scan_controlled_mcr_instructions(_zero_operand_record(0x08))[0]
+    ret = scan_controlled_ret_instructions(_zero_operand_record(0x09))[0]
+
+    assert (mcr.mnemonic, mcr.selector) == ("MCR", 0x08)
+    assert (ret.mnemonic, ret.selector) == ("RET", 0x09)
+    assert mcr.selector_offset == ret.selector_offset
+    assert mcr.operands == ret.operands == ()
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:

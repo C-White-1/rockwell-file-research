@@ -55,6 +55,7 @@ _LBL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lbl/v1"
 _JSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jsr/v1"
 _SBR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sbr/v1"
 _RET_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ret/v1"
+_MCR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mcr/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -81,6 +82,7 @@ _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
 }
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
+    0x08: ("MCR", _MCR_PROFILE),
     0x09: ("RET", _RET_PROFILE),
     0x3D: ("SBR", _SBR_PROFILE),
 }
@@ -1395,6 +1397,16 @@ def scan_controlled_ret_instructions(payload: bytes) -> list[InstructionEvidence
         item
         for item in _scan_controlled_zero_operand_program_control_instructions(payload)
         if item.mnemonic == "RET"
+    ]
+
+
+def scan_controlled_mcr_instructions(payload: bytes) -> list[InstructionEvidence]:
+    """Recognize MCR records matching the controlled zero-operand profile."""
+
+    return [
+        item
+        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        if item.mnemonic == "MCR"
     ]
 
 
