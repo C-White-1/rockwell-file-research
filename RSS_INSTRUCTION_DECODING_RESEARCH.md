@@ -270,6 +270,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
+| `BSL` | `0x2C` | File `#B3:1`; control `R6:0`; bit `B3:0/1`; length `16` |
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
 | `NEQ` | `0x33` | Source A `N7:0`; source B `N7:1` |
 | `GRT` | `0x34` | Source A `N7:0`; source B `N7:1` |
@@ -525,6 +526,11 @@ The controlled UIF record uses selector `0xAA` with the same header, literal
 mask, grammar, and operand role. Together the fixtures establish the contiguous
 UID/UIE/UIF selector sequence `0xA8`/`0xA9`/`0xAA` without relying on that
 sequence to infer any untested instruction.
+
+The controlled BSL instruction uses selector `0x2C`, header `04 00`, and four
+unqualified fields ordered `file`, `control`, `bit_address`, and `length`.
+RSLogix displays EN and DN status indicators for the instruction, but they are
+not additional textual operands in the observed record.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

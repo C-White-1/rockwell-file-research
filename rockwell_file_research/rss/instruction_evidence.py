@@ -13,6 +13,7 @@ _CONTROLLED_MASK_OPERAND = re.compile(
     re.IGNORECASE,
 )
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_FILE_BIT_OPERAND = re.compile(r"^#B\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
@@ -56,6 +57,7 @@ _SUS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sus/v1"
 _UIE_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uie/v1"
 _UID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uid/v1"
 _UIF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uif/v1"
+_BSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsl/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -103,6 +105,9 @@ _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
 _EDGE_OUTPUT_IDENTITIES = {
     0x9D: ("OSF", _OSF_PROFILE),
     0x9E: ("OSR", _OSR_PROFILE),
+}
+_SHIFT_IDENTITIES = {
+    0x2C: ("BSL", _BSL_PROFILE),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -494,6 +499,95 @@ def scan_controlled_osf_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "OSF"
+    ]
+
+
+def _scan_controlled_shift_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled four-field shift instruction records."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(4):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 4 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 2] != b"\x00\x00":
+            continue
+        selector_offset = cursor + 2
+        identity = _SHIFT_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (
+            _CONTROLLED_FILE_BIT_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_BIT_OPERAND,
+            _CONTROLLED_INTEGER,
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        mnemonic, profile = identity
+        roles = ("file", "control", "bit_address", "length")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_bsl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize BSL records matching the controlled shift profile."""
+
+    return [
+        item
+        for item in _scan_controlled_shift_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "BSL"
     ]
 
 
@@ -1772,6 +1866,12 @@ def scan_controlled_instructions(
     evidence.extend(_scan_controlled_zero_operand_program_control_instructions(payload))
     evidence.extend(
         _scan_controlled_edge_output_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        _scan_controlled_shift_instructions(
             payload,
             include_private_text=include_private_text,
         )

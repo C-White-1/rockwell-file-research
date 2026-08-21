@@ -6,6 +6,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_abs_instructions,
     scan_controlled_add_instructions,
     scan_controlled_and_instructions,
+    scan_controlled_bsl_instructions,
     scan_controlled_clr_instructions,
     scan_controlled_cop_instructions,
     scan_controlled_ctd_instructions,
@@ -79,6 +80,17 @@ def _edge_output_record(*, selector: int) -> bytes:
     fields = (b"B3:0/1", b"B3:0/2")
     return (
         b"\x02\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00"
+        + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _shift_record(*, selector: int) -> bytes:
+    fields = (b"#B3:1", b"R6:0", b"B3:0/1", b"16")
+    return (
+        b"\x04\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00"
         + bytes([selector])
@@ -397,6 +409,22 @@ def test_osf_differs_from_osr_only_by_controlled_selector() -> None:
     assert (osr.mnemonic, osr.selector) == ("OSR", 0x9E)
     assert osf.selector_offset == osr.selector_offset
     assert osf.operands == osr.operands
+
+
+def test_bsl_exposes_ordered_shift_operands() -> None:
+    result = scan_controlled_bsl_instructions(
+        _shift_record(selector=0x2C),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("BSL", 0x2C)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("file", "#B3:1"),
+        ("control", "R6:0"),
+        ("bit_address", "B3:0/1"),
+        ("length", "16"),
+    ]
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:
