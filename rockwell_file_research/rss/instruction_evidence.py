@@ -21,6 +21,7 @@ _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
+_SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
 _CLR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/clr/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
@@ -69,6 +70,7 @@ _QUALIFIED_WORD_IDENTITIES = {
         ("source_a", "source_b", "destination"),
         0x06,
     ),
+    0x46: ("SQR", _SQR_PROFILE, ("source", "destination"), 0x04),
 }
 
 
@@ -284,6 +286,23 @@ def scan_controlled_neg_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "NEG"
+    ]
+
+
+def scan_controlled_sqr_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SQR records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SQR"
     ]
 
 
