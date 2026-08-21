@@ -37,6 +37,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_or_instructions,
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
+    scan_controlled_sbr_instructions,
     scan_controlled_scl_instructions,
     scan_controlled_scp_instructions,
     scan_controlled_simple_bit_instructions,
@@ -275,6 +276,10 @@ def _label_record(*, operand: str, selector: int) -> bytes:
         + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
+
+
+def _zero_operand_record(selector: int) -> bytes:
+    return b"\x00\x00\x00\x00" + bytes([selector]) + b"\x00\x00\x00\x00\x00\x0b\x80"
 
 
 def _counter_record(
@@ -1235,6 +1240,14 @@ def test_program_control_operands_remain_family_specific() -> None:
     assert not scan_controlled_jmp_instructions(
         _label_record(operand="U:3", selector=0x16)
     )
+
+
+def test_sbr_is_a_zero_operand_program_control_marker() -> None:
+    result = scan_controlled_sbr_instructions(_zero_operand_record(0x3D))
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SBR", 0x3D)
+    assert result[0].operands == ()
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:

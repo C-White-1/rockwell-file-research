@@ -53,6 +53,7 @@ _MVM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mvm/v1"
 _JMP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jmp/v1"
 _LBL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lbl/v1"
 _JSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jsr/v1"
+_SBR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sbr/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -77,6 +78,9 @@ _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x15: ("JSR", _JSR_PROFILE, "subroutine", _CONTROLLED_SUBROUTINE_OPERAND),
     0x16: ("JMP", _JMP_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
+}
+_ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
+    0x3D: ("SBR", _SBR_PROFILE),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -1341,6 +1345,47 @@ def scan_controlled_jsr_instructions(
     ]
 
 
+def _scan_controlled_zero_operand_program_control_instructions(
+    payload: bytes,
+) -> list[InstructionEvidence]:
+    """Recognize controlled zero-operand program-control records."""
+
+    evidence: list[InstructionEvidence] = []
+    for selector_offset in range(4, max(4, len(payload) - 7)):
+        if payload[selector_offset - 4 : selector_offset] != b"\x00\x00\x00\x00":
+            continue
+        identity = _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES.get(
+            payload[selector_offset]
+        )
+        if identity is None:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        mnemonic, profile = identity
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=(),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_sbr_instructions(payload: bytes) -> list[InstructionEvidence]:
+    """Recognize SBR records matching the controlled zero-operand profile."""
+
+    return [
+        item
+        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        if item.mnemonic == "SBR"
+    ]
+
+
 def _scan_controlled_counter_instructions(
     payload: bytes,
     *,
@@ -1490,4 +1535,5 @@ def scan_controlled_instructions(
             include_private_text=include_private_text,
         )
     )
+    evidence.extend(_scan_controlled_zero_operand_program_control_instructions(payload))
     return sorted(evidence, key=lambda item: item.selector_offset)

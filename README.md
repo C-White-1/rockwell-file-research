@@ -220,8 +220,8 @@ meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
-FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, and JSR only
-when a record
+FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, and SBR
+only when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
@@ -252,6 +252,7 @@ CTU and CTD report counter, preset, and accumulator under their controlled
 profiles.
 JMP and LBL report their normalized `Q`-file label operands.
 JSR reports its normalized `U`-file subroutine operand.
+SBR reports no operands and acts as a subroutine-entry marker.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

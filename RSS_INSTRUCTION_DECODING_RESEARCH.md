@@ -243,6 +243,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `XIC` | `0x39` | `B3:0/0` |
 | `XIO` | `0x3A` | `B3:0/0` |
 | `LBL` | `0x3B` | Label `Q2:1` |
+| `SBR` | `0x3D` | No operands |
 | `OTE` | `0x2F` | `B3:0/1` |
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
@@ -463,6 +464,10 @@ The controlled JSR instruction uses selector `0x15`, header `01 00`, and one
 unqualified subroutine-file operand. RSLogix normalized the entered file
 number `3` to `U:3`. The shared program-control scanner applies a distinct
 `U`-file grammar and `subroutine` role rather than treating it as a jump label.
+
+The controlled SBR instruction is a zero-operand subroutine-entry marker. Its
+record uses selector `0x3D`, a zero operand header, and the standard instruction
+trailer; no textual operand is present.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

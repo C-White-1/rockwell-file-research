@@ -58,6 +58,7 @@ opcodes.
 | `XIC` | `0x39` | operand | Confirmed |
 | `XIO` | `0x3A` | operand | Confirmed |
 | `LBL` | `0x3B` | label | Confirmed |
+| `SBR` | `0x3D` | none | Confirmed |
 | `SQR` | `0x46` | source, destination | Confirmed |
 | `RTO` | `0xA3` | timer, time_base, preset, accumulator | Confirmed |
 | `TOF` | `0xA6` | timer, time_base, preset, accumulator | Confirmed |
@@ -73,7 +74,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **47**.
+Confirmed total: **48**.
 
 ## Unavailable instruction records
 
@@ -99,7 +100,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Program control: `SBR`, `RET`, `MCR`, `SUS`, `TND`,
+- Program control: `RET`, `MCR`, `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
