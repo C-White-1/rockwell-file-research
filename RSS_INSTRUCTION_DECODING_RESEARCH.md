@@ -290,6 +290,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `FRD` | `0x18` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
+| `UID` | `0xA8` | Interrupt types `1` |
 | `UIE` | `0xA9` | Interrupt types `1` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -514,6 +515,10 @@ falling-edge evidence profile.
 The controlled UIE instruction uses selector `0xA9`, header `01 00`, and one
 unqualified decimal interrupt-type mask. The entered value `1` remained
 serialized as `1` and is reported with role `interrupt_types`.
+
+The controlled UID record is field-identical to UIE but uses selector `0xA8`.
+It shares the integer-only `interrupt_types` grammar while retaining a separate
+interrupt-disable evidence profile.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

@@ -67,6 +67,7 @@ opcodes.
 | `RTO` | `0xA3` | timer, time_base, preset, accumulator | Confirmed |
 | `TOF` | `0xA6` | timer, time_base, preset, accumulator | Confirmed |
 | `TON` | `0xA7` | timer, time_base, preset, accumulator | Confirmed |
+| `UID` | `0xA8` | interrupt_types | Confirmed |
 | `UIE` | `0xA9` | interrupt_types | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 | `ONS` | `0xAB` | storage_bit | Confirmed |
@@ -82,7 +83,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **56**.
+Confirmed total: **57**.
 
 ## Unavailable instruction records
 
@@ -109,7 +110,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Bit and edge control: `UID`, `UIF`.
+- Bit and edge control: `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
 - Process and control: `PID`, `PTO`, `PWM`, `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.
