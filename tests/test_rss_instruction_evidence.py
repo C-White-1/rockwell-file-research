@@ -12,6 +12,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_instructions,
+    scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
@@ -465,6 +466,26 @@ def test_les_uses_two_comparison_source_roles() -> None:
         ("source_a", "N7:0"),
         ("source_b", "N7:1"),
     ]
+
+
+def test_leq_differs_from_les_only_by_controlled_selector() -> None:
+    les_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    les_payload[-8] = 0x36
+    les = scan_controlled_les_instructions(
+        bytes(les_payload),
+        include_private_text=True,
+    )[0]
+    leq_payload = bytearray(les_payload)
+    leq_payload[-8] = 0x37
+    leq = scan_controlled_leq_instructions(
+        bytes(leq_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (les.mnemonic, les.selector) == ("LES", 0x36)
+    assert (leq.mnemonic, leq.selector) == ("LEQ", 0x37)
+    assert les.selector_offset == leq.selector_offset
+    assert les.operands == leq.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
