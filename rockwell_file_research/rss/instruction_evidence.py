@@ -33,6 +33,7 @@ _GEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/geq/v1"
 _MEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/meq/v1"
 _LIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lim/v1"
 _SCP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scp/v1"
+_SCL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scl/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -111,6 +112,12 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x37: ("LEQ", _LEQ_PROFILE, ("source_a", "source_b"), 0x04),
     0x38: ("MEQ", _MEQ_PROFILE, ("source", "mask", "compare"), 0x06),
     0x3F: ("LIM", _LIM_PROFILE, ("low_limit", "test", "high_limit"), 0x06),
+    0x45: (
+        "SCL",
+        _SCL_PROFILE,
+        ("source", "rate", "offset", "destination"),
+        0x08,
+    ),
     0x95: (
         "SCP",
         _SCP_PROFILE,
@@ -238,6 +245,7 @@ def _scan_controlled_qualified_word_instructions(
             0x02,
             0x04,
             0x06,
+            0x08,
             0x0C,
         }:
             continue
@@ -550,6 +558,23 @@ def scan_controlled_scp_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SCP"
+    ]
+
+
+def scan_controlled_scl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SCL records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SCL"
     ]
 
 

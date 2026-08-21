@@ -58,8 +58,9 @@ opcodes.
 | `TON` | `0xA7` | timer, time_base, preset, accumulator | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
+| `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 
-Confirmed total: **33**.
+Confirmed total: **34**.
 
 ## Unavailable instruction records
 
@@ -74,7 +75,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Arithmetic and conversion: `SCL`, `SWP`, `TOD`, `FRD`,
+- Arithmetic and conversion: `SWP`, `TOD`, `FRD`,
   `DEG`, `RAD`, `XPY`.
 - Mathematical: `ACS`, `ASN`, `ATN`, `COS`, `LN`, `LOG`, `SIN`, `TAN`.
 - File and data: `COP`, `FLL`, `FFL`, `FFU`, `LFL`, `LFU`, `MVM`.
@@ -114,6 +115,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned fixture candidate is `SCL`. Its availability and operand
+The next planned fixture candidate is `SWP`. Its availability and operand
 fields must first be confirmed in the selected processor's instruction
 palette before assigning a filename.
