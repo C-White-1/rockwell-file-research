@@ -25,6 +25,7 @@ _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
 _ABS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/abs/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
+_XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
 _CLR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/clr/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
@@ -58,6 +59,12 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x24: (
         "OR",
         _OR_PROFILE,
+        ("source_a", "source_b", "destination"),
+        0x06,
+    ),
+    0x25: (
+        "XOR",
+        _XOR_PROFILE,
         ("source_a", "source_b", "destination"),
         0x06,
     ),
@@ -370,6 +377,23 @@ def scan_controlled_or_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "OR"
+    ]
+
+
+def scan_controlled_xor_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize XOR records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "XOR"
     ]
 
 

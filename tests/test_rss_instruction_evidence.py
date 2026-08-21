@@ -22,6 +22,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_sub_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
+    scan_controlled_xor_instructions,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
@@ -432,6 +433,28 @@ def test_or_differs_from_and_only_by_controlled_selector() -> None:
     assert (bitwise_or.mnemonic, bitwise_or.selector) == ("OR", 0x24)
     assert bitwise_and.selector_offset == bitwise_or.selector_offset
     assert bitwise_and.operands == bitwise_or.operands
+
+
+def test_xor_differs_from_and_only_by_controlled_selector() -> None:
+    and_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    and_payload[-8] = 0x23
+    bitwise_and = scan_controlled_and_instructions(
+        bytes(and_payload),
+        include_private_text=True,
+    )[0]
+    xor_payload = bytearray(and_payload)
+    xor_payload[-8] = 0x25
+    bitwise_xor = scan_controlled_xor_instructions(
+        bytes(xor_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (bitwise_and.mnemonic, bitwise_and.selector) == ("AND", 0x23)
+    assert (bitwise_xor.mnemonic, bitwise_xor.selector) == ("XOR", 0x25)
+    assert bitwise_and.selector_offset == bitwise_xor.selector_offset
+    assert bitwise_and.operands == bitwise_xor.operands
 
 
 def test_add_selector_is_stable_across_independent_operand_changes() -> None:

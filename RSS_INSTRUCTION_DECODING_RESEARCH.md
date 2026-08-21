@@ -245,6 +245,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `OR` | `0x24` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
+| `XOR` | `0x25` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -321,6 +322,12 @@ The field-identical AND and OR instruction records differ only at their
 selectors: AND uses `0x23`, while OR uses `0x24`. OR therefore uses the same
 qualified three-word recognizer and ordered operand roles under its own
 evidence profile.
+
+The field-identical XOR, AND, and OR records establish an adjacent bitwise
+selector family: AND uses `0x23`, OR uses `0x24`, and XOR uses `0x25`. XOR's
+surrounding serialization moves its record by one byte, but its isolated
+framing and operands are unchanged. XOR therefore uses the shared qualified
+three-word recognizer under its own evidence profile.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
