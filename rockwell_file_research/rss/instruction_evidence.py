@@ -55,6 +55,7 @@ _MCR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mcr/v1"
 _SUS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sus/v1"
 _UIE_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uie/v1"
 _UID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uid/v1"
+_UIF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uif/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -91,6 +92,7 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0xA8: ("UID", _UID_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
+    0xAA: ("UIF", _UIF_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
 }
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x08: ("MCR", _MCR_PROFILE),
@@ -1527,6 +1529,23 @@ def scan_controlled_uid_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "UID"
+    ]
+
+
+def scan_controlled_uif_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize UIF records matching the controlled interrupt profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "UIF"
     ]
 
 

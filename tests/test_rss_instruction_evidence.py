@@ -56,6 +56,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ton_instructions,
     scan_controlled_uid_instructions,
     scan_controlled_uie_instructions,
+    scan_controlled_uif_instructions,
     scan_controlled_xor_instructions,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
@@ -1352,6 +1353,29 @@ def test_uid_differs_from_uie_only_by_controlled_selector() -> None:
     assert (uie.mnemonic, uie.selector) == ("UIE", 0xA9)
     assert uid.selector_offset == uie.selector_offset
     assert uid.operands == uie.operands
+
+
+def test_uif_completes_contiguous_interrupt_selector_family() -> None:
+    uid = scan_controlled_uid_instructions(
+        _label_record(operand="1", selector=0xA8),
+        include_private_text=True,
+    )[0]
+    uie = scan_controlled_uie_instructions(
+        _label_record(operand="1", selector=0xA9),
+        include_private_text=True,
+    )[0]
+    uif = scan_controlled_uif_instructions(
+        _label_record(operand="1", selector=0xAA),
+        include_private_text=True,
+    )[0]
+
+    assert [(item.mnemonic, item.selector) for item in (uid, uie, uif)] == [
+        ("UID", 0xA8),
+        ("UIE", 0xA9),
+        ("UIF", 0xAA),
+    ]
+    assert uid.selector_offset == uie.selector_offset == uif.selector_offset
+    assert uid.operands == uie.operands == uif.operands
 
 
 def test_sbr_is_a_zero_operand_program_control_marker() -> None:

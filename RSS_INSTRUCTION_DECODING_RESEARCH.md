@@ -292,6 +292,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `UID` | `0xA8` | Interrupt types `1` |
 | `UIE` | `0xA9` | Interrupt types `1` |
+| `UIF` | `0xAA` | Interrupt types `1` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RES` | `0x13` | Timer `T4:0` or counter `C5:0` |
@@ -519,6 +520,11 @@ serialized as `1` and is reported with role `interrupt_types`.
 The controlled UID record is field-identical to UIE but uses selector `0xA8`.
 It shares the integer-only `interrupt_types` grammar while retaining a separate
 interrupt-disable evidence profile.
+
+The controlled UIF record uses selector `0xAA` with the same header, literal
+mask, grammar, and operand role. Together the fixtures establish the contiguous
+UID/UIE/UIF selector sequence `0xA8`/`0xA9`/`0xAA` without relying on that
+sequence to infer any untested instruction.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
