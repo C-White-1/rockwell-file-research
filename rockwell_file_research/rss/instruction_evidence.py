@@ -50,6 +50,7 @@ _LFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfl/v1"
 _LFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfu/v1"
 _MVM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mvm/v1"
 _JMP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jmp/v1"
+_LBL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lbl/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -72,6 +73,7 @@ _COUNTER_IDENTITIES = {
 }
 _LABEL_IDENTITIES = {
     0x16: ("JMP", _JMP_PROFILE),
+    0x3B: ("LBL", _LBL_PROFILE),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -1297,6 +1299,23 @@ def scan_controlled_jmp_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "JMP"
+    ]
+
+
+def scan_controlled_lbl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize LBL records matching the controlled label profile."""
+
+    return [
+        item
+        for item in _scan_controlled_label_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "LBL"
     ]
 
 

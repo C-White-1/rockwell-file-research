@@ -242,6 +242,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | --- | ---: | --- |
 | `XIC` | `0x39` | `B3:0/0` |
 | `XIO` | `0x3A` | `B3:0/0` |
+| `LBL` | `0x3B` | Label `Q2:1` |
 | `OTE` | `0x2F` | `B3:0/1` |
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
@@ -452,6 +453,10 @@ The controlled JMP instruction uses selector `0x16`, header `01 00`, and one
 unqualified label operand. RSLogix normalized the entered label number `1` to
 `Q2:1`; the recognizer therefore requires the observed `Q`-file address form
 and reports it with role `label`.
+
+The controlled LBL record uses the same header and normalized `Q2:1` operand
+as JMP, but selector `0x3B`. The two instructions share the label-record
+recognizer while retaining separate evidence profiles.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

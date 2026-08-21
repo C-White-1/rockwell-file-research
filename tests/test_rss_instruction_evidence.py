@@ -20,6 +20,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_grt_instructions,
     scan_controlled_instructions,
     scan_controlled_jmp_instructions,
+    scan_controlled_lbl_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
     scan_controlled_lfl_instructions,
@@ -1195,6 +1196,22 @@ def test_jmp_rejects_non_label_operand_family() -> None:
     assert not scan_controlled_jmp_instructions(
         _label_record(operand="N7:1", selector=0x16)
     )
+
+
+def test_lbl_differs_from_jmp_only_by_controlled_selector() -> None:
+    jmp = scan_controlled_jmp_instructions(
+        _label_record(operand="Q2:1", selector=0x16),
+        include_private_text=True,
+    )[0]
+    lbl = scan_controlled_lbl_instructions(
+        _label_record(operand="Q2:1", selector=0x3B),
+        include_private_text=True,
+    )[0]
+
+    assert (jmp.mnemonic, jmp.selector) == ("JMP", 0x16)
+    assert (lbl.mnemonic, lbl.selector) == ("LBL", 0x3B)
+    assert jmp.selector_offset == lbl.selector_offset
+    assert jmp.operands == lbl.operands
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:
