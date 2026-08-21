@@ -215,11 +215,11 @@ may represent constants, expressions, labels, configuration strings, or
 comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
-OTE, OTL, OTU, MOV, ADD, TON, RTO, TOF, RES, CTU, and CTD only when a record
+OTE, OTL, OTU, MOV, ADD, SUB, TON, RTO, TOF, RES, CTU, and CTD only when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
-ADD reports `source_a`, `source_b`, and `destination`. Meanwhile,
+ADD and SUB report `source_a`, `source_b`, and `destination`. Meanwhile,
 TON, RTO, and TOF report timer, time base, preset, and accumulator. Unknown or differently
 framed selectors stay uninterpreted. RES currently accepts controlled timer and
 counter operand forms.

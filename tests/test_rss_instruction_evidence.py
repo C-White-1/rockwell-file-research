@@ -11,6 +11,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
     scan_controlled_simple_bit_instructions,
+    scan_controlled_sub_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
 )
@@ -329,6 +330,26 @@ def test_add_selector_is_stable_across_independent_operand_changes() -> None:
         ("N7:0", "N7:4", "N7:2"),
         ("N7:0", "N7:1", "N7:5"),
     ]
+
+
+def test_sub_differs_from_add_only_by_controlled_selector() -> None:
+    add = scan_controlled_add_instructions(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2"),
+        include_private_text=True,
+    )[0]
+    sub_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    sub_payload[-8] = 0x28
+    sub = scan_controlled_sub_instructions(
+        bytes(sub_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (add.mnemonic, add.selector) == ("ADD", 0x27)
+    assert (sub.mnemonic, sub.selector) == ("SUB", 0x28)
+    assert add.selector_offset == sub.selector_offset
+    assert add.operands == sub.operands
 
 
 def test_combined_scanner_returns_xic_before_mov() -> None:

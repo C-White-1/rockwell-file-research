@@ -240,6 +240,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTU` | `0x31` | `B3:0/1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
+| `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -288,6 +289,10 @@ changes to each field altered only its expected ASCII digit. Selector `0x27`,
 selector offset 189, qualifiers, other operands, and framing remained fixed.
 MOV and ADD therefore share a qualified-word structural recognizer while
 retaining separate evidence profiles.
+
+The field-identical ADD and SUB fixtures differ only at selector offset 189:
+ADD uses `0x27`, while SUB uses `0x28`. SUB therefore uses the same qualified
+three-word recognizer and operand roles under its own evidence profile.
 
 The controlled TON record contains four consecutive length-prefixed fields:
 timer, time base, preset, and accumulator. Preset-only (`5` to `7`) and
