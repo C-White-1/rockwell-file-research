@@ -6,6 +6,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_add_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
+    scan_controlled_div_instructions,
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
@@ -371,6 +372,26 @@ def test_mul_differs_from_add_only_by_controlled_selector() -> None:
     assert (mul.mnemonic, mul.selector) == ("MUL", 0x29)
     assert add.selector_offset == mul.selector_offset
     assert add.operands == mul.operands
+
+
+def test_div_differs_from_add_only_by_controlled_selector() -> None:
+    add = scan_controlled_add_instructions(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2"),
+        include_private_text=True,
+    )[0]
+    div_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    div_payload[-8] = 0x2A
+    div = scan_controlled_div_instructions(
+        bytes(div_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (add.mnemonic, add.selector) == ("ADD", 0x27)
+    assert (div.mnemonic, div.selector) == ("DIV", 0x2A)
+    assert add.selector_offset == div.selector_offset
+    assert add.operands == div.operands
 
 
 def test_combined_scanner_returns_xic_before_mov() -> None:

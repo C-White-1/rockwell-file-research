@@ -23,6 +23,7 @@ _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
 _MUL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mul/v1"
+_DIV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/div/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
 _RTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rto/v1"
 _TOF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tof/v1"
@@ -55,6 +56,12 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x29: (
         "MUL",
         _MUL_PROFILE,
+        ("source_a", "source_b", "destination"),
+        0x06,
+    ),
+    0x2A: (
+        "DIV",
+        _DIV_PROFILE,
         ("source_a", "source_b", "destination"),
         0x06,
     ),
@@ -290,6 +297,23 @@ def scan_controlled_mul_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "MUL"
+    ]
+
+
+def scan_controlled_div_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize DIV records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "DIV"
     ]
 
 

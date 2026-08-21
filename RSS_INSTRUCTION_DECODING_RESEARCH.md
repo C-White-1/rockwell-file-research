@@ -242,6 +242,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
+| `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -291,11 +292,14 @@ selector offset 189, qualifiers, other operands, and framing remained fixed.
 MOV and ADD therefore share a qualified-word structural recognizer while
 retaining separate evidence profiles.
 
-The field-identical ADD, SUB, and MUL fixtures differ only at selector offset
-189: ADD uses `0x27`, SUB uses `0x28`, and MUL uses `0x29`. SUB and MUL
-therefore use the same qualified three-word recognizer and operand roles under
-their own evidence profiles. This adjacency is evidence of a related selector
-family, but it is not used to infer untested instructions.
+The field-identical ADD, SUB, MUL, and DIV instruction records differ only at
+their selectors: ADD uses `0x27`, SUB uses `0x28`, MUL uses `0x29`, and DIV
+uses `0x2A`. DIV's record begins at offset 162 rather than 164 because its
+surrounding file serialization differs by two bytes, but the isolated record
+has the same framing and fields. All four therefore use the same qualified
+three-word recognizer and operand roles under their own evidence profiles.
+This adjacency is evidence of a related selector family, but it is not used to
+infer untested instructions.
 
 The controlled TON record contains four consecutive length-prefixed fields:
 timer, time base, preset, and accumulator. Preset-only (`5` to `7`) and
