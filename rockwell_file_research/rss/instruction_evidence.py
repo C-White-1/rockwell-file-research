@@ -57,6 +57,7 @@ _SBR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sbr/v1"
 _RET_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ret/v1"
 _MCR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mcr/v1"
 _SUS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sus/v1"
+_TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -86,6 +87,7 @@ _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x08: ("MCR", _MCR_PROFILE),
     0x09: ("RET", _RET_PROFILE),
+    0x0B: ("TND", _TND_PROFILE),
     0x3D: ("SBR", _SBR_PROFILE),
 }
 _TIMER_IDENTITIES = {
@@ -1426,6 +1428,16 @@ def scan_controlled_mcr_instructions(payload: bytes) -> list[InstructionEvidence
         item
         for item in _scan_controlled_zero_operand_program_control_instructions(payload)
         if item.mnemonic == "MCR"
+    ]
+
+
+def scan_controlled_tnd_instructions(payload: bytes) -> list[InstructionEvidence]:
+    """Recognize TND records matching the controlled zero-operand profile."""
+
+    return [
+        item
+        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        if item.mnemonic == "TND"
     ]
 
 

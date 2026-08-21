@@ -242,6 +242,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | --- | ---: | --- |
 | `MCR` | `0x08` | No operands |
 | `RET` | `0x09` | No operands |
+| `TND` | `0x0B` | No operands |
 | `XIC` | `0x39` | `B3:0/0` |
 | `XIO` | `0x3A` | `B3:0/0` |
 | `LBL` | `0x3B` | Label `Q2:1` |
@@ -483,6 +484,10 @@ MCR zone pairing, nesting, or execution semantics.
 The controlled SUS instruction uses selector `0x1F`, header `01 00`, and one
 unqualified decimal identifier. The entered value `1` remained serialized as
 `1`; it is reported with role `suspend_id` and an integer-only operand grammar.
+
+The controlled TND instruction uses selector `0x0B` and the shared
+zero-operand frame. The evidence confirms its temporary-end identity and lack
+of operands, but does not independently prove runtime scan-cycle semantics.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

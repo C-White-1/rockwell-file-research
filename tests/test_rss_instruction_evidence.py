@@ -47,6 +47,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_sub_instructions,
     scan_controlled_sus_instructions,
     scan_controlled_swp_instructions,
+    scan_controlled_tnd_instructions,
     scan_controlled_tod_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
@@ -1290,6 +1291,16 @@ def test_mcr_differs_from_other_zero_operand_markers_by_selector() -> None:
     assert (ret.mnemonic, ret.selector) == ("RET", 0x09)
     assert mcr.selector_offset == ret.selector_offset
     assert mcr.operands == ret.operands == ()
+
+
+def test_tnd_differs_from_other_zero_operand_markers_by_selector() -> None:
+    ret = scan_controlled_ret_instructions(_zero_operand_record(0x09))[0]
+    tnd = scan_controlled_tnd_instructions(_zero_operand_record(0x0B))[0]
+
+    assert (ret.mnemonic, ret.selector) == ("RET", 0x09)
+    assert (tnd.mnemonic, tnd.selector) == ("TND", 0x0B)
+    assert ret.selector_offset == tnd.selector_offset
+    assert ret.operands == tnd.operands == ()
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:
