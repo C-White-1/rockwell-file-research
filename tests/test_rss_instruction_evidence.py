@@ -10,6 +10,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
     scan_controlled_div_instructions,
+    scan_controlled_equ_instructions,
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
@@ -410,6 +411,22 @@ def test_not_differs_from_mov_only_by_controlled_selector() -> None:
     assert (bitwise_not.mnemonic, bitwise_not.selector) == ("NOT", 0x1B)
     assert mov.selector_offset == bitwise_not.selector_offset
     assert mov.operands == bitwise_not.operands
+
+
+def test_equ_uses_two_comparison_source_roles() -> None:
+    equ_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    equ_payload[-8] = 0x32
+    result = scan_controlled_equ_instructions(
+        bytes(equ_payload),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("EQU", 0x32)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source_a", "N7:0"),
+        ("source_b", "N7:1"),
+    ]
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
