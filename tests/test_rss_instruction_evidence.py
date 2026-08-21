@@ -11,6 +11,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ctu_instructions,
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
+    scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
     scan_controlled_instructions,
     scan_controlled_leq_instructions,
@@ -503,6 +504,26 @@ def test_grt_uses_two_comparison_source_roles() -> None:
         ("source_a", "N7:0"),
         ("source_b", "N7:1"),
     ]
+
+
+def test_geq_differs_from_grt_only_by_controlled_selector() -> None:
+    grt_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    grt_payload[-8] = 0x34
+    grt = scan_controlled_grt_instructions(
+        bytes(grt_payload),
+        include_private_text=True,
+    )[0]
+    geq_payload = bytearray(grt_payload)
+    geq_payload[-8] = 0x35
+    geq = scan_controlled_geq_instructions(
+        bytes(geq_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (grt.mnemonic, grt.selector) == ("GRT", 0x34)
+    assert (geq.mnemonic, geq.selector) == ("GEQ", 0x35)
+    assert grt.selector_offset == geq.selector_offset
+    assert grt.operands == geq.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:

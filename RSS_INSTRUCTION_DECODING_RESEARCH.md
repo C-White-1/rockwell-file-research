@@ -256,6 +256,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
 | `NEQ` | `0x33` | Source A `N7:0`; source B `N7:1` |
 | `GRT` | `0x34` | Source A `N7:0`; source B `N7:1` |
+| `GEQ` | `0x35` | Source A `N7:0`; source B `N7:1` |
 | `LES` | `0x36` | Source A `N7:0`; source B `N7:1` |
 | `LEQ` | `0x37` | Source A `N7:0`; source B `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -338,6 +339,11 @@ evidence profile.
 
 The controlled GRT instruction uses selector `0x34` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.
+
+The field-identical GRT and GEQ instruction records differ only at their
+selectors: GRT uses `0x34`, while GEQ uses `0x35`. Together with EQU, NEQ,
+LES, and LEQ, this establishes the contiguous comparison selector family
+`0x32` through `0x37` for the controlled profile.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.

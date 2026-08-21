@@ -45,6 +45,7 @@ opcodes.
 | `EQU` | `0x32` | source_a, source_b | Confirmed |
 | `NEQ` | `0x33` | source_a, source_b | Confirmed |
 | `GRT` | `0x34` | source_a, source_b | Confirmed |
+| `GEQ` | `0x35` | source_a, source_b | Confirmed |
 | `LES` | `0x36` | source_a, source_b | Confirmed |
 | `LEQ` | `0x37` | source_a, source_b | Confirmed |
 | `XIC` | `0x39` | operand | Confirmed |
@@ -55,7 +56,7 @@ opcodes.
 | `TON` | `0xA7` | timer, time_base, preset, accumulator | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 
-Confirmed total: **29**.
+Confirmed total: **30**.
 
 ## Candidate backlog
 
@@ -64,7 +65,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Comparison: `GEQ`, `MEQ`, `LIM`.
+- Comparison: `MEQ`, `LIM`.
 - Arithmetic and conversion: `DDV`, `SCP`, `SCL`, `SWP`, `TOD`, `FRD`,
   `DEG`, `RAD`, `XPY`.
 - Mathematical: `ACS`, `ASN`, `ATN`, `COS`, `LN`, `LOG`, `SIN`, `TAN`.
@@ -105,5 +106,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned comparison fixture is `GEQ`, using source A `N7:0`, source B
-`N7:1`, and a following `OTE B3:0/1` to consume the rung condition.
+The next planned comparison fixture is `MEQ`, using source `N7:0`, mask
+`N7:1`, compare `N7:2`, and a following `OTE B3:0/1` to consume the rung
+condition.

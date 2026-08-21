@@ -29,6 +29,7 @@ _NEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neq/v1"
 _LES_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/les/v1"
 _LEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/leq/v1"
 _GRT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/grt/v1"
+_GEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/geq/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -102,6 +103,7 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x32: ("EQU", _EQU_PROFILE, ("source_a", "source_b"), 0x04),
     0x33: ("NEQ", _NEQ_PROFILE, ("source_a", "source_b"), 0x04),
     0x34: ("GRT", _GRT_PROFILE, ("source_a", "source_b"), 0x04),
+    0x35: ("GEQ", _GEQ_PROFILE, ("source_a", "source_b"), 0x04),
     0x36: ("LES", _LES_PROFILE, ("source_a", "source_b"), 0x04),
     0x37: ("LEQ", _LEQ_PROFILE, ("source_a", "source_b"), 0x04),
     0x46: ("SQR", _SQR_PROFILE, ("source", "destination"), 0x04),
@@ -457,6 +459,23 @@ def scan_controlled_grt_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "GRT"
+    ]
+
+
+def scan_controlled_geq_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize GEQ records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "GEQ"
     ]
 
 

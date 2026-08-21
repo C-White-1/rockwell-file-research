@@ -219,16 +219,16 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, ADD, SUB, MUL,
-DIV, EQU, NEQ, GRT, LES, LEQ, TON, RTO, TOF, RES, CTU, and CTD only when a
-record
+DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, TON, RTO, TOF, RES, CTU, and CTD only
+when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
 CLR reports `destination`. MOV, NEG, SQR, ABS, and NOT report `source` and
 `destination`. AND, OR, XOR, ADD, SUB, MUL, and DIV report `source_a`,
 `source_b`, and `destination`.
-EQU, NEQ, GRT, LES, and LEQ report the two comparison operands as `source_a`
-and `source_b`.
+EQU, NEQ, GRT, GEQ, LES, and LEQ report the two comparison operands as
+`source_a` and `source_b`.
 Meanwhile,
 TON, RTO, and TOF report timer, time base, preset, and accumulator. Unknown or differently
 framed selectors stay uninterpreted. RES currently accepts controlled timer and
