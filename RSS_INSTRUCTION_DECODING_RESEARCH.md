@@ -489,6 +489,11 @@ The controlled TND instruction uses selector `0x0B` and the shared
 zero-operand frame. The evidence confirms its temporary-end identity and lack
 of operands, but does not independently prove runtime scan-cycle semantics.
 
+`END` is not a selectable instruction in the observed MicroLogix 1100 Series B
+instruction palette. RSLogix displays it automatically after the final rung,
+so it is tracked as a ladder-file structural marker rather than assigned a
+guessed instruction selector.
+
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
 changes to each field altered only its expected ASCII digit. Selector `0x27`,

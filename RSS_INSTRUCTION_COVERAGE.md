@@ -96,6 +96,7 @@ Confirmed total: **52**.
 | `LN` | Mathematical instruction greyed out | Unavailable |
 | `LOG` | Mathematical instruction greyed out | Unavailable |
 | `XPY` | Arithmetic instruction greyed out | Unavailable |
+| `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
 
@@ -104,7 +105,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Program control: `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
 - Process and control: `PID`, `PTO`, `PWM`, `RMP`.
