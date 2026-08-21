@@ -246,6 +246,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
 | `CLR` | `0x14` | Destination `N7:0` |
+| `JMP` | `0x16` | Label `Q2:1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
@@ -446,6 +447,11 @@ The controlled MVM instruction uses selector `0x26` and the qualified
 three-field frame `06 00`, immediately preceding ADD `0x27`. RSLogix
 normalized the entered decimal mask `255` to serialized text `00FFh`; the
 evidence model preserves that observed representation as the `mask` operand.
+
+The controlled JMP instruction uses selector `0x16`, header `01 00`, and one
+unqualified label operand. RSLogix normalized the entered label number `1` to
+`Q2:1`; the recognizer therefore requires the observed `Q`-file address form
+and reports it with role `label`.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

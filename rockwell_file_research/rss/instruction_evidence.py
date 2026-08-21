@@ -21,6 +21,7 @@ _CONTROLLED_MASK_OPERAND = re.compile(
 )
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
@@ -48,6 +49,7 @@ _FFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffu/v1"
 _LFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfl/v1"
 _LFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfu/v1"
 _MVM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mvm/v1"
+_JMP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jmp/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -67,6 +69,9 @@ _CTD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctd/v1"
 _COUNTER_IDENTITIES = {
     0x11: ("CTU", _CTU_PROFILE),
     0x12: ("CTD", _CTD_PROFILE),
+}
+_LABEL_IDENTITIES = {
+    0x16: ("JMP", _JMP_PROFILE),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -1227,6 +1232,74 @@ def scan_controlled_res_instructions(
     return evidence
 
 
+def _scan_controlled_label_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled single-operand program-label records."""
+
+    evidence: list[InstructionEvidence] = []
+    for operand_offset in range(3, len(payload)):
+        operand_length = payload[operand_offset - 1]
+        if not operand_length or operand_offset + operand_length + 9 > len(payload):
+            continue
+        if payload[operand_offset - 3 : operand_offset - 1] != b"\x01\x00":
+            continue
+        operand_bytes = payload[operand_offset : operand_offset + operand_length]
+        try:
+            operand = operand_bytes.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_LABEL_OPERAND.fullmatch(operand) is None:
+            continue
+        selector_offset = operand_offset + operand_length + 2
+        if payload[operand_offset + operand_length : selector_offset] != b"\x00\x00":
+            continue
+        identity = _LABEL_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        mnemonic, profile = identity
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=(
+                    _operand(
+                        role="label",
+                        offset=operand_offset,
+                        value=operand_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_jmp_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize JMP records matching the controlled label profile."""
+
+    return [
+        item
+        for item in _scan_controlled_label_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "JMP"
+    ]
+
+
 def _scan_controlled_counter_instructions(
     payload: bytes,
     *,
@@ -1366,6 +1439,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         _scan_controlled_counter_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        _scan_controlled_label_instructions(
             payload,
             include_private_text=include_private_text,
         )

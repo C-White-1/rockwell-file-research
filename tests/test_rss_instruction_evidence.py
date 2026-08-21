@@ -19,6 +19,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
     scan_controlled_instructions,
+    scan_controlled_jmp_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
     scan_controlled_lfl_instructions,
@@ -258,6 +259,18 @@ def _res_record(operand: str) -> bytes:
         + bytes([len(encoded)])
         + encoded
         + b"\x00\x00\x13"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _label_record(*, operand: str, selector: int) -> bytes:
+    encoded = operand.encode("ascii")
+    return (
+        b"\x01\x00"
+        + bytes([len(encoded)])
+        + encoded
+        + b"\x00\x00"
+        + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -1163,6 +1176,25 @@ def test_controlled_res_supports_timer_and_counter_operands() -> None:
 
 def test_res_rejects_uncontrolled_operand_family() -> None:
     assert not scan_controlled_res_instructions(_res_record("N7:0"))
+
+
+def test_jmp_exposes_normalized_program_label_operand() -> None:
+    result = scan_controlled_jmp_instructions(
+        _label_record(operand="Q2:1", selector=0x16),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("JMP", 0x16)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("label", "Q2:1"),
+    ]
+
+
+def test_jmp_rejects_non_label_operand_family() -> None:
+    assert not scan_controlled_jmp_instructions(
+        _label_record(operand="N7:1", selector=0x16)
+    )
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:

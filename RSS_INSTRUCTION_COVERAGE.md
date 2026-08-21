@@ -29,6 +29,7 @@ opcodes.
 | `CTD` | `0x12` | counter, preset, accumulator | Confirmed |
 | `RES` | `0x13` | operand | Confirmed |
 | `CLR` | `0x14` | destination | Confirmed |
+| `JMP` | `0x16` | label | Confirmed |
 | `TOD` | `0x17` | source, destination | Confirmed |
 | `FRD` | `0x18` | source, destination | Confirmed |
 | `NOT` | `0x1B` | source, destination | Confirmed |
@@ -70,7 +71,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **44**.
+Confirmed total: **45**.
 
 ## Unavailable instruction records
 
@@ -96,7 +97,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
+- Program control: `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
