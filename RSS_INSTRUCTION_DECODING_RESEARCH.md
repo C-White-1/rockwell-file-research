@@ -255,6 +255,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
 | `NEQ` | `0x33` | Source A `N7:0`; source B `N7:1` |
+| `GRT` | `0x34` | Source A `N7:0`; source B `N7:1` |
 | `LES` | `0x36` | Source A `N7:0`; source B `N7:1` |
 | `LEQ` | `0x37` | Source A `N7:0`; source B `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -334,6 +335,9 @@ The field-identical AND and OR instruction records differ only at their
 selectors: AND uses `0x23`, while OR uses `0x24`. OR therefore uses the same
 qualified three-word recognizer and ordered operand roles under its own
 evidence profile.
+
+The controlled GRT instruction uses selector `0x34` with the same qualified
+two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.
