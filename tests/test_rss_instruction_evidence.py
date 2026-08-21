@@ -21,6 +21,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
+    scan_controlled_lfl_instructions,
     scan_controlled_lim_instructions,
     scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
@@ -211,6 +212,12 @@ def _ffu_record() -> bytes:
         + b"\x00\x00\x42"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
+
+
+def _lfl_record() -> bytes:
+    record = bytearray(_ffl_record())
+    record[-8] = 0x43
+    return bytes(record)
 
 
 def _timer_record(
@@ -790,6 +797,23 @@ def test_ffu_exposes_reversed_fifo_data_flow_roles() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("fifo", "#N7:10"),
         ("destination", "N7:0"),
+        ("control", "R6:0"),
+        ("length", "3"),
+        ("position", "0"),
+    ]
+
+
+def test_lfl_differs_from_ffl_only_by_selector_and_lifo_role() -> None:
+    result = scan_controlled_lfl_instructions(
+        _lfl_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("LFL", 0x43)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "N7:0"),
+        ("lifo", "#N7:10"),
         ("control", "R6:0"),
         ("length", "3"),
         ("position", "0"),
