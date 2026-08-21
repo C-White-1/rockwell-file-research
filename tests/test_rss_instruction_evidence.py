@@ -27,6 +27,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
+    scan_controlled_mvm_instructions,
     scan_controlled_neg_instructions,
     scan_controlled_neq_instructions,
     scan_controlled_not_instructions,
@@ -671,6 +672,25 @@ def test_meq_exposes_source_mask_and_compare_roles() -> None:
         ("source", "N7:0"),
         ("mask", "N7:1"),
         ("compare", "N7:2"),
+    ]
+
+
+def test_mvm_exposes_source_normalized_mask_and_destination_roles() -> None:
+    mvm_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="00FFh", destination="N7:1")
+    )
+    mvm_payload[-8] = 0x26
+    result = scan_controlled_mvm_instructions(
+        bytes(mvm_payload),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("MVM", 0x26)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "N7:0"),
+        ("mask", "00FFh"),
+        ("destination", "N7:1"),
     ]
 
 

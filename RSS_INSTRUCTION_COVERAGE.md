@@ -37,6 +37,7 @@ opcodes.
 | `AND` | `0x23` | source_a, source_b, destination | Confirmed |
 | `OR` | `0x24` | source_a, source_b, destination | Confirmed |
 | `XOR` | `0x25` | source_a, source_b, destination | Confirmed |
+| `MVM` | `0x26` | source, mask, destination | Confirmed |
 | `ADD` | `0x27` | source_a, source_b, destination | Confirmed |
 | `SUB` | `0x28` | source_a, source_b, destination | Confirmed |
 | `MUL` | `0x29` | source_a, source_b, destination | Confirmed |
@@ -69,7 +70,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **43**.
+Confirmed total: **44**.
 
 ## Unavailable instruction records
 
@@ -95,7 +96,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- File and data: `MVM`.
 - Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.

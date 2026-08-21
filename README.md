@@ -218,7 +218,7 @@ may represent constants, expressions, labels, configuration strings, or
 comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
-OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, ADD, SUB, MUL,
+OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, and CTD only when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
@@ -227,6 +227,7 @@ evidence-backed roles; MOV reports `source` followed by `destination`, while
 CLR reports `destination`. MOV, NEG, SQR, ABS, and NOT report `source` and
 `destination`. AND, OR, XOR, ADD, SUB, MUL, and DIV report `source_a`,
 `source_b`, and `destination`.
+MVM reports `source`, serialized `mask`, and `destination`.
 EQU, NEQ, GRT, GEQ, LES, and LEQ report the two comparison operands as
 `source_a` and `source_b`.
 MEQ reports `source`, `mask`, and `compare`.

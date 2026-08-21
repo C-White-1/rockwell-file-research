@@ -15,6 +15,10 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
 }
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_MASK_OPERAND = re.compile(
+    r"^(?:N\d+:\d+|\d+|[0-9A-F]+H)$",
+    re.IGNORECASE,
+)
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
@@ -43,6 +47,7 @@ _FFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffl/v1"
 _FFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffu/v1"
 _LFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfl/v1"
 _LFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfu/v1"
+_MVM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mvm/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -176,6 +181,12 @@ _QUALIFIED_WORD_IDENTITIES = {
         ("source_a", "source_b", "destination"),
         0x06,
     ),
+    0x26: (
+        "MVM",
+        _MVM_PROFILE,
+        ("source", "mask", "destination"),
+        0x06,
+    ),
     0x27: (
         "ADD",
         _ADD_PROFILE,
@@ -229,6 +240,13 @@ _QUALIFIED_WORD_IDENTITIES = {
     ),
     0x46: ("SQR", _SQR_PROFILE, ("source", "destination"), 0x04),
     0x98: ("ABS", _ABS_PROFILE, ("source", "destination"), 0x04),
+}
+_QUALIFIED_OPERAND_PATTERNS = {
+    0x26: (
+        _CONTROLLED_WORD_OPERAND,
+        _CONTROLLED_MASK_OPERAND,
+        _CONTROLLED_WORD_OPERAND,
+    ),
 }
 
 
@@ -376,7 +394,14 @@ def _scan_controlled_qualified_word_instructions(
             decoded = [value.decode("ascii") for _, value in fields]
         except UnicodeDecodeError:
             continue
-        if any(_CONTROLLED_WORD_OPERAND.fullmatch(value) is None for value in decoded):
+        patterns = _QUALIFIED_OPERAND_PATTERNS.get(
+            selector,
+            tuple(_CONTROLLED_WORD_OPERAND for _ in roles),
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
             continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
@@ -620,6 +645,23 @@ def scan_controlled_meq_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "MEQ"
+    ]
+
+
+def scan_controlled_mvm_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize MVM records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "MVM"
     ]
 
 

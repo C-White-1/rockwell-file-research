@@ -254,6 +254,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `OR` | `0x24` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `XOR` | `0x25` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
+| `MVM` | `0x26` | Source `N7:0`; mask `00FFh`; destination `N7:1` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -440,6 +441,11 @@ selector family: AND uses `0x23`, OR uses `0x24`, and XOR uses `0x25`. XOR's
 surrounding serialization moves its record by one byte, but its isolated
 framing and operands are unchanged. XOR therefore uses the shared qualified
 three-word recognizer under its own evidence profile.
+
+The controlled MVM instruction uses selector `0x26` and the qualified
+three-field frame `06 00`, immediately preceding ADD `0x27`. RSLogix
+normalized the entered decimal mask `255` to serialized text `00FFh`; the
+evidence model preserves that observed representation as the `mask` operand.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
