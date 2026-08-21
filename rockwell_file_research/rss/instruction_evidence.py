@@ -22,6 +22,7 @@ _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
+_MUL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mul/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
 _RTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rto/v1"
 _TOF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tof/v1"
@@ -48,6 +49,12 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x28: (
         "SUB",
         _SUB_PROFILE,
+        ("source_a", "source_b", "destination"),
+        0x06,
+    ),
+    0x29: (
+        "MUL",
+        _MUL_PROFILE,
         ("source_a", "source_b", "destination"),
         0x06,
     ),
@@ -266,6 +273,23 @@ def scan_controlled_sub_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SUB"
+    ]
+
+
+def scan_controlled_mul_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize MUL records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "MUL"
     ]
 
 
