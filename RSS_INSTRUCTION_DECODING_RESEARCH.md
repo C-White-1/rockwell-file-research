@@ -267,6 +267,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
 | `SWP` | `0x96` | File source `#N7:0`; length `3` |
+| `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -377,6 +378,11 @@ The controlled SWP instruction uses selector `0x96` and a distinct header
 `#N7:0` and literal length `3`; they do not carry the `01 3F` qualification
 used by ordinary word operands. The leading `#` is preserved because it marks
 a file-range source rather than a scalar address.
+
+The field-identical TOD and MOV instruction records differ only at their
+selectors: TOD uses `0x17`, while MOV uses `0x1C`. TOD therefore uses the same
+qualified two-word recognizer and ordered source/destination roles under its
+own evidence profile.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.

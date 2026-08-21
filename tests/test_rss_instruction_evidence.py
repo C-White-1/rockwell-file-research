@@ -32,6 +32,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
     scan_controlled_swp_instructions,
+    scan_controlled_tod_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
     scan_controlled_xor_instructions,
@@ -654,6 +655,24 @@ def test_swp_exposes_file_source_and_literal_length() -> None:
 def test_swp_rejects_non_file_source_and_non_integer_length() -> None:
     assert not scan_controlled_swp_instructions(_swp_record(source="N7:0"))
     assert not scan_controlled_swp_instructions(_swp_record(length="N7:1"))
+
+
+def test_tod_differs_from_mov_only_by_controlled_selector() -> None:
+    mov = scan_controlled_mov_instructions(
+        _mov_record(source="N7:0", destination="N7:1"),
+        include_private_text=True,
+    )[0]
+    tod_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    tod_payload[-8] = 0x17
+    tod = scan_controlled_tod_instructions(
+        bytes(tod_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (mov.mnemonic, mov.selector) == ("MOV", 0x1C)
+    assert (tod.mnemonic, tod.selector) == ("TOD", 0x17)
+    assert mov.selector_offset == tod.selector_offset
+    assert mov.operands == tod.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
