@@ -70,6 +70,17 @@ Confirmed total: **37**.
 | Instruction | Observed constraint | Status |
 | --- | --- | --- |
 | `DDV` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `DEG` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `RAD` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `ACS` | Trigonometric instruction greyed out | Unavailable |
+| `ASN` | Trigonometric instruction greyed out | Unavailable |
+| `ATN` | Trigonometric instruction greyed out | Unavailable |
+| `COS` | Trigonometric instruction greyed out | Unavailable |
+| `SIN` | Trigonometric instruction greyed out | Unavailable |
+| `TAN` | Trigonometric instruction greyed out | Unavailable |
+| `LN` | Mathematical instruction greyed out | Unavailable |
+| `LOG` | Mathematical instruction greyed out | Unavailable |
+| `XPY` | Arithmetic instruction greyed out | Unavailable |
 
 ## Candidate backlog
 
@@ -78,8 +89,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Arithmetic and conversion: `DEG`, `RAD`, `XPY`.
-- Mathematical: `ACS`, `ASN`, `ATN`, `COS`, `LN`, `LOG`, `SIN`, `TAN`.
 - File and data: `COP`, `FLL`, `FFL`, `FFU`, `LFL`, `LFU`, `MVM`.
 - Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
   `END`.
@@ -117,6 +126,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned fixture candidate is `DEG`. Its availability and operand
+The next planned fixture candidate is `COP`. Its availability and operand
 fields must first be confirmed in the selected processor's instruction
 palette before assigning a filename.

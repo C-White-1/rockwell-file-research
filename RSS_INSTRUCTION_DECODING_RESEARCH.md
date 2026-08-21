@@ -111,9 +111,11 @@ manifest, and delivery checks are defined in the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 The current confirmed set and remaining research queue are maintained in the
 [RSLogix 500 instruction coverage register](RSS_INSTRUCTION_COVERAGE.md).
-That register also records instructions such as DDV that are unavailable for
-the selected processor profile, preventing absence from being mistaken for an
-unknown encoding.
+That register also records instructions such as DDV, DEG, RAD, and the
+greyed-out trigonometric family that are unavailable for the selected processor
+profile. LN and LOG are also observed unavailable. Recording these constraints
+prevents absence from being mistaken for an unknown encoding.
+XPY is likewise greyed out for the selected profile.
 
 ### 1. Establish tooling and provenance
 
