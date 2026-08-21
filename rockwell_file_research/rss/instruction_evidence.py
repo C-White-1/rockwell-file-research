@@ -20,6 +20,7 @@ _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
+_NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
 _MUL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mul/v1"
@@ -41,6 +42,7 @@ _TIMER_IDENTITIES = {
 }
 _QUALIFIED_WORD_IDENTITIES = {
     0x1C: ("MOV", _MOV_PROFILE, ("source", "destination"), 0x04),
+    0x1E: ("NEG", _NEG_PROFILE, ("source", "destination"), 0x04),
     0x27: (
         "ADD",
         _ADD_PROFILE,
@@ -246,6 +248,23 @@ def scan_controlled_mov_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "MOV"
+    ]
+
+
+def scan_controlled_neg_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize NEG records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "NEG"
     ]
 
 

@@ -10,6 +10,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
+    scan_controlled_neg_instructions,
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
     scan_controlled_simple_bit_instructions,
@@ -306,6 +307,24 @@ def test_controlled_add_exposes_three_ordered_operand_roles() -> None:
         ("source_b", "N7:1"),
         ("destination", "N7:2"),
     ]
+
+
+def test_neg_differs_from_mov_only_by_controlled_selector() -> None:
+    mov = scan_controlled_mov_instructions(
+        _mov_record(source="N7:0", destination="N7:1"),
+        include_private_text=True,
+    )[0]
+    neg_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    neg_payload[-8] = 0x1E
+    neg = scan_controlled_neg_instructions(
+        bytes(neg_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (mov.mnemonic, mov.selector) == ("MOV", 0x1C)
+    assert (neg.mnemonic, neg.selector) == ("NEG", 0x1E)
+    assert mov.selector_offset == neg.selector_offset
+    assert mov.operands == neg.operands
 
 
 def test_add_selector_is_stable_across_independent_operand_changes() -> None:

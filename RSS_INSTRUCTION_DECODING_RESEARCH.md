@@ -239,6 +239,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
+| `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `SUB` | `0x28` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -284,6 +285,12 @@ only the expected ASCII digit. Selector `0x1C`, selector offset 182, operand
 offsets 167 and 174, qualifiers, and all surrounding bytes remained fixed.
 MOV is therefore exposed with ordered `source` and `destination` operands under
 profile `rslogix-micro-starter-lite/ml1100-series-b/mov/v1`.
+
+The field-identical MOV and NEG instruction records differ only at their
+selectors: MOV uses `0x1C`, while NEG uses `0x1E`. NEG's surrounding file
+serialization moves the record from offset 164 to 162, but its isolated
+framing and ordered source/destination fields are unchanged. NEG therefore
+uses the shared qualified two-word recognizer under its own evidence profile.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
