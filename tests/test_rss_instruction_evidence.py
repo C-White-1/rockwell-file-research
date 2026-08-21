@@ -7,6 +7,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_add_instructions,
     scan_controlled_and_instructions,
     scan_controlled_clr_instructions,
+    scan_controlled_cop_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
     scan_controlled_div_instructions,
@@ -135,6 +136,25 @@ def _swp_record(*, source: str = "#N7:0", length: str = "3") -> bytes:
         + bytes([len(length_bytes)])
         + length_bytes
         + b"\x00\x00\x96"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _cop_record(
+    *,
+    source: str = "#N7:0",
+    destination: str = "#N7:10",
+    length: str = "3",
+) -> bytes:
+    fields = [
+        source.encode("ascii"),
+        destination.encode("ascii"),
+        length.encode("ascii"),
+    ]
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x22"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -656,6 +676,21 @@ def test_swp_exposes_file_source_and_literal_length() -> None:
 def test_swp_rejects_non_file_source_and_non_integer_length() -> None:
     assert not scan_controlled_swp_instructions(_swp_record(source="N7:0"))
     assert not scan_controlled_swp_instructions(_swp_record(length="N7:1"))
+
+
+def test_cop_exposes_two_file_addresses_and_literal_length() -> None:
+    result = scan_controlled_cop_instructions(
+        _cop_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("COP", 0x22)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "#N7:0"),
+        ("destination", "#N7:10"),
+        ("length", "3"),
+    ]
 
 
 def test_tod_differs_from_mov_only_by_controlled_selector() -> None:

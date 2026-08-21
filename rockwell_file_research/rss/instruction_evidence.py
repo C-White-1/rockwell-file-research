@@ -36,6 +36,7 @@ _LIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lim/v1"
 _SCP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scp/v1"
 _SCL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scl/v1"
 _SWP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/swp/v1"
+_COP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/cop/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -60,6 +61,26 @@ _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
     0xA3: ("RTO", _RTO_PROFILE),
     0xA6: ("TOF", _TOF_PROFILE),
+}
+_FILE_OPERATION_IDENTITIES = {
+    0x22: (
+        "COP",
+        _COP_PROFILE,
+        ("source", "destination", "length"),
+        (
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_INTEGER,
+        ),
+        0x03,
+    ),
+    0x96: (
+        "SWP",
+        _SWP_PROFILE,
+        ("source", "length"),
+        (_CONTROLLED_FILE_WORD_OPERAND, _CONTROLLED_INTEGER),
+        0x02,
+    ),
 }
 _QUALIFIED_WORD_IDENTITIES = {
     0x14: ("CLR", _CLR_PROFILE, ("destination",), 0x02),
@@ -584,20 +605,21 @@ def scan_controlled_scl_instructions(
     ]
 
 
-def scan_controlled_swp_instructions(
+def _scan_controlled_file_operation_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize controlled SWP file-source and literal-length records."""
+    """Recognize controlled file operations with unqualified fields."""
 
     evidence: list[InstructionEvidence] = []
     for record_offset in range(max(0, len(payload) - 1)):
-        if payload[record_offset : record_offset + 2] != b"\x02\x00":
+        field_count = payload[record_offset]
+        if payload[record_offset + 1] != 0 or field_count not in {2, 3}:
             continue
         cursor = record_offset + 2
         fields: list[tuple[int, bytes]] = []
-        for _ in range(2):
+        for _ in range(field_count):
             if cursor >= len(payload):
                 break
             length = payload[cursor]
@@ -607,28 +629,35 @@ def scan_controlled_swp_instructions(
                 break
             fields.append((offset, payload[offset:end]))
             cursor = end
-        if len(fields) != 2 or cursor + 10 > len(payload):
+        if len(fields) != field_count or cursor + 10 > len(payload):
             continue
-        if payload[cursor : cursor + 3] != b"\x00\x00\x96":
-            continue
-        try:
-            source = fields[0][1].decode("ascii")
-            length_value = fields[1][1].decode("ascii")
-        except UnicodeDecodeError:
-            continue
-        if _CONTROLLED_FILE_WORD_OPERAND.fullmatch(source) is None:
-            continue
-        if _CONTROLLED_INTEGER.fullmatch(length_value) is None:
+        if payload[cursor : cursor + 2] != b"\x00\x00":
             continue
         selector_offset = cursor + 2
+        selector = payload[selector_offset]
+        identity = _FILE_OPERATION_IDENTITIES.get(selector)
+        if identity is None:
+            continue
+        mnemonic, profile, roles, patterns, expected_count = identity
+        if field_count != expected_count:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
         ):
             continue
         evidence.append(
             InstructionEvidence(
-                mnemonic="SWP",
-                selector=0x96,
+                mnemonic=mnemonic,
+                selector=selector,
                 selector_offset=selector_offset,
                 operands=tuple(
                     _operand(
@@ -637,14 +666,46 @@ def scan_controlled_swp_instructions(
                         value=value,
                         include_private_text=include_private_text,
                     )
-                    for role, (offset, value) in zip(
-                        ("source", "length"), fields, strict=True
-                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
-                evidence_profile=_SWP_PROFILE,
+                evidence_profile=profile,
             )
         )
     return evidence
+
+
+def scan_controlled_swp_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SWP records matching the controlled file-operation profile."""
+
+    return [
+        item
+        for item in _scan_controlled_file_operation_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SWP"
+    ]
+
+
+def scan_controlled_cop_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize COP records matching the controlled file-operation profile."""
+
+    return [
+        item
+        for item in _scan_controlled_file_operation_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "COP"
+    ]
 
 
 def scan_controlled_tod_instructions(
@@ -1096,7 +1157,7 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(
-        scan_controlled_swp_instructions(
+        _scan_controlled_file_operation_instructions(
             payload,
             include_private_text=include_private_text,
         )
