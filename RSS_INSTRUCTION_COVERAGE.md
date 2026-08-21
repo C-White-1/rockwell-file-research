@@ -30,6 +30,7 @@ opcodes.
 | `RES` | `0x13` | operand | Confirmed |
 | `CLR` | `0x14` | destination | Confirmed |
 | `TOD` | `0x17` | source, destination | Confirmed |
+| `FRD` | `0x18` | source, destination | Confirmed |
 | `NOT` | `0x1B` | source, destination | Confirmed |
 | `MOV` | `0x1C` | source, destination | Confirmed |
 | `NEG` | `0x1E` | source, destination | Confirmed |
@@ -62,7 +63,7 @@ opcodes.
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 | `SWP` | `0x96` | file source, literal length | Confirmed |
 
-Confirmed total: **36**.
+Confirmed total: **37**.
 
 ## Unavailable instruction records
 
@@ -77,8 +78,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Arithmetic and conversion: `FRD`,
-  `DEG`, `RAD`, `XPY`.
+- Arithmetic and conversion: `DEG`, `RAD`, `XPY`.
 - Mathematical: `ACS`, `ASN`, `ATN`, `COS`, `LN`, `LOG`, `SIN`, `TAN`.
 - File and data: `COP`, `FLL`, `FFL`, `FFU`, `LFL`, `LFU`, `MVM`.
 - Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
@@ -117,6 +117,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned fixture candidate is `FRD`. Its availability and operand
+The next planned fixture candidate is `DEG`. Its availability and operand
 fields must first be confirmed in the selected processor's instruction
 palette before assigning a filename.

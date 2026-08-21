@@ -11,6 +11,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ctu_instructions,
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
+    scan_controlled_frd_instructions,
     scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
     scan_controlled_instructions,
@@ -673,6 +674,26 @@ def test_tod_differs_from_mov_only_by_controlled_selector() -> None:
     assert (tod.mnemonic, tod.selector) == ("TOD", 0x17)
     assert mov.selector_offset == tod.selector_offset
     assert mov.operands == tod.operands
+
+
+def test_frd_differs_from_tod_only_by_controlled_selector() -> None:
+    tod_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    tod_payload[-8] = 0x17
+    tod = scan_controlled_tod_instructions(
+        bytes(tod_payload),
+        include_private_text=True,
+    )[0]
+    frd_payload = bytearray(tod_payload)
+    frd_payload[-8] = 0x18
+    frd = scan_controlled_frd_instructions(
+        bytes(frd_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (tod.mnemonic, tod.selector) == ("TOD", 0x17)
+    assert (frd.mnemonic, frd.selector) == ("FRD", 0x18)
+    assert tod.selector_offset == frd.selector_offset
+    assert tod.operands == frd.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
