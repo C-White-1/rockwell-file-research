@@ -42,6 +42,7 @@ _FLL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/fll/v1"
 _FFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffl/v1"
 _FFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffu/v1"
 _LFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfl/v1"
+_LFU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lfu/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -101,6 +102,19 @@ _FILE_OPERATION_IDENTITIES = {
         (
             _CONTROLLED_WORD_OPERAND,
             _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_INTEGER,
+        ),
+        0x05,
+    ),
+    0x44: (
+        "LFU",
+        _LFU_PROFILE,
+        ("lifo", "destination", "control", "length", "position"),
+        (
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
             _CONTROLLED_CONTROL_OPERAND,
             _CONTROLLED_INTEGER,
             _CONTROLLED_INTEGER,
@@ -828,6 +842,23 @@ def scan_controlled_lfl_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "LFL"
+    ]
+
+
+def scan_controlled_lfu_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize LFU records matching the controlled file-operation profile."""
+
+    return [
+        item
+        for item in _scan_controlled_file_operation_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "LFU"
     ]
 
 

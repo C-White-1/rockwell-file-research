@@ -67,8 +67,9 @@ opcodes.
 | `FFL` | `0x41` | source, FIFO, control, length, position | Confirmed |
 | `FFU` | `0x42` | FIFO, destination, control, length, position | Confirmed |
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
+| `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **42**.
+Confirmed total: **43**.
 
 ## Unavailable instruction records
 
@@ -94,7 +95,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- File and data: `LFU`, `MVM`.
+- File and data: `MVM`.
 - Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.

@@ -22,6 +22,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
     scan_controlled_lfl_instructions,
+    scan_controlled_lfu_instructions,
     scan_controlled_lim_instructions,
     scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
@@ -217,6 +218,12 @@ def _ffu_record() -> bytes:
 def _lfl_record() -> bytes:
     record = bytearray(_ffl_record())
     record[-8] = 0x43
+    return bytes(record)
+
+
+def _lfu_record() -> bytes:
+    record = bytearray(_ffu_record())
+    record[-8] = 0x44
     return bytes(record)
 
 
@@ -814,6 +821,23 @@ def test_lfl_differs_from_ffl_only_by_selector_and_lifo_role() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("source", "N7:0"),
         ("lifo", "#N7:10"),
+        ("control", "R6:0"),
+        ("length", "3"),
+        ("position", "0"),
+    ]
+
+
+def test_lfu_differs_from_ffu_only_by_selector_and_lifo_role() -> None:
+    result = scan_controlled_lfu_instructions(
+        _lfu_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("LFU", 0x44)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("lifo", "#N7:10"),
+        ("destination", "N7:0"),
         ("control", "R6:0"),
         ("length", "3"),
         ("position", "0"),

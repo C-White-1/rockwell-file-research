@@ -274,6 +274,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `FFL` | `0x41` | Source, FIFO, control, length, and position |
 | `FFU` | `0x42` | FIFO, destination, control, length, and position |
 | `LFL` | `0x43` | Source, LIFO, control, length, and position |
+| `LFU` | `0x44` | LIFO, destination, control, length, and position |
 | `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `FRD` | `0x18` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -416,6 +417,10 @@ The field-identical FFL and LFL instruction records differ only at their
 selectors: FFL uses `0x41`, while LFL uses `0x43`. LFL retains the scalar
 source, file collection, control, length, and position structure, with the
 collection role identified as `lifo`.
+
+The field-identical FFU and LFU instruction records likewise differ only at
+their selectors: FFU uses `0x42`, while LFU uses `0x44`. LFU names its file
+collection role `lifo` and retains the destination and control-field roles.
 
 The field-identical TOD and MOV instruction records differ only at their
 selectors: TOD uses `0x17`, while MOV uses `0x1C`. TOD therefore uses the same
