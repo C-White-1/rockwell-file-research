@@ -241,6 +241,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RES` | `0x13` | Timer `T4:0` or counter `C5:0` |
+| `CTU` | `0x11` | Counter `C5:0`; preset `3`; accumulator `0` |
 
 An operand-only XIC comparison changed `B3:0/0` to `B3:1/2`. Only the two
 corresponding ASCII operand digits changed; selector `0x39`, selector offset,
@@ -290,6 +291,13 @@ counter `C5:0`. Selector `0x13`, selector offset 173, length prefix, and all
 framing remained fixed. RES is therefore recognized for these two operand
 families under profile
 `rslogix-micro-starter-lite/ml1100-series-b/res/v1`.
+
+The controlled CTU record contains three consecutive length-prefixed fields:
+counter, preset, and accumulator. Preset-only (`3` to `5`) and counter-only
+(`C5:0` to `C5:1`) comparisons changed only the expected ASCII digit.
+Selector `0x11`, selector offset 177, all other fields, and framing remained
+fixed. The profile requires the observed offline accumulator `0`; other
+accumulator encodings remain uninterpreted.
 
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer

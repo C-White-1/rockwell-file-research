@@ -3,6 +3,7 @@
 import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
+    scan_controlled_ctu_instructions,
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_res_instructions,
@@ -75,6 +76,20 @@ def _res_record(operand: str) -> bytes:
         + bytes([len(encoded)])
         + encoded
         + b"\x00\x00\x13"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _ctu_record(*, counter: str, preset: str = "3", accumulator: str = "0") -> bytes:
+    fields = [
+        counter.encode("ascii"),
+        preset.encode("ascii"),
+        accumulator.encode("ascii"),
+    ]
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x11"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -323,3 +338,49 @@ def test_controlled_res_supports_timer_and_counter_operands() -> None:
 
 def test_res_rejects_uncontrolled_operand_family() -> None:
     assert not scan_controlled_res_instructions(_res_record("N7:0"))
+
+
+def test_controlled_ctu_exposes_ordered_structured_fields() -> None:
+    result = scan_controlled_ctu_instructions(
+        _ctu_record(counter="C5:0"),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert result[0].selector == 0x11
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("counter", "C5:0"),
+        ("preset", "3"),
+        ("accumulator", "0"),
+    ]
+
+
+def test_ctu_selector_is_stable_across_counter_and_preset_changes() -> None:
+    variants = [
+        _ctu_record(counter="C5:0", preset="3"),
+        _ctu_record(counter="C5:0", preset="5"),
+        _ctu_record(counter="C5:1", preset="3"),
+    ]
+
+    evidence = [
+        scan_controlled_ctu_instructions(
+            variant,
+            include_private_text=True,
+        )[0]
+        for variant in variants
+    ]
+
+    assert {item.selector for item in evidence} == {0x11}
+    assert len({item.selector_offset for item in evidence}) == 1
+    assert [item.operands[0].value for item in evidence] == [
+        "C5:0",
+        "C5:0",
+        "C5:1",
+    ]
+    assert [item.operands[1].value for item in evidence] == ["3", "5", "3"]
+
+
+def test_ctu_rejects_nonzero_accumulator() -> None:
+    assert not scan_controlled_ctu_instructions(
+        _ctu_record(counter="C5:0", accumulator="1")
+    )
