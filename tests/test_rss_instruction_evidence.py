@@ -10,6 +10,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
     scan_controlled_simple_bit_instructions,
+    scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
@@ -348,6 +349,22 @@ def test_rto_differs_from_ton_only_by_controlled_selector() -> None:
     assert (rto.mnemonic, rto.selector) == ("RTO", 0xA3)
     assert ton.selector_offset == rto.selector_offset
     assert ton.operands == rto.operands
+
+
+def test_tof_differs_from_ton_only_by_controlled_selector() -> None:
+    ton = scan_controlled_ton_instructions(
+        _timer_record(selector=0xA7, timer="T4:0"),
+        include_private_text=True,
+    )[0]
+    tof = scan_controlled_tof_instructions(
+        _timer_record(selector=0xA6, timer="T4:0"),
+        include_private_text=True,
+    )[0]
+
+    assert (ton.mnemonic, ton.selector) == ("TON", 0xA7)
+    assert (tof.mnemonic, tof.selector) == ("TOF", 0xA6)
+    assert ton.selector_offset == tof.selector_offset
+    assert ton.operands == tof.operands
 
 
 def test_controlled_res_supports_timer_and_counter_operands() -> None:

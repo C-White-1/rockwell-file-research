@@ -241,6 +241,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
+| `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RES` | `0x13` | Timer `T4:0` or counter `C5:0` |
 | `CTU` | `0x11` | Counter `C5:0`; preset `3`; accumulator `0` |
 | `CTD` | `0x12` | Counter `C5:0`; preset `3`; accumulator `0` |
@@ -291,6 +292,8 @@ until controlled fixtures establish them.
 The field-identical TON and RTO fixtures differ only at selector offset 181:
 TON uses `0xA7`, while RTO uses `0xA3`. Both instructions therefore share one
 four-field structural recognizer while retaining separate evidence profiles.
+The field-identical TOF fixture likewise differs only at that selector offset,
+using `0xA6`.
 
 The controlled RES comparison changed only its operand from timer `T4:0` to
 counter `C5:0`. Selector `0x13`, selector offset 173, length prefix, and all

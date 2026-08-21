@@ -22,6 +22,7 @@ _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
 _RTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rto/v1"
+_TOF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tof/v1"
 _RES_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/res/v1"
 _CTU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctu/v1"
 _CTD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctd/v1"
@@ -32,6 +33,7 @@ _COUNTER_IDENTITIES = {
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
     0xA3: ("RTO", _RTO_PROFILE),
+    0xA6: ("TOF", _TOF_PROFILE),
 }
 
 
@@ -301,6 +303,23 @@ def scan_controlled_rto_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "RTO"
+    ]
+
+
+def scan_controlled_tof_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize TOF records matching the controlled timer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_timer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "TOF"
     ]
 
 
