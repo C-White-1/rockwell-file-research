@@ -13,6 +13,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_ffl_instructions,
+    scan_controlled_ffu_instructions,
     scan_controlled_fll_instructions,
     scan_controlled_frd_instructions,
     scan_controlled_geq_instructions,
@@ -192,6 +193,22 @@ def _ffl_record() -> bytes:
         b"\x05\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x41"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _ffu_record() -> bytes:
+    fields = [
+        b"#N7:10",
+        b"N7:0",
+        b"R6:0",
+        b"3",
+        b"0",
+    ]
+    return (
+        b"\x05\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x42"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -756,6 +773,23 @@ def test_ffl_exposes_five_ordered_fifo_fields() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("source", "N7:0"),
         ("fifo", "#N7:10"),
+        ("control", "R6:0"),
+        ("length", "3"),
+        ("position", "0"),
+    ]
+
+
+def test_ffu_exposes_reversed_fifo_data_flow_roles() -> None:
+    result = scan_controlled_ffu_instructions(
+        _ffu_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("FFU", 0x42)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("fifo", "#N7:10"),
+        ("destination", "N7:0"),
         ("control", "R6:0"),
         ("length", "3"),
         ("position", "0"),

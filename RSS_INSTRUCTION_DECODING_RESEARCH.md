@@ -272,6 +272,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `COP` | `0x22` | File source `#N7:0`; destination `#N7:10`; length `3` |
 | `FLL` | `0x21` | Source `N7:0`; file destination `#N7:10`; length `3` |
 | `FFL` | `0x41` | Source, FIFO, control, length, and position |
+| `FFU` | `0x42` | FIFO, destination, control, length, and position |
 | `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `FRD` | `0x18` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -403,6 +404,12 @@ The controlled FFL instruction uses selector `0x41` and header `05 00`. Its
 five unqualified fields are scalar source `N7:0`, FIFO file `#N7:10`, control
 address `R6:0`, literal length `3`, and literal position `0`. The recognizer
 requires the observed address families for each role.
+
+The controlled FFU instruction uses selector `0x42`, immediately following
+FFL `0x41`, and the same header `05 00`. Its fields are FIFO file `#N7:10`,
+scalar destination `N7:0`, control `R6:0`, length `3`, and position `0`. This
+reverses the first two data-flow roles relative to FFL without changing the
+remaining control fields.
 
 The field-identical TOD and MOV instruction records differ only at their
 selectors: TOD uses `0x17`, while MOV uses `0x1C`. TOD therefore uses the same
