@@ -5,6 +5,7 @@ import zlib
 from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_abs_instructions,
     scan_controlled_add_instructions,
+    scan_controlled_and_instructions,
     scan_controlled_clr_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
@@ -388,6 +389,26 @@ def test_abs_differs_from_mov_only_by_controlled_selector() -> None:
     assert (absolute.mnemonic, absolute.selector) == ("ABS", 0x98)
     assert mov.selector_offset == absolute.selector_offset
     assert mov.operands == absolute.operands
+
+
+def test_and_differs_from_add_only_by_controlled_selector() -> None:
+    add = scan_controlled_add_instructions(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2"),
+        include_private_text=True,
+    )[0]
+    and_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    and_payload[-8] = 0x23
+    bitwise_and = scan_controlled_and_instructions(
+        bytes(and_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (add.mnemonic, add.selector) == ("ADD", 0x27)
+    assert (bitwise_and.mnemonic, bitwise_and.selector) == ("AND", 0x23)
+    assert add.selector_offset == bitwise_and.selector_offset
+    assert add.operands == bitwise_and.operands
 
 
 def test_add_selector_is_stable_across_independent_operand_changes() -> None:

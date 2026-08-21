@@ -23,6 +23,7 @@ _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
 _ABS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/abs/v1"
+_AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _CLR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/clr/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
@@ -47,6 +48,12 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x14: ("CLR", _CLR_PROFILE, ("destination",), 0x02),
     0x1C: ("MOV", _MOV_PROFILE, ("source", "destination"), 0x04),
     0x1E: ("NEG", _NEG_PROFILE, ("source", "destination"), 0x04),
+    0x23: (
+        "AND",
+        _AND_PROFILE,
+        ("source_a", "source_b", "destination"),
+        0x06,
+    ),
     0x27: (
         "ADD",
         _ADD_PROFILE,
@@ -322,6 +329,23 @@ def scan_controlled_abs_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "ABS"
+    ]
+
+
+def scan_controlled_and_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize AND records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "AND"
     ]
 
 
