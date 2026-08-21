@@ -238,6 +238,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTE` | `0x2F` | `B3:0/1` |
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
+| `CLR` | `0x14` | Destination `N7:0` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
 | `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -285,6 +286,11 @@ only the expected ASCII digit. Selector `0x1C`, selector offset 182, operand
 offsets 167 and 174, qualifiers, and all surrounding bytes remained fixed.
 MOV is therefore exposed with ordered `source` and `destination` operands under
 profile `rslogix-micro-starter-lite/ml1100-series-b/mov/v1`.
+
+The controlled CLR record uses header `02 00` followed by one `01 3F`-qualified
+word operand, destination `N7:0`, and selector `0x14`. CLR therefore extends
+the qualified-word structural recognizer to a single ordered destination field
+under its own evidence profile.
 
 The field-identical MOV and NEG instruction records differ only at their
 selectors: MOV uses `0x1C`, while NEG uses `0x1E`. NEG's surrounding file

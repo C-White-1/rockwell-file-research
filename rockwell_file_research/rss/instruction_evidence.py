@@ -21,6 +21,7 @@ _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
+_CLR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/clr/v1"
 _ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _SUB_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sub/v1"
 _MUL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mul/v1"
@@ -41,6 +42,7 @@ _TIMER_IDENTITIES = {
     0xA6: ("TOF", _TOF_PROFILE),
 }
 _QUALIFIED_WORD_IDENTITIES = {
+    0x14: ("CLR", _CLR_PROFILE, ("destination",), 0x02),
     0x1C: ("MOV", _MOV_PROFILE, ("source", "destination"), 0x04),
     0x1E: ("NEG", _NEG_PROFILE, ("source", "destination"), 0x04),
     0x27: (
@@ -173,9 +175,9 @@ def _scan_controlled_qualified_word_instructions(
     """Recognize controlled qualified-word instruction records."""
 
     evidence: list[InstructionEvidence] = []
-    for record_offset in range(max(0, len(payload) - 20)):
+    for record_offset in range(max(0, len(payload) - 1)):
         header_value = payload[record_offset]
-        if payload[record_offset + 1] != 0 or header_value not in {0x04, 0x06}:
+        if payload[record_offset + 1] != 0 or header_value not in {0x02, 0x04, 0x06}:
             continue
         cursor = record_offset + 2
         fields: list[tuple[int, bytes]] = []
@@ -248,6 +250,23 @@ def scan_controlled_mov_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "MOV"
+    ]
+
+
+def scan_controlled_clr_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize CLR records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "CLR"
     ]
 
 

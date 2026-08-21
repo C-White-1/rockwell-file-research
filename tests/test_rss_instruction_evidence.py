@@ -4,6 +4,7 @@ import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_add_instructions,
+    scan_controlled_clr_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
     scan_controlled_div_instructions,
@@ -56,6 +57,17 @@ def _mov_record(*, source: str, destination: str) -> bytes:
         + bytes([len(destination_bytes)])
         + destination_bytes
         + b"\x01\x3f\x00\x00\x1c"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _clr_record(destination: str) -> bytes:
+    encoded = destination.encode("ascii")
+    return (
+        b"\x02\x00"
+        + bytes([len(encoded)])
+        + encoded
+        + b"\x01\x3f\x00\x00\x14"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -306,6 +318,19 @@ def test_controlled_add_exposes_three_ordered_operand_roles() -> None:
         ("source_a", "N7:0"),
         ("source_b", "N7:1"),
         ("destination", "N7:2"),
+    ]
+
+
+def test_controlled_clr_exposes_destination_operand() -> None:
+    result = scan_controlled_clr_instructions(
+        _clr_record("N7:0"),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("CLR", 0x14)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("destination", "N7:0")
     ]
 
 
