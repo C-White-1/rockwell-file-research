@@ -254,6 +254,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MUL` | `0x29` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
+| `NEQ` | `0x33` | Source A `N7:0`; source B `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -358,6 +359,11 @@ The controlled EQU record uses the shared qualified two-word framing with
 selector `0x32`. Unlike MOV-family records, both fields are comparison inputs:
 `source_a` and `source_b`; neither is a destination. The following OTE in the
 controlled rung remains a separate simple-bit instruction record.
+
+The field-identical EQU and NEQ instruction records differ only at their
+selectors: EQU uses `0x32`, while NEQ uses `0x33`. NEQ therefore uses the same
+qualified two-word comparison recognizer and operand roles under its own
+evidence profile.
 
 The controlled TON record contains four consecutive length-prefixed fields:
 timer, time base, preset, and accumulator. Preset-only (`5` to `7`) and

@@ -15,6 +15,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
     scan_controlled_neg_instructions,
+    scan_controlled_neq_instructions,
     scan_controlled_not_instructions,
     scan_controlled_or_instructions,
     scan_controlled_res_instructions,
@@ -427,6 +428,26 @@ def test_equ_uses_two_comparison_source_roles() -> None:
         ("source_a", "N7:0"),
         ("source_b", "N7:1"),
     ]
+
+
+def test_neq_differs_from_equ_only_by_controlled_selector() -> None:
+    equ_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    equ_payload[-8] = 0x32
+    equ = scan_controlled_equ_instructions(
+        bytes(equ_payload),
+        include_private_text=True,
+    )[0]
+    neq_payload = bytearray(equ_payload)
+    neq_payload[-8] = 0x33
+    neq = scan_controlled_neq_instructions(
+        bytes(neq_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (equ.mnemonic, equ.selector) == ("EQU", 0x32)
+    assert (neq.mnemonic, neq.selector) == ("NEQ", 0x33)
+    assert equ.selector_offset == neq.selector_offset
+    assert equ.operands == neq.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
