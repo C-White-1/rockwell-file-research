@@ -16,6 +16,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
+    scan_controlled_lim_instructions,
     scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
@@ -543,6 +544,25 @@ def test_meq_exposes_source_mask_and_compare_roles() -> None:
         ("source", "N7:0"),
         ("mask", "N7:1"),
         ("compare", "N7:2"),
+    ]
+
+
+def test_lim_exposes_low_test_and_high_roles() -> None:
+    lim_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    lim_payload[-8] = 0x3F
+    result = scan_controlled_lim_instructions(
+        bytes(lim_payload),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("LIM", 0x3F)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("low_limit", "N7:0"),
+        ("test", "N7:1"),
+        ("high_limit", "N7:2"),
     ]
 
 

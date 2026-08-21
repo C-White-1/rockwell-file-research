@@ -49,6 +49,7 @@ opcodes.
 | `LES` | `0x36` | source_a, source_b | Confirmed |
 | `LEQ` | `0x37` | source_a, source_b | Confirmed |
 | `MEQ` | `0x38` | source, mask, compare | Confirmed |
+| `LIM` | `0x3F` | low_limit, test, high_limit | Confirmed |
 | `XIC` | `0x39` | operand | Confirmed |
 | `XIO` | `0x3A` | operand | Confirmed |
 | `SQR` | `0x46` | source, destination | Confirmed |
@@ -57,7 +58,7 @@ opcodes.
 | `TON` | `0xA7` | timer, time_base, preset, accumulator | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 
-Confirmed total: **31**.
+Confirmed total: **32**.
 
 ## Candidate backlog
 
@@ -66,7 +67,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Comparison: `LIM`.
 - Arithmetic and conversion: `DDV`, `SCP`, `SCL`, `SWP`, `TOD`, `FRD`,
   `DEG`, `RAD`, `XPY`.
 - Mathematical: `ACS`, `ASN`, `ATN`, `COS`, `LN`, `LOG`, `SIN`, `TAN`.
@@ -107,6 +107,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned comparison fixture is `LIM`, using low limit `N7:0`, test
-`N7:1`, high limit `N7:2`, and a following `OTE B3:0/1` to consume the rung
-condition.
+The next planned fixture candidate is `DDV`. Its availability and operand
+fields must first be confirmed in the selected processor's instruction
+palette before assigning a filename.

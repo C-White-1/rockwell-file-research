@@ -31,6 +31,7 @@ _LEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/leq/v1"
 _GRT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/grt/v1"
 _GEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/geq/v1"
 _MEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/meq/v1"
+_LIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lim/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -108,6 +109,7 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x36: ("LES", _LES_PROFILE, ("source_a", "source_b"), 0x04),
     0x37: ("LEQ", _LEQ_PROFILE, ("source_a", "source_b"), 0x04),
     0x38: ("MEQ", _MEQ_PROFILE, ("source", "mask", "compare"), 0x06),
+    0x3F: ("LIM", _LIM_PROFILE, ("low_limit", "test", "high_limit"), 0x06),
     0x46: ("SQR", _SQR_PROFILE, ("source", "destination"), 0x04),
     0x98: ("ABS", _ABS_PROFILE, ("source", "destination"), 0x04),
 }
@@ -495,6 +497,23 @@ def scan_controlled_meq_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "MEQ"
+    ]
+
+
+def scan_controlled_lim_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize LIM records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "LIM"
     ]
 
 
