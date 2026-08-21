@@ -270,6 +270,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
 | `SWP` | `0x96` | File source `#N7:0`; length `3` |
 | `COP` | `0x22` | File source `#N7:0`; destination `#N7:10`; length `3` |
+| `FLL` | `0x21` | Source `N7:0`; file destination `#N7:10`; length `3` |
 | `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `FRD` | `0x18` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -391,6 +392,11 @@ a file-range source rather than a scalar address.
 The controlled COP instruction uses selector `0x22` and generalizes the
 unqualified file-operation framing to header `03 00`. Its ordered fields are
 file source `#N7:0`, file destination `#N7:10`, and literal length `3`.
+
+The controlled FLL instruction uses selector `0x21` and header `03 00`. It
+shares the unqualified three-field file-operation framing with COP, but its
+source is scalar `N7:0`; only destination `#N7:10` is a file address. The last
+field is literal length `3`.
 
 The field-identical TOD and MOV instruction records differ only at their
 selectors: TOD uses `0x17`, while MOV uses `0x1C`. TOD therefore uses the same

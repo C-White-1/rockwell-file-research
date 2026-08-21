@@ -37,6 +37,7 @@ _SCP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scp/v1"
 _SCL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scl/v1"
 _SWP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/swp/v1"
 _COP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/cop/v1"
+_FLL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/fll/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -63,6 +64,17 @@ _TIMER_IDENTITIES = {
     0xA6: ("TOF", _TOF_PROFILE),
 }
 _FILE_OPERATION_IDENTITIES = {
+    0x21: (
+        "FLL",
+        _FLL_PROFILE,
+        ("source", "destination", "length"),
+        (
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_INTEGER,
+        ),
+        0x03,
+    ),
     0x22: (
         "COP",
         _COP_PROFILE,
@@ -705,6 +717,23 @@ def scan_controlled_cop_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "COP"
+    ]
+
+
+def scan_controlled_fll_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize FLL records matching the controlled file-operation profile."""
+
+    return [
+        item
+        for item in _scan_controlled_file_operation_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "FLL"
     ]
 
 

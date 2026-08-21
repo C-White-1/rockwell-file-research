@@ -63,8 +63,9 @@ opcodes.
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 | `SWP` | `0x96` | file source, literal length | Confirmed |
 | `COP` | `0x22` | file source, file destination, length | Confirmed |
+| `FLL` | `0x21` | scalar source, file destination, length | Confirmed |
 
-Confirmed total: **38**.
+Confirmed total: **39**.
 
 ## Unavailable instruction records
 
@@ -90,7 +91,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- File and data: `FLL`, `FFL`, `FFU`, `LFL`, `LFU`, `MVM`.
+- File and data: `FFL`, `FFU`, `LFL`, `LFU`, `MVM`.
 - Program control: `JMP`, `LBL`, `JSR`, `SBR`, `RET`, `MCR`, `SUS`, `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
@@ -127,6 +128,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned fixture candidate is `FLL`. Its availability and operand
+The next planned fixture candidate is `FFL`. Its availability and operand
 fields must first be confirmed in the selected processor's instruction
 palette before assigning a filename.
