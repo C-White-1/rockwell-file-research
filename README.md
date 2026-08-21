@@ -203,6 +203,9 @@ The available documentation, Laddis binary-ladder findings, controlled
 differential procedure, and acceptance criteria for an evidence-backed opcode
 registry are documented in
 [RSS instruction-decoding research](RSS_INSTRUCTION_DECODING_RESEARCH.md).
+
+Progress toward complete instruction coverage is maintained in the
+[RSLogix 500 instruction coverage register](RSS_INSTRUCTION_COVERAGE.md).
 The corresponding engineer-facing creation and delivery contract is the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 

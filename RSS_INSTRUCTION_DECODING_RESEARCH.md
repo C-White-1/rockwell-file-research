@@ -109,6 +109,8 @@ Examples of valid tests inspired by the paper include:
 The exact project settings, fixture names, instruction matrix, save discipline,
 manifest, and delivery checks are defined in the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
+The current confirmed set and remaining research queue are maintained in the
+[RSLogix 500 instruction coverage register](RSS_INSTRUCTION_COVERAGE.md).
 
 ### 1. Establish tooling and provenance
 
