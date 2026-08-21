@@ -21,12 +21,17 @@ _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
+_RTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rto/v1"
 _RES_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/res/v1"
 _CTU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctu/v1"
 _CTD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctd/v1"
 _COUNTER_IDENTITIES = {
     0x11: ("CTU", _CTU_PROFILE),
     0x12: ("CTD", _CTD_PROFILE),
+}
+_TIMER_IDENTITIES = {
+    0xA7: ("TON", _TON_PROFILE),
+    0xA3: ("RTO", _RTO_PROFILE),
 }
 
 
@@ -195,12 +200,12 @@ def scan_controlled_mov_instructions(
     return evidence
 
 
-def scan_controlled_ton_instructions(
+def _scan_controlled_timer_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize TON records matching the controlled four-field profile."""
+    """Recognize controlled TON and RTO four-field records."""
 
     evidence: list[InstructionEvidence] = []
     for record_offset in range(max(0, len(payload) - 24)):
@@ -235,17 +240,20 @@ def scan_controlled_ton_instructions(
         if payload[cursor : cursor + 2] != b"\x00\x00":
             continue
         selector_offset = cursor + 2
-        if payload[selector_offset] != 0xA7:
+        selector = payload[selector_offset]
+        identity = _TIMER_IDENTITIES.get(selector)
+        if identity is None:
             continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
         ):
             continue
         roles = ("timer", "time_base", "preset", "accumulator")
+        mnemonic, profile = identity
         evidence.append(
             InstructionEvidence(
-                mnemonic="TON",
-                selector=0xA7,
+                mnemonic=mnemonic,
+                selector=selector,
                 selector_offset=selector_offset,
                 operands=tuple(
                     _operand(
@@ -256,10 +264,44 @@ def scan_controlled_ton_instructions(
                     )
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
-                evidence_profile=_TON_PROFILE,
+                evidence_profile=profile,
             )
         )
     return evidence
+
+
+def scan_controlled_ton_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize TON records matching the controlled timer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_timer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "TON"
+    ]
+
+
+def scan_controlled_rto_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize RTO records matching the controlled timer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_timer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "RTO"
+    ]
 
 
 def scan_controlled_res_instructions(
@@ -431,7 +473,7 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(
-        scan_controlled_ton_instructions(
+        _scan_controlled_timer_instructions(
             payload,
             include_private_text=include_private_text,
         )
