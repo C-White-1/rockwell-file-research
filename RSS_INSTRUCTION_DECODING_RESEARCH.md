@@ -240,6 +240,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 
 | Mnemonic | Selector | Controlled operand comparison |
 | --- | ---: | --- |
+| `RET` | `0x09` | No operands |
 | `XIC` | `0x39` | `B3:0/0` |
 | `XIO` | `0x3A` | `B3:0/0` |
 | `LBL` | `0x3B` | Label `Q2:1` |
@@ -468,6 +469,10 @@ number `3` to `U:3`. The shared program-control scanner applies a distinct
 The controlled SBR instruction is a zero-operand subroutine-entry marker. Its
 record uses selector `0x3D`, a zero operand header, and the standard instruction
 trailer; no textual operand is present.
+
+The controlled RET instruction uses the same zero-operand frame and standard
+trailer as SBR, but selector `0x09`. It is retained as a distinct
+subroutine-return profile rather than inferred from SBR's semantics.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
