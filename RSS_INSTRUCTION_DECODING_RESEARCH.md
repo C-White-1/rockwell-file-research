@@ -111,6 +111,9 @@ manifest, and delivery checks are defined in the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 The current confirmed set and remaining research queue are maintained in the
 [RSLogix 500 instruction coverage register](RSS_INSTRUCTION_COVERAGE.md).
+That register also records instructions such as DDV that are unavailable for
+the selected processor profile, preventing absence from being mistaken for an
+unknown encoding.
 
 ### 1. Establish tooling and provenance
 
@@ -261,6 +264,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `LEQ` | `0x37` | Source A `N7:0`; source B `N7:1` |
 | `MEQ` | `0x38` | Source `N7:0`; mask `N7:1`; compare `N7:2` |
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
+| `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -355,6 +359,12 @@ separate simple-bit instruction record.
 The controlled LIM instruction uses selector `0x3F` and the shared qualified
 three-word framing. Its serialized order matches its entry fields: `low_limit`,
 `test`, then `high_limit`. The following OTE remains a separate record.
+
+The controlled SCP instruction uses selector `0x95` and extends the shared
+qualified-word framing to header `0C 00` with six ordered fields: `input`,
+`input_min`, `input_max`, `scaled_min`, `scaled_max`, and `output`. Each field
+uses the same length-prefixed `01 3F` qualification observed in shorter word
+instructions.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.

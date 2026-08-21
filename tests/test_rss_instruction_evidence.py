@@ -26,6 +26,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_or_instructions,
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
+    scan_controlled_scp_instructions,
     scan_controlled_simple_bit_instructions,
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
@@ -96,6 +97,16 @@ def _add_record(*, source_a: str, source_b: str, destination: str) -> bytes:
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field + b"\x01\x3f" for field in fields)
         + b"\x00\x00\x27"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _scp_record(fields: list[str]) -> bytes:
+    encoded = [field.encode("ascii") for field in fields]
+    return (
+        b"\x0c\x00"
+        + b"".join(bytes([len(field)]) + field + b"\x01\x3f" for field in encoded)
+        + b"\x00\x00\x95"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -563,6 +574,24 @@ def test_lim_exposes_low_test_and_high_roles() -> None:
         ("low_limit", "N7:0"),
         ("test", "N7:1"),
         ("high_limit", "N7:2"),
+    ]
+
+
+def test_scp_exposes_six_ordered_scaling_roles() -> None:
+    result = scan_controlled_scp_instructions(
+        _scp_record([f"N7:{index}" for index in range(6)]),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SCP", 0x95)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("input", "N7:0"),
+        ("input_min", "N7:1"),
+        ("input_max", "N7:2"),
+        ("scaled_min", "N7:3"),
+        ("scaled_max", "N7:4"),
+        ("output", "N7:5"),
     ]
 
 
