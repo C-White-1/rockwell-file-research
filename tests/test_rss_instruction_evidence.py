@@ -37,6 +37,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_not_instructions,
     scan_controlled_ons_instructions,
     scan_controlled_or_instructions,
+    scan_controlled_osf_instructions,
     scan_controlled_osr_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
@@ -377,6 +378,22 @@ def test_osr_exposes_ordered_storage_and_output_bits() -> None:
         ("storage_bit", "B3:0/1"),
         ("output_bit", "B3:0/2"),
     ]
+
+
+def test_osf_differs_from_osr_only_by_controlled_selector() -> None:
+    osf = scan_controlled_osf_instructions(
+        _edge_output_record(selector=0x9D),
+        include_private_text=True,
+    )[0]
+    osr = scan_controlled_osr_instructions(
+        _edge_output_record(selector=0x9E),
+        include_private_text=True,
+    )[0]
+
+    assert (osf.mnemonic, osf.selector) == ("OSF", 0x9D)
+    assert (osr.mnemonic, osr.selector) == ("OSR", 0x9E)
+    assert osf.selector_offset == osr.selector_offset
+    assert osf.operands == osr.operands
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:

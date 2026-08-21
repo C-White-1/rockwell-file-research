@@ -22,6 +22,7 @@ _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _ONS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ons/v1"
 _OSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/osr/v1"
+_OSF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/osf/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
@@ -94,6 +95,7 @@ _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x3D: ("SBR", _SBR_PROFILE),
 }
 _EDGE_OUTPUT_IDENTITIES = {
+    0x9D: ("OSF", _OSF_PROFILE),
     0x9E: ("OSR", _OSR_PROFILE),
 }
 _TIMER_IDENTITIES = {
@@ -469,6 +471,23 @@ def scan_controlled_osr_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "OSR"
+    ]
+
+
+def scan_controlled_osf_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize OSF records matching the controlled edge-output profile."""
+
+    return [
+        item
+        for item in _scan_controlled_edge_output_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "OSF"
     ]
 
 
