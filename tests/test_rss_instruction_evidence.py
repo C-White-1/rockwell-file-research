@@ -12,6 +12,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_instructions,
+    scan_controlled_les_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
     scan_controlled_neg_instructions,
@@ -448,6 +449,22 @@ def test_neq_differs_from_equ_only_by_controlled_selector() -> None:
     assert (neq.mnemonic, neq.selector) == ("NEQ", 0x33)
     assert equ.selector_offset == neq.selector_offset
     assert equ.operands == neq.operands
+
+
+def test_les_uses_two_comparison_source_roles() -> None:
+    les_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    les_payload[-8] = 0x36
+    result = scan_controlled_les_instructions(
+        bytes(les_payload),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("LES", 0x36)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source_a", "N7:0"),
+        ("source_b", "N7:1"),
+    ]
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
