@@ -221,7 +221,7 @@ nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
-RET, and MCR only when a record
+RET, MCR, and SUS only when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
@@ -256,6 +256,7 @@ SBR reports no operands and acts as a subroutine-entry marker.
 RET reports no operands and acts as a subroutine-return marker.
 MCR reports no operands; zone-pairing semantics are not inferred from an
 isolated instruction record.
+SUS reports its literal `suspend_id` operand.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

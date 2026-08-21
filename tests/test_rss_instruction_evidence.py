@@ -45,6 +45,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_simple_bit_instructions,
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
+    scan_controlled_sus_instructions,
     scan_controlled_swp_instructions,
     scan_controlled_tod_instructions,
     scan_controlled_tof_instructions,
@@ -1241,6 +1242,25 @@ def test_program_control_operands_remain_family_specific() -> None:
     )
     assert not scan_controlled_jmp_instructions(
         _label_record(operand="U:3", selector=0x16)
+    )
+
+
+def test_sus_exposes_literal_suspend_identifier() -> None:
+    result = scan_controlled_sus_instructions(
+        _label_record(operand="1", selector=0x1F),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SUS", 0x1F)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("suspend_id", "1"),
+    ]
+
+
+def test_sus_rejects_non_integer_identifier() -> None:
+    assert not scan_controlled_sus_instructions(
+        _label_record(operand="N7:1", selector=0x1F)
     )
 
 

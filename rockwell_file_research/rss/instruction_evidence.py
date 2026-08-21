@@ -56,6 +56,7 @@ _JSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/jsr/v1"
 _SBR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sbr/v1"
 _RET_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ret/v1"
 _MCR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mcr/v1"
+_SUS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sus/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -79,6 +80,7 @@ _COUNTER_IDENTITIES = {
 _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x15: ("JSR", _JSR_PROFILE, "subroutine", _CONTROLLED_SUBROUTINE_OPERAND),
     0x16: ("JMP", _JMP_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
+    0x1F: ("SUS", _SUS_PROFILE, "suspend_id", _CONTROLLED_INTEGER),
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
 }
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
@@ -1346,6 +1348,23 @@ def scan_controlled_jsr_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "JSR"
+    ]
+
+
+def scan_controlled_sus_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SUS records matching the controlled program-control profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_operand_program_control_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SUS"
     ]
 
 

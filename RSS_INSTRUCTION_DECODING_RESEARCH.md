@@ -254,6 +254,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `JMP` | `0x16` | Label `Q2:1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
+| `SUS` | `0x1F` | Suspend ID `1` |
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
@@ -478,6 +479,10 @@ subroutine-return profile rather than inferred from SBR's semantics.
 The controlled MCR instruction uses the same zero-operand frame with selector
 `0x08`. This confirms record identity only: an isolated fixture does not prove
 MCR zone pairing, nesting, or execution semantics.
+
+The controlled SUS instruction uses selector `0x1F`, header `01 00`, and one
+unqualified decimal identifier. The entered value `1` remained serialized as
+`1`; it is reported with role `suspend_id` and an integer-only operand grammar.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

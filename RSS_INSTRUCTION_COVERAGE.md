@@ -38,6 +38,7 @@ opcodes.
 | `NOT` | `0x1B` | source, destination | Confirmed |
 | `MOV` | `0x1C` | source, destination | Confirmed |
 | `NEG` | `0x1E` | source, destination | Confirmed |
+| `SUS` | `0x1F` | suspend_id | Confirmed |
 | `AND` | `0x23` | source_a, source_b, destination | Confirmed |
 | `OR` | `0x24` | source_a, source_b, destination | Confirmed |
 | `XOR` | `0x25` | source_a, source_b, destination | Confirmed |
@@ -76,7 +77,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **50**.
+Confirmed total: **51**.
 
 ## Unavailable instruction records
 
@@ -102,7 +103,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Program control: `SUS`, `TND`,
+- Program control: `TND`,
   `END`.
 - Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
