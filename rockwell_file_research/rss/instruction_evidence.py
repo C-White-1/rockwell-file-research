@@ -6,13 +6,6 @@ import hashlib
 import re
 from dataclasses import dataclass
 
-_CONTROLLED_SIMPLE_BIT_SELECTORS = {
-    0x2F: "OTE",
-    0x30: "OTL",
-    0x31: "OTU",
-    0x39: "XIC",
-    0x3A: "XIO",
-}
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_MASK_OPERAND = re.compile(
@@ -27,6 +20,7 @@ _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
+_ONS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ons/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
@@ -74,6 +68,14 @@ _TOF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tof/v1"
 _RES_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/res/v1"
 _CTU_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctu/v1"
 _CTD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ctd/v1"
+_CONTROLLED_SIMPLE_BIT_IDENTITIES = {
+    0x2F: ("OTE", _SIMPLE_BIT_PROFILE, "operand"),
+    0x30: ("OTL", _SIMPLE_BIT_PROFILE, "operand"),
+    0x31: ("OTU", _SIMPLE_BIT_PROFILE, "operand"),
+    0x39: ("XIC", _SIMPLE_BIT_PROFILE, "operand"),
+    0x3A: ("XIO", _SIMPLE_BIT_PROFILE, "operand"),
+    0xAB: ("ONS", _ONS_PROFILE, "storage_bit"),
+}
 _COUNTER_IDENTITIES = {
     0x11: ("CTU", _CTU_PROFILE),
     0x12: ("CTD", _CTD_PROFILE),
@@ -341,9 +343,10 @@ def scan_controlled_simple_bit_instructions(
         if payload[operand_offset + operand_length : selector_offset] != b"\x00\x00":
             continue
         selector = payload[selector_offset]
-        mnemonic = _CONTROLLED_SIMPLE_BIT_SELECTORS.get(selector)
-        if mnemonic is None:
+        identity = _CONTROLLED_SIMPLE_BIT_IDENTITIES.get(selector)
+        if identity is None:
             continue
+        mnemonic, profile, role = identity
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
         ):
@@ -355,16 +358,33 @@ def scan_controlled_simple_bit_instructions(
                 selector_offset=selector_offset,
                 operands=(
                     _operand(
-                        role="operand",
+                        role=role,
                         offset=operand_offset,
                         value=operand_bytes,
                         include_private_text=include_private_text,
                     ),
                 ),
-                evidence_profile=_SIMPLE_BIT_PROFILE,
+                evidence_profile=profile,
             )
         )
     return evidence
+
+
+def scan_controlled_ons_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ONS records matching the controlled storage-bit profile."""
+
+    return [
+        item
+        for item in scan_controlled_simple_bit_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ONS"
+    ]
 
 
 def _scan_controlled_qualified_word_instructions(

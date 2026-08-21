@@ -68,6 +68,7 @@ opcodes.
 | `TOF` | `0xA6` | timer, time_base, preset, accumulator | Confirmed |
 | `TON` | `0xA7` | timer, time_base, preset, accumulator | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
+| `ONS` | `0xAB` | storage_bit | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 | `SWP` | `0x96` | file source, literal length | Confirmed |
@@ -78,7 +79,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **52**.
+Confirmed total: **53**.
 
 ## Unavailable instruction records
 
@@ -105,7 +106,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Bit and edge control: `ONS`, `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
+- Bit and edge control: `OSR`, `OSF`, `UIE`, `UID`, `UIF`.
 - Shift and sequencer: `BSL`, `BSR`, `SQC`, `SQL`, `SQO`.
 - Process and control: `PID`, `PTO`, `PWM`, `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.

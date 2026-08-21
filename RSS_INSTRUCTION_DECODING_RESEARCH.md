@@ -258,6 +258,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SUS` | `0x1F` | Suspend ID `1` |
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
+| `ONS` | `0xAB` | Storage bit `B3:0/1` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `OR` | `0x24` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -493,6 +494,11 @@ of operands, but does not independently prove runtime scan-cycle semantics.
 instruction palette. RSLogix displays it automatically after the final rung,
 so it is tracked as a ladder-file structural marker rather than assigned a
 guessed instruction selector.
+
+The controlled ONS instruction uses selector `0xAB`, header `01 00`, and the
+same unqualified `B`-bit framing as XIC, XIO, and output coils. Its operand is
+reported as `storage_bit` under a separate profile because its semantic role
+is not interchangeable with the generic bit operand role.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

@@ -35,6 +35,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_neg_instructions,
     scan_controlled_neq_instructions,
     scan_controlled_not_instructions,
+    scan_controlled_ons_instructions,
     scan_controlled_or_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
@@ -336,6 +337,20 @@ def test_private_operand_text_is_redacted_by_default() -> None:
 
     assert result[0].operands[0].value is None
     assert len(result[0].operands[0].sha256) == 64
+
+
+def test_ons_exposes_storage_bit_role_under_its_own_profile() -> None:
+    result = scan_controlled_ons_instructions(
+        _record(operand="B3:0/1", selector=0xAB),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ONS", 0xAB)
+    assert result[0].evidence_profile.endswith("/ons/v1")
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("storage_bit", "B3:0/1"),
+    ]
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:
