@@ -243,6 +243,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `NEG` | `0x1E` | Source `N7:0`; destination `N7:1` |
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
+| `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `OR` | `0x24` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `XOR` | `0x25` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -310,6 +311,11 @@ own evidence profile.
 
 The field-identical ABS and MOV instruction records differ only at their
 selectors: ABS uses `0x98`, while MOV uses `0x1C`. ABS therefore uses the same
+qualified two-word recognizer and ordered source/destination roles under its
+own evidence profile.
+
+The field-identical NOT and MOV instruction records differ only at their
+selectors: NOT uses `0x1B`, while MOV uses `0x1C`. NOT therefore uses the same
 qualified two-word recognizer and ordered source/destination roles under its
 own evidence profile.
 

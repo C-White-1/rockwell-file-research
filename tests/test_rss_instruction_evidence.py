@@ -14,6 +14,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
     scan_controlled_neg_instructions,
+    scan_controlled_not_instructions,
     scan_controlled_or_instructions,
     scan_controlled_res_instructions,
     scan_controlled_rto_instructions,
@@ -391,6 +392,24 @@ def test_abs_differs_from_mov_only_by_controlled_selector() -> None:
     assert (absolute.mnemonic, absolute.selector) == ("ABS", 0x98)
     assert mov.selector_offset == absolute.selector_offset
     assert mov.operands == absolute.operands
+
+
+def test_not_differs_from_mov_only_by_controlled_selector() -> None:
+    mov = scan_controlled_mov_instructions(
+        _mov_record(source="N7:0", destination="N7:1"),
+        include_private_text=True,
+    )[0]
+    not_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    not_payload[-8] = 0x1B
+    bitwise_not = scan_controlled_not_instructions(
+        bytes(not_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (mov.mnemonic, mov.selector) == ("MOV", 0x1C)
+    assert (bitwise_not.mnemonic, bitwise_not.selector) == ("NOT", 0x1B)
+    assert mov.selector_offset == bitwise_not.selector_offset
+    assert mov.operands == bitwise_not.operands
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
