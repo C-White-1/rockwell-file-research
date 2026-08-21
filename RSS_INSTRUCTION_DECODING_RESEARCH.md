@@ -259,6 +259,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `GEQ` | `0x35` | Source A `N7:0`; source B `N7:1` |
 | `LES` | `0x36` | Source A `N7:0`; source B `N7:1` |
 | `LEQ` | `0x37` | Source A `N7:0`; source B `N7:1` |
+| `MEQ` | `0x38` | Source `N7:0`; mask `N7:1`; compare `N7:2` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -344,6 +345,11 @@ The field-identical GRT and GEQ instruction records differ only at their
 selectors: GRT uses `0x34`, while GEQ uses `0x35`. Together with EQU, NEQ,
 LES, and LEQ, this establishes the contiguous comparison selector family
 `0x32` through `0x37` for the controlled profile.
+
+The controlled MEQ instruction uses selector `0x38` and the shared qualified
+three-word framing. Its ordered roles are `source`, `mask`, and `compare`, not
+the arithmetic source/source/destination roles. The following OTE remains a
+separate simple-bit instruction record.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.

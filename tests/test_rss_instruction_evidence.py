@@ -16,6 +16,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
+    scan_controlled_meq_instructions,
     scan_controlled_mov_instructions,
     scan_controlled_mul_instructions,
     scan_controlled_neg_instructions,
@@ -524,6 +525,25 @@ def test_geq_differs_from_grt_only_by_controlled_selector() -> None:
     assert (geq.mnemonic, geq.selector) == ("GEQ", 0x35)
     assert grt.selector_offset == geq.selector_offset
     assert grt.operands == geq.operands
+
+
+def test_meq_exposes_source_mask_and_compare_roles() -> None:
+    meq_payload = bytearray(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2")
+    )
+    meq_payload[-8] = 0x38
+    result = scan_controlled_meq_instructions(
+        bytes(meq_payload),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("MEQ", 0x38)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "N7:0"),
+        ("mask", "N7:1"),
+        ("compare", "N7:2"),
+    ]
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
