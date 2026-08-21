@@ -54,6 +54,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_tod_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
+    scan_controlled_uie_instructions,
     scan_controlled_xor_instructions,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
@@ -1321,6 +1322,19 @@ def test_sus_rejects_non_integer_identifier() -> None:
     assert not scan_controlled_sus_instructions(
         _label_record(operand="N7:1", selector=0x1F)
     )
+
+
+def test_uie_exposes_literal_interrupt_type_mask() -> None:
+    result = scan_controlled_uie_instructions(
+        _label_record(operand="1", selector=0xA9),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("UIE", 0xA9)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("interrupt_types", "1"),
+    ]
 
 
 def test_sbr_is_a_zero_operand_program_control_marker() -> None:

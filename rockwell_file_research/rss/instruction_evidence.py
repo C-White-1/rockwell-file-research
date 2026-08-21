@@ -53,6 +53,7 @@ _SBR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sbr/v1"
 _RET_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ret/v1"
 _MCR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mcr/v1"
 _SUS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sus/v1"
+_UIE_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uie/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -82,11 +83,12 @@ _COUNTER_IDENTITIES = {
     0x11: ("CTU", _CTU_PROFILE),
     0x12: ("CTD", _CTD_PROFILE),
 }
-_SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
+_SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0x15: ("JSR", _JSR_PROFILE, "subroutine", _CONTROLLED_SUBROUTINE_OPERAND),
     0x16: ("JMP", _JMP_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0x1F: ("SUS", _SUS_PROFILE, "suspend_id", _CONTROLLED_INTEGER),
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
+    0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
 }
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x08: ("MCR", _MCR_PROFILE),
@@ -1373,12 +1375,12 @@ def scan_controlled_res_instructions(
     return evidence
 
 
-def _scan_controlled_single_operand_program_control_instructions(
+def _scan_controlled_single_unqualified_operand_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize controlled single-operand program-control records."""
+    """Recognize controlled single unqualified operand records."""
 
     evidence: list[InstructionEvidence] = []
     for operand_offset in range(3, len(payload)):
@@ -1395,9 +1397,7 @@ def _scan_controlled_single_operand_program_control_instructions(
         selector_offset = operand_offset + operand_length + 2
         if payload[operand_offset + operand_length : selector_offset] != b"\x00\x00":
             continue
-        identity = _SINGLE_OPERAND_PROGRAM_CONTROL_IDENTITIES.get(
-            payload[selector_offset]
-        )
+        identity = _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES.get(payload[selector_offset])
         if identity is None:
             continue
         mnemonic, profile, role, pattern = identity
@@ -1435,7 +1435,7 @@ def scan_controlled_jmp_instructions(
 
     return [
         item
-        for item in _scan_controlled_single_operand_program_control_instructions(
+        for item in _scan_controlled_single_unqualified_operand_instructions(
             payload,
             include_private_text=include_private_text,
         )
@@ -1452,7 +1452,7 @@ def scan_controlled_lbl_instructions(
 
     return [
         item
-        for item in _scan_controlled_single_operand_program_control_instructions(
+        for item in _scan_controlled_single_unqualified_operand_instructions(
             payload,
             include_private_text=include_private_text,
         )
@@ -1469,7 +1469,7 @@ def scan_controlled_jsr_instructions(
 
     return [
         item
-        for item in _scan_controlled_single_operand_program_control_instructions(
+        for item in _scan_controlled_single_unqualified_operand_instructions(
             payload,
             include_private_text=include_private_text,
         )
@@ -1486,11 +1486,28 @@ def scan_controlled_sus_instructions(
 
     return [
         item
-        for item in _scan_controlled_single_operand_program_control_instructions(
+        for item in _scan_controlled_single_unqualified_operand_instructions(
             payload,
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SUS"
+    ]
+
+
+def scan_controlled_uie_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize UIE records matching the controlled interrupt profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "UIE"
     ]
 
 
@@ -1709,7 +1726,7 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(
-        _scan_controlled_single_operand_program_control_instructions(
+        _scan_controlled_single_unqualified_operand_instructions(
             payload,
             include_private_text=include_private_text,
         )
