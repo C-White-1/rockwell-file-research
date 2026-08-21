@@ -3,6 +3,7 @@
 import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
+    scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
     scan_controlled_instructions,
     scan_controlled_mov_instructions,
@@ -80,7 +81,13 @@ def _res_record(operand: str) -> bytes:
     )
 
 
-def _ctu_record(*, counter: str, preset: str = "3", accumulator: str = "0") -> bytes:
+def _counter_record(
+    *,
+    selector: int,
+    counter: str,
+    preset: str = "3",
+    accumulator: str = "0",
+) -> bytes:
     fields = [
         counter.encode("ascii"),
         preset.encode("ascii"),
@@ -89,7 +96,8 @@ def _ctu_record(*, counter: str, preset: str = "3", accumulator: str = "0") -> b
     return (
         b"\x03\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
-        + b"\x00\x00\x11"
+        + b"\x00\x00"
+        + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -342,7 +350,7 @@ def test_res_rejects_uncontrolled_operand_family() -> None:
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:
     result = scan_controlled_ctu_instructions(
-        _ctu_record(counter="C5:0"),
+        _counter_record(selector=0x11, counter="C5:0"),
         include_private_text=True,
     )
 
@@ -357,9 +365,9 @@ def test_controlled_ctu_exposes_ordered_structured_fields() -> None:
 
 def test_ctu_selector_is_stable_across_counter_and_preset_changes() -> None:
     variants = [
-        _ctu_record(counter="C5:0", preset="3"),
-        _ctu_record(counter="C5:0", preset="5"),
-        _ctu_record(counter="C5:1", preset="3"),
+        _counter_record(selector=0x11, counter="C5:0", preset="3"),
+        _counter_record(selector=0x11, counter="C5:0", preset="5"),
+        _counter_record(selector=0x11, counter="C5:1", preset="3"),
     ]
 
     evidence = [
@@ -382,5 +390,21 @@ def test_ctu_selector_is_stable_across_counter_and_preset_changes() -> None:
 
 def test_ctu_rejects_nonzero_accumulator() -> None:
     assert not scan_controlled_ctu_instructions(
-        _ctu_record(counter="C5:0", accumulator="1")
+        _counter_record(selector=0x11, counter="C5:0", accumulator="1")
     )
+
+
+def test_ctd_differs_from_ctu_only_by_controlled_selector() -> None:
+    ctu = scan_controlled_ctu_instructions(
+        _counter_record(selector=0x11, counter="C5:0"),
+        include_private_text=True,
+    )[0]
+    ctd = scan_controlled_ctd_instructions(
+        _counter_record(selector=0x12, counter="C5:0"),
+        include_private_text=True,
+    )[0]
+
+    assert (ctu.mnemonic, ctu.selector) == ("CTU", 0x11)
+    assert (ctd.mnemonic, ctd.selector) == ("CTD", 0x12)
+    assert ctu.selector_offset == ctd.selector_offset
+    assert ctu.operands == ctd.operands

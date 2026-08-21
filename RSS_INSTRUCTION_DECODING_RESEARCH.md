@@ -242,6 +242,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RES` | `0x13` | Timer `T4:0` or counter `C5:0` |
 | `CTU` | `0x11` | Counter `C5:0`; preset `3`; accumulator `0` |
+| `CTD` | `0x12` | Counter `C5:0`; preset `3`; accumulator `0` |
 
 An operand-only XIC comparison changed `B3:0/0` to `B3:1/2`. Only the two
 corresponding ASCII operand digits changed; selector `0x39`, selector offset,
@@ -298,6 +299,10 @@ counter, preset, and accumulator. Preset-only (`3` to `5`) and counter-only
 Selector `0x11`, selector offset 177, all other fields, and framing remained
 fixed. The profile requires the observed offline accumulator `0`; other
 accumulator encodings remain uninterpreted.
+
+The field-identical CTU and CTD fixtures differ only at selector offset 177:
+CTU uses `0x11`, while CTD uses `0x12`. Both instructions therefore share one
+three-field structural recognizer while retaining separate evidence profiles.
 
 These are implemented as the profile
 `rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1`. The recognizer
