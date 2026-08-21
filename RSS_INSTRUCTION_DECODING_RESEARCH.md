@@ -266,6 +266,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
+| `SWP` | `0x96` | File source `#N7:0`; length `3` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -370,6 +371,12 @@ instructions.
 The controlled SCL instruction uses selector `0x45` and extends the shared
 qualified-word framing to header `08 00` with four ordered fields: `source`,
 `rate`, `offset`, and `destination`.
+
+The controlled SWP instruction uses selector `0x96` and a distinct header
+`02 00` record. Its two consecutive length-prefixed fields are file source
+`#N7:0` and literal length `3`; they do not carry the `01 3F` qualification
+used by ordinary word operands. The leading `#` is preserved because it marks
+a file-range source rather than a scalar address.
 
 The controlled LES instruction uses selector `0x36` with the same qualified
 two-word comparison framing and `source_a`/`source_b` roles as EQU and NEQ.

@@ -15,6 +15,7 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
 }
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
@@ -34,6 +35,7 @@ _MEQ_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/meq/v1"
 _LIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lim/v1"
 _SCP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scp/v1"
 _SCL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scl/v1"
+_SWP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/swp/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -578,6 +580,69 @@ def scan_controlled_scl_instructions(
     ]
 
 
+def scan_controlled_swp_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled SWP file-source and literal-length records."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x02\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(2):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 2 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 3] != b"\x00\x00\x96":
+            continue
+        try:
+            source = fields[0][1].decode("ascii")
+            length_value = fields[1][1].decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_FILE_WORD_OPERAND.fullmatch(source) is None:
+            continue
+        if _CONTROLLED_INTEGER.fullmatch(length_value) is None:
+            continue
+        selector_offset = cursor + 2
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="SWP",
+                selector=0x96,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(
+                        ("source", "length"), fields, strict=True
+                    )
+                ),
+                evidence_profile=_SWP_PROFILE,
+            )
+        )
+    return evidence
+
+
 def scan_controlled_and_instructions(
     payload: bytes,
     *,
@@ -988,6 +1053,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         _scan_controlled_timer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_swp_instructions(
             payload,
             include_private_text=include_private_text,
         )

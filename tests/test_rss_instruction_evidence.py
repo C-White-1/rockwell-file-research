@@ -31,6 +31,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_simple_bit_instructions,
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
+    scan_controlled_swp_instructions,
     scan_controlled_tof_instructions,
     scan_controlled_ton_instructions,
     scan_controlled_xor_instructions,
@@ -118,6 +119,20 @@ def _scl_record(fields: list[str]) -> bytes:
         b"\x08\x00"
         + b"".join(bytes([len(field)]) + field + b"\x01\x3f" for field in encoded)
         + b"\x00\x00\x45"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _swp_record(*, source: str = "#N7:0", length: str = "3") -> bytes:
+    source_bytes = source.encode("ascii")
+    length_bytes = length.encode("ascii")
+    return (
+        b"\x02\x00"
+        + bytes([len(source_bytes)])
+        + source_bytes
+        + bytes([len(length_bytes)])
+        + length_bytes
+        + b"\x00\x00\x96"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -620,6 +635,25 @@ def test_scl_exposes_four_ordered_scaling_roles() -> None:
         ("offset", "N7:2"),
         ("destination", "N7:3"),
     ]
+
+
+def test_swp_exposes_file_source_and_literal_length() -> None:
+    result = scan_controlled_swp_instructions(
+        _swp_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SWP", 0x96)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "#N7:0"),
+        ("length", "3"),
+    ]
+
+
+def test_swp_rejects_non_file_source_and_non_integer_length() -> None:
+    assert not scan_controlled_swp_instructions(_swp_record(source="N7:0"))
+    assert not scan_controlled_swp_instructions(_swp_record(length="N7:1"))
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:
