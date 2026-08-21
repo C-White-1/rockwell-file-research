@@ -3,6 +3,7 @@
 import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
+    scan_controlled_add_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
     scan_controlled_instructions,
@@ -51,6 +52,20 @@ def _mov_record(*, source: str, destination: str) -> bytes:
         + bytes([len(destination_bytes)])
         + destination_bytes
         + b"\x01\x3f\x00\x00\x1c"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _add_record(*, source_a: str, source_b: str, destination: str) -> bytes:
+    fields = [
+        source_a.encode("ascii"),
+        source_b.encode("ascii"),
+        destination.encode("ascii"),
+    ]
+    return (
+        b"\x06\x00"
+        + b"".join(bytes([len(field)]) + field + b"\x01\x3f" for field in fields)
+        + b"\x00\x00\x27"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -272,6 +287,47 @@ def test_mov_selector_is_stable_across_independent_operand_changes() -> None:
         "N7:1",
         "N7:1",
         "N7:3",
+    ]
+
+
+def test_controlled_add_exposes_three_ordered_operand_roles() -> None:
+    result = scan_controlled_add_instructions(
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2"),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert result[0].selector == 0x27
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source_a", "N7:0"),
+        ("source_b", "N7:1"),
+        ("destination", "N7:2"),
+    ]
+
+
+def test_add_selector_is_stable_across_independent_operand_changes() -> None:
+    variants = [
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:2"),
+        _add_record(source_a="N7:3", source_b="N7:1", destination="N7:2"),
+        _add_record(source_a="N7:0", source_b="N7:4", destination="N7:2"),
+        _add_record(source_a="N7:0", source_b="N7:1", destination="N7:5"),
+    ]
+
+    evidence = [
+        scan_controlled_add_instructions(
+            variant,
+            include_private_text=True,
+        )[0]
+        for variant in variants
+    ]
+
+    assert {item.selector for item in evidence} == {0x27}
+    assert len({item.selector_offset for item in evidence}) == 1
+    assert [tuple(operand.value for operand in item.operands) for item in evidence] == [
+        ("N7:0", "N7:1", "N7:2"),
+        ("N7:3", "N7:1", "N7:2"),
+        ("N7:0", "N7:4", "N7:2"),
+        ("N7:0", "N7:1", "N7:5"),
     ]
 
 

@@ -239,6 +239,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OTL` | `0x30` | `B3:0/1` |
 | `OTU` | `0x31` | `B3:0/1` |
 | `MOV` | `0x1C` | Source `N7:0`; destination `N7:1` |
+| `ADD` | `0x27` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `RTO` | `0xA3` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `TOF` | `0xA6` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
@@ -280,6 +281,13 @@ only the expected ASCII digit. Selector `0x1C`, selector offset 182, operand
 offsets 167 and 174, qualifiers, and all surrounding bytes remained fixed.
 MOV is therefore exposed with ordered `source` and `destination` operands under
 profile `rslogix-micro-starter-lite/ml1100-series-b/mov/v1`.
+
+The controlled ADD record uses the same `01 3F`-qualified word operands as
+MOV, with three ordered fields: Source A, Source B, and destination. Independent
+changes to each field altered only its expected ASCII digit. Selector `0x27`,
+selector offset 189, qualifiers, other operands, and framing remained fixed.
+MOV and ADD therefore share a qualified-word structural recognizer while
+retaining separate evidence profiles.
 
 The controlled TON record contains four consecutive length-prefixed fields:
 timer, time base, preset, and accumulator. Preset-only (`5` to `7`) and

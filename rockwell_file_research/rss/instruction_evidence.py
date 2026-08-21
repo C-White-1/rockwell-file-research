@@ -20,6 +20,7 @@ _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
+_ADD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/add/v1"
 _TON_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ton/v1"
 _RTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rto/v1"
 _TOF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tof/v1"
@@ -34,6 +35,15 @@ _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
     0xA3: ("RTO", _RTO_PROFILE),
     0xA6: ("TOF", _TOF_PROFILE),
+}
+_QUALIFIED_WORD_IDENTITIES = {
+    0x1C: ("MOV", _MOV_PROFILE, ("source", "destination"), 0x04),
+    0x27: (
+        "ADD",
+        _ADD_PROFILE,
+        ("source_a", "source_b", "destination"),
+        0x06,
+    ),
 }
 
 
@@ -132,46 +142,50 @@ def scan_controlled_simple_bit_instructions(
     return evidence
 
 
-def scan_controlled_mov_instructions(
+def _scan_controlled_qualified_word_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize MOV records matching the controlled two-word profile."""
+    """Recognize controlled qualified-word instruction records."""
 
     evidence: list[InstructionEvidence] = []
     for record_offset in range(max(0, len(payload) - 20)):
-        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+        header_value = payload[record_offset]
+        if payload[record_offset + 1] != 0 or header_value not in {0x04, 0x06}:
             continue
-        source_length = payload[record_offset + 2]
-        source_offset = record_offset + 3
-        source_end = source_offset + source_length
-        if source_end + 3 >= len(payload):
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(header_value // 2):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end + 2 > len(payload):
+                break
+            value = payload[offset:end]
+            if payload[end : end + 2] != b"\x01\x3f":
+                break
+            fields.append((offset, value))
+            cursor = end + 2
+        if len(fields) != header_value // 2 or cursor + 10 > len(payload):
             continue
-        source_bytes = payload[source_offset:source_end]
-        if payload[source_end : source_end + 2] != b"\x01\x3f":
+        if payload[cursor : cursor + 2] != b"\x00\x00":
             continue
-        destination_length_offset = source_end + 2
-        destination_length = payload[destination_length_offset]
-        destination_offset = destination_length_offset + 1
-        destination_end = destination_offset + destination_length
-        if destination_end + 11 > len(payload):
+        selector_offset = cursor + 2
+        selector = payload[selector_offset]
+        identity = _QUALIFIED_WORD_IDENTITIES.get(selector)
+        if identity is None:
             continue
-        destination_bytes = payload[destination_offset:destination_end]
+        mnemonic, profile, roles, expected_header = identity
+        if header_value != expected_header or len(fields) != len(roles):
+            continue
         try:
-            source = source_bytes.decode("ascii")
-            destination = destination_bytes.decode("ascii")
+            decoded = [value.decode("ascii") for _, value in fields]
         except UnicodeDecodeError:
             continue
-        if (
-            _CONTROLLED_WORD_OPERAND.fullmatch(source) is None
-            or _CONTROLLED_WORD_OPERAND.fullmatch(destination) is None
-        ):
-            continue
-        selector_offset = destination_end + 4
-        if payload[destination_end:selector_offset] != b"\x01\x3f\x00\x00":
-            continue
-        if payload[selector_offset] != 0x1C:
+        if any(_CONTROLLED_WORD_OPERAND.fullmatch(value) is None for value in decoded):
             continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
             b"\x00\x00\x00\x00\x00\x0b\x80"
@@ -179,27 +193,56 @@ def scan_controlled_mov_instructions(
             continue
         evidence.append(
             InstructionEvidence(
-                mnemonic="MOV",
-                selector=0x1C,
+                mnemonic=mnemonic,
+                selector=selector,
                 selector_offset=selector_offset,
-                operands=(
+                operands=tuple(
                     _operand(
-                        role="source",
-                        offset=source_offset,
-                        value=source_bytes,
+                        role=role,
+                        offset=offset,
+                        value=value,
                         include_private_text=include_private_text,
-                    ),
-                    _operand(
-                        role="destination",
-                        offset=destination_offset,
-                        value=destination_bytes,
-                        include_private_text=include_private_text,
-                    ),
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
-                evidence_profile=_MOV_PROFILE,
+                evidence_profile=profile,
             )
         )
     return evidence
+
+
+def scan_controlled_mov_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize MOV records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "MOV"
+    ]
+
+
+def scan_controlled_add_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ADD records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ADD"
+    ]
 
 
 def _scan_controlled_timer_instructions(
@@ -486,7 +529,7 @@ def scan_controlled_instructions(
         include_private_text=include_private_text,
     )
     evidence.extend(
-        scan_controlled_mov_instructions(
+        _scan_controlled_qualified_word_instructions(
             payload,
             include_private_text=include_private_text,
         )
