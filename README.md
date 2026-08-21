@@ -219,8 +219,8 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, ADD, SUB, MUL,
-DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, TOD,
-FRD, TON, RTO, TOF, RES, CTU, and CTD only when a record
+DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
+TOD, FRD, TON, RTO, TOF, RES, CTU, and CTD only when a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
@@ -237,6 +237,7 @@ SCL reports `source`, `rate`, `offset`, and `destination`.
 SWP reports a `#N` file `source` and literal `length`.
 COP reports file `source`, file `destination`, and literal `length`.
 FLL reports scalar `source`, file `destination`, and literal `length`.
+FFL reports `source`, file `fifo`, `control`, `length`, and `position`.
 TOD and FRD report `source` and `destination`.
 Meanwhile,
 TON, RTO, and TOF report timer, time base, preset, and accumulator. Unknown or differently

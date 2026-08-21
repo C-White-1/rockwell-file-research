@@ -16,6 +16,7 @@ _CONTROLLED_SIMPLE_BIT_SELECTORS = {
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
@@ -38,6 +39,7 @@ _SCL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/scl/v1"
 _SWP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/swp/v1"
 _COP_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/cop/v1"
 _FLL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/fll/v1"
+_FFL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ffl/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
@@ -64,6 +66,19 @@ _TIMER_IDENTITIES = {
     0xA6: ("TOF", _TOF_PROFILE),
 }
 _FILE_OPERATION_IDENTITIES = {
+    0x41: (
+        "FFL",
+        _FFL_PROFILE,
+        ("source", "fifo", "control", "length", "position"),
+        (
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_INTEGER,
+        ),
+        0x05,
+    ),
     0x21: (
         "FLL",
         _FLL_PROFILE,
@@ -627,7 +642,7 @@ def _scan_controlled_file_operation_instructions(
     evidence: list[InstructionEvidence] = []
     for record_offset in range(max(0, len(payload) - 1)):
         field_count = payload[record_offset]
-        if payload[record_offset + 1] != 0 or field_count not in {2, 3}:
+        if payload[record_offset + 1] != 0 or field_count not in {2, 3, 5}:
             continue
         cursor = record_offset + 2
         fields: list[tuple[int, bytes]] = []
@@ -734,6 +749,23 @@ def scan_controlled_fll_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "FLL"
+    ]
+
+
+def scan_controlled_ffl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize FFL records matching the controlled file-operation profile."""
+
+    return [
+        item
+        for item in _scan_controlled_file_operation_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "FFL"
     ]
 
 
