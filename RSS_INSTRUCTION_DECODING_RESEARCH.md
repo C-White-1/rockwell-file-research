@@ -259,6 +259,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SQR` | `0x46` | Source `N7:0`; destination `N7:1` |
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
 | `ONS` | `0xAB` | Storage bit `B3:0/1` |
+| `OSR` | `0x9E` | Storage bit `B3:0/1`; output bit `B3:0/2` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `OR` | `0x24` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -499,6 +500,10 @@ The controlled ONS instruction uses selector `0xAB`, header `01 00`, and the
 same unqualified `B`-bit framing as XIC, XIO, and output coils. Its operand is
 reported as `storage_bit` under a separate profile because its semantic role
 is not interchangeable with the generic bit operand role.
+
+The controlled OSR instruction uses selector `0x9E`, header `02 00`, and two
+unqualified `B`-bit fields. Their observed order and roles are `storage_bit`
+followed by `output_bit`; this two-field record has its own edge-output profile.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

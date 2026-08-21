@@ -37,6 +37,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_not_instructions,
     scan_controlled_ons_instructions,
     scan_controlled_or_instructions,
+    scan_controlled_osr_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -67,6 +68,17 @@ def _record(*, operand: str, selector: int) -> bytes:
         + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
         + bytes(36)
+    )
+
+
+def _edge_output_record(*, selector: int) -> bytes:
+    fields = (b"B3:0/1", b"B3:0/2")
+    return (
+        b"\x02\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00"
+        + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
 
@@ -350,6 +362,20 @@ def test_ons_exposes_storage_bit_role_under_its_own_profile() -> None:
     assert result[0].evidence_profile.endswith("/ons/v1")
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("storage_bit", "B3:0/1"),
+    ]
+
+
+def test_osr_exposes_ordered_storage_and_output_bits() -> None:
+    result = scan_controlled_osr_instructions(
+        _edge_output_record(selector=0x9E),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("OSR", 0x9E)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("storage_bit", "B3:0/1"),
+        ("output_bit", "B3:0/2"),
     ]
 
 

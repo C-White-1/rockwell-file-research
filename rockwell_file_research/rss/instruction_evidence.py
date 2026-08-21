@@ -21,6 +21,7 @@ _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _ONS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ons/v1"
+_OSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/osr/v1"
 _MOV_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/mov/v1"
 _NEG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/neg/v1"
 _SQR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqr/v1"
@@ -91,6 +92,9 @@ _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x09: ("RET", _RET_PROFILE),
     0x0B: ("TND", _TND_PROFILE),
     0x3D: ("SBR", _SBR_PROFILE),
+}
+_EDGE_OUTPUT_IDENTITIES = {
+    0x9E: ("OSR", _OSR_PROFILE),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -384,6 +388,87 @@ def scan_controlled_ons_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "ONS"
+    ]
+
+
+def _scan_controlled_edge_output_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled two-bit edge-output instruction records."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x02\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(2):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            value = payload[offset:end]
+            fields.append((offset, value))
+            cursor = end
+        if len(fields) != 2 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 2] != b"\x00\x00":
+            continue
+        selector_offset = cursor + 2
+        identity = _EDGE_OUTPUT_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        if any(_CONTROLLED_BIT_OPERAND.fullmatch(value) is None for value in decoded):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        mnemonic, profile = identity
+        roles = ("storage_bit", "output_bit")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_osr_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize OSR records matching the controlled edge-output profile."""
+
+    return [
+        item
+        for item in _scan_controlled_edge_output_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "OSR"
     ]
 
 
@@ -1611,4 +1696,10 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(_scan_controlled_zero_operand_program_control_instructions(payload))
+    evidence.extend(
+        _scan_controlled_edge_output_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
     return sorted(evidence, key=lambda item: item.selector_offset)
