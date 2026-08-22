@@ -264,6 +264,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `PTO` | `0xA0` | PTO number `0` |
 | `PWM` | `0xA1` | PWM number `0` |
 | `DLG` | `0xAC` | Queue number `0` |
+| `RTA` | `0xAD` | No operands |
 | `GCD` | `0xAF` | Source `N7:0`; destination `N7:1` |
 | `RCP` | `0xB0` | Recipe file `0`; recipe `1`; operation `Load` |
 | `INT` | `0x4B` | No operands |
@@ -722,6 +723,11 @@ explicit in an INT-specific evidence profile.
 The controlled REF instruction uses selector `0x48`, has no operands, and
 shares the established zero-operand frame under a REF-specific evidence
 profile.
+
+The controlled RTA instruction uses selector `0xAD`, has no operands, and
+shares the established zero-operand frame. This confirms its serialized
+identity but does not establish how the controller configures or applies the
+real-time-clock adjustment at runtime.
 
 The controlled LCD record uses selector `0xB2`, header `08 00`, and seven
 printable fields: ordered line-2, line-3, and line-4 source pairs `N7:0`
