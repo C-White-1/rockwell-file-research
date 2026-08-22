@@ -289,6 +289,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MEQ` | `0x38` | Source `N7:0`; mask `N7:1`; compare `N7:2` |
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
 | `IIM` | `0x5D` | Slot `0`; mask `00FFh`; length `1` |
+| `IOM` | `0x5E` | Slot `0`; mask `00FFh`; length `1` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -615,6 +616,11 @@ The controlled IIM instruction uses selector `0x5D`, header `03 00`, and three
 unqualified fields: slot `0`, mask `00FFh`, and length `1`. RSLogix normalized
 the entered decimal mask `255` to hexadecimal text; the serialized form is
 preserved as evidence.
+
+The field-identical IOM record uses selector `0x5E`, immediately following IIM
+`0x5D`. It retains header `03 00` and ordered slot, mask, and length fields,
+with the normalized hexadecimal mask preserved under a distinct immediate-
+output evidence profile.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

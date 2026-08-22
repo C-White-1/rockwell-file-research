@@ -72,6 +72,7 @@ _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
 _HSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/hsl/v1"
 _IIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iim/v1"
+_IOM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iom/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -129,6 +130,7 @@ _SHIFT_IDENTITIES = {
 }
 _IMMEDIATE_IO_IDENTITIES = {
     0x5D: ("IIM", _IIM_PROFILE),
+    0x5E: ("IOM", _IOM_PROFILE),
 }
 _SEQUENCER_IDENTITIES = {
     0x2D: (
@@ -1064,6 +1066,23 @@ def scan_controlled_iim_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "IIM"
+    ]
+
+
+def scan_controlled_iom_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize IOM records matching the controlled immediate-output profile."""
+
+    return [
+        item
+        for item in _scan_controlled_immediate_io_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "IOM"
     ]
 
 

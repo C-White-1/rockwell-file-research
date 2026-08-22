@@ -23,6 +23,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_hsl_instructions,
     scan_controlled_iim_instructions,
     scan_controlled_instructions,
+    scan_controlled_iom_instructions,
     scan_controlled_jmp_instructions,
     scan_controlled_jsr_instructions,
     scan_controlled_lbl_instructions,
@@ -637,6 +638,22 @@ def test_iim_exposes_slot_mask_and_length() -> None:
         ("mask", "00FFh"),
         ("length", "1"),
     ]
+
+
+def test_iom_differs_from_iim_only_by_controlled_selector() -> None:
+    iom = scan_controlled_iom_instructions(
+        _iim_record().replace(b"\x00\x00\x5d", b"\x00\x00\x5e"),
+        include_private_text=True,
+    )[0]
+    iim = scan_controlled_iim_instructions(
+        _iim_record(),
+        include_private_text=True,
+    )[0]
+
+    assert (iom.mnemonic, iom.selector) == ("IOM", 0x5E)
+    assert (iim.mnemonic, iim.selector) == ("IIM", 0x5D)
+    assert iom.selector_offset == iim.selector_offset
+    assert iom.operands == iim.operands
 
 
 def test_pto_exposes_pulse_train_output_number() -> None:
