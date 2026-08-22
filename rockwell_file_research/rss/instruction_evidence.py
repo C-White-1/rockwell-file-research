@@ -16,6 +16,7 @@ _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_FILE_BIT_OPERAND = re.compile(r"^#B\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_PID_OPERAND = re.compile(r"^PD\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_MESSAGE_OPERAND = re.compile(r"^MG\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
@@ -66,6 +67,7 @@ _SQO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqo/v1"
 _PID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pid/v1"
 _PTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pto/v1"
 _PWM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pwm/v1"
+_MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -845,6 +847,54 @@ def scan_controlled_pid_instructions(
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
                 evidence_profile=_PID_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_msg_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize MSG instruction prefixes without interpreting setup data."""
+
+    evidence: list[InstructionEvidence] = []
+    for operand_offset in range(3, len(payload)):
+        operand_length = payload[operand_offset - 1]
+        if not operand_length or operand_offset + operand_length + 27 > len(payload):
+            continue
+        if payload[operand_offset - 3 : operand_offset - 1] != b"\x04\x00":
+            continue
+        operand_bytes = payload[operand_offset : operand_offset + operand_length]
+        try:
+            operand = operand_bytes.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_MESSAGE_OPERAND.fullmatch(operand) is None:
+            continue
+        cursor = operand_offset + operand_length
+        if payload[cursor : cursor + 8] != b"\x01\x3f\x01\x3f\x01\x3f\x00\x00":
+            continue
+        selector_offset = cursor + 8
+        if payload[selector_offset] != 0xB3:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 19] != (bytes(17) + b"\x0b"):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="MSG",
+                selector=0xB3,
+                selector_offset=selector_offset,
+                operands=(
+                    _operand(
+                        role="msg_file",
+                        offset=operand_offset,
+                        value=operand_bytes,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=_MSG_PROFILE,
             )
         )
     return evidence
@@ -2177,6 +2227,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_pid_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_msg_instructions(
             payload,
             include_private_text=include_private_text,
         )
