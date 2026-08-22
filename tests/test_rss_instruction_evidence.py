@@ -42,6 +42,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_osf_instructions,
     scan_controlled_osr_instructions,
     scan_controlled_pid_instructions,
+    scan_controlled_pto_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -553,6 +554,19 @@ def test_pid_exposes_ordered_control_operands() -> None:
         ("pid_file", "PD9:0"),
         ("process_variable", "N7:0"),
         ("control_variable", "N7:1"),
+    ]
+
+
+def test_pto_exposes_pulse_train_output_number() -> None:
+    result = scan_controlled_pto_instructions(
+        _record(operand="0", selector=0xA0),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("PTO", 0xA0)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("pto_number", "0"),
     ]
 
 

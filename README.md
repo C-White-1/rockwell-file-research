@@ -222,7 +222,7 @@ OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
-and PID only when
+PID, and PTO only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
@@ -276,6 +276,7 @@ SQO reports ordered `file`, `mask`, `destination`, `control`, `length`, and
 `position` operands.
 PID reports ordered `pid_file`, `process_variable`, and `control_variable`
 operands. PID tuning and status data remain separate DATA FILES evidence.
+PTO reports its literal `pto_number` operand.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

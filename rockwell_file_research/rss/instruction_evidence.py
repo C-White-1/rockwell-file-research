@@ -64,6 +64,7 @@ _SQC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqc/v1"
 _SQL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sql/v1"
 _SQO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqo/v1"
 _PID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pid/v1"
+_PTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pto/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -98,6 +99,7 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0x16: ("JMP", _JMP_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0x1F: ("SUS", _SUS_PROFILE, "suspend_id", _CONTROLLED_INTEGER),
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
+    0xA0: ("PTO", _PTO_PROFILE, "pto_number", _CONTROLLED_INTEGER),
     0xA8: ("UID", _UID_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xAA: ("UIF", _UIF_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
@@ -1844,6 +1846,23 @@ def scan_controlled_sus_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SUS"
+    ]
+
+
+def scan_controlled_pto_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize PTO records matching the controlled pulse-output profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "PTO"
     ]
 
 
