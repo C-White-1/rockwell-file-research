@@ -28,6 +28,15 @@ _SELECTOR = re.compile(
     r"(?:/(?:(?P<bit>\d+)|(?P<slash_member>[A-Za-z]+))|"
     r"\.(?P<member>[A-Za-z]+))?)|/(?P<file_bit>\d+))$"
 )
+_MICROLOGIX_IO_BIT = re.compile(
+    r"^(?P<prefix>[IO]):(?P<slot>\d+)"
+    r"(?:\.(?P<word>\d+))?/(?P<bit>\d+)$",
+    re.IGNORECASE,
+)
+_MICROLOGIX_IO_WORD = re.compile(
+    r"^(?P<prefix>[IO]):(?P<slot>\d+)\.(?P<word>\d+)$",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -121,4 +130,41 @@ def parse_data_table_address(value: str) -> DataTableAddress | None:
         prefix=prefix,
         file_number=_DEFAULT_FILE_NUMBERS[prefix],
         selector=match["selector"],
+    )
+
+
+def canonicalize_micrologix_io_address(value: str) -> str | None:
+    """Return canonical slot/word I/O notation for a MicroLogix address.
+
+    Drawings and operator-facing material may flatten an embedded I/O image,
+    for example ``I:0/16``. RSS evidence represents the same location with an
+    explicit 16-bit word selector: ``I:0.1/0``. This function performs only
+    that structural normalization. It does not infer a signal's purpose,
+    physical terminal, module placement, or whether an address is used.
+
+    Word-oriented expansion-module addresses such as ``I:1.0`` are already
+    canonical and are preserved. Unsupported text returns ``None``.
+    """
+
+    raw = value.strip()
+    bit_match = _MICROLOGIX_IO_BIT.fullmatch(raw)
+    if bit_match is not None:
+        prefix = bit_match["prefix"].upper()
+        slot = int(bit_match["slot"])
+        explicit_word = bit_match["word"]
+        bit = int(bit_match["bit"])
+        if explicit_word is None:
+            word, bit = divmod(bit, 16)
+        else:
+            word = int(explicit_word)
+            if bit > 15:
+                return None
+        return f"{prefix}:{slot}.{word}/{bit}"
+
+    word_match = _MICROLOGIX_IO_WORD.fullmatch(raw)
+    if word_match is None:
+        return None
+    return (
+        f"{word_match['prefix'].upper()}:"
+        f"{int(word_match['slot'])}.{int(word_match['word'])}"
     )

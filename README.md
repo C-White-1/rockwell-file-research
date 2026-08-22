@@ -276,6 +276,23 @@ isolated instruction record.
 SUS reports its literal `suspend_id` operand.
 TND reports no operands and acts as a temporary-end marker.
 INT reports no operands under its I/O-interrupt evidence profile.
+
+MicroLogix I/O addresses can also be normalized without assigning meaning to
+the address. In particular, compact drawing notation such as `I:0/16` becomes
+the RSS-comparable word/bit form `I:0.1/0`. The source notation should remain
+part of the evidence record; normalization does not prove a signal assignment,
+terminal, module position, or usage.
+
+Declared I/O points can be correlated with RSS operand evidence using the same
+canonical form. Reports retain every candidate reference. A caller may also
+request a separate compact-rung count with an explicit byte-length policy;
+that policy is diagnostic and does not discard or reinterpret larger regions.
+
+Controlled data-file fixtures also establish a conservative decoder for
+signed 16-bit integer arrays. Decoding requires the integer type marker,
+element-count header, two-byte little-endian stride, and exact adjacency to a
+catalogue record. Values are returned with their byte offsets and digest;
+records that fail any invariant remain uninterpreted.
 REF reports no operands under its own controlled evidence profile.
 RTA reports no operands; its runtime clock-adjustment mechanism remains
 outside the serialized instruction evidence established here.

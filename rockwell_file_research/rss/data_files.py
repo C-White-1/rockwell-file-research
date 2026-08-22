@@ -24,6 +24,8 @@ STANDARD_DATA_FILE_LABELS = frozenset(
     }
 )
 SERIALIZATION_CLASSES = frozenset({"CDataFile", "CDataHolder", "CSlcMDataFile"})
+INTEGER_TYPE_MARKER = bytes.fromhex("03 80 07")
+INTEGER_HEADER_SUFFIX = bytes.fromhex("01 00 00 00 FF FF")
 
 
 @dataclass(frozen=True)
@@ -49,6 +51,18 @@ class DataFileRecord:
     name_sha256: str
     unknown_numeric_candidate: int
     marker_offset: int
+
+
+@dataclass(frozen=True)
+class IntegerDataFileValues:
+    """Signed 16-bit values with structural byte provenance."""
+
+    file_number: int
+    header_offset: int
+    values_offset: int
+    element_count: int
+    values_sha256: str
+    values: tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -126,6 +140,68 @@ def scan_data_file_records(payload: bytes) -> list[DataFileRecord]:
             )
         )
     return records
+
+
+def scan_integer_data_file_values(
+    payload: bytes,
+    records: list[DataFileRecord] | None = None,
+) -> list[IntegerDataFileValues]:
+    """Decode structurally delimited signed 16-bit integer value arrays.
+
+    Controlled MicroLogix fixtures established the integer type marker, the
+    element-count header, a two-byte little-endian stride, and adjacency of the
+    value array to its catalogue record. Records that do not satisfy every
+    invariant remain uninterpreted.
+    """
+
+    candidates = records if records is not None else scan_data_file_records(payload)
+    decoded: list[IntegerDataFileValues] = []
+    for record in candidates:
+        matches: list[IntegerDataFileValues] = []
+        suffix_offset = payload.find(INTEGER_HEADER_SUFFIX, 0, record.offset)
+        while suffix_offset >= 2:
+            header_offset = suffix_offset - 2
+            element_count = int.from_bytes(
+                payload[header_offset : header_offset + 2], "little"
+            )
+            values_offset = header_offset + 8
+            values_end = values_offset + element_count * 2
+            marker_offset = payload.rfind(
+                INTEGER_TYPE_MARKER,
+                max(0, header_offset - 32),
+                header_offset,
+            )
+            if (
+                element_count > 0
+                and values_end == record.offset
+                and marker_offset >= 0
+            ):
+                value_bytes = payload[values_offset:values_end]
+                matches.append(
+                    IntegerDataFileValues(
+                        file_number=record.file_number,
+                        header_offset=header_offset,
+                        values_offset=values_offset,
+                        element_count=element_count,
+                        values_sha256=hashlib.sha256(value_bytes).hexdigest(),
+                        values=tuple(
+                            int.from_bytes(
+                                value_bytes[offset : offset + 2],
+                                "little",
+                                signed=True,
+                            )
+                            for offset in range(0, len(value_bytes), 2)
+                        ),
+                    )
+                )
+            suffix_offset = payload.find(
+                INTEGER_HEADER_SUFFIX,
+                suffix_offset + 1,
+                record.offset,
+            )
+        if len(matches) == 1:
+            decoded.append(matches[0])
+    return decoded
 
 
 def inspect_data_file_section(
