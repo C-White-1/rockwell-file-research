@@ -95,6 +95,7 @@ opcodes.
 | `UIF` | `0xAA` | interrupt_types | Confirmed |
 | `DLG` | `0xAC` | queue_number | Confirmed |
 | `GCD` | `0xAF` | source, destination | Confirmed |
+| `LCD` | `0xB2` | six display sources, display_with_input | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 | `ONS` | `0xAB` | storage_bit | Confirmed |
 | `OSF` | `0x9D` | storage_bit, output_bit | Confirmed |
@@ -115,7 +116,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **86**.
+Confirmed total: **87**.
 
 ## Normalized palette entries
 
@@ -162,8 +163,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `LCD`,
-  `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
+- Recipe, event, and specialised: `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
 selected processor's instruction palette and Rockwell documentation before it

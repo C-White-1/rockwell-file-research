@@ -42,6 +42,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_jmp_instructions,
     scan_controlled_jsr_instructions,
     scan_controlled_lbl_instructions,
+    scan_controlled_lcd_instructions,
     scan_controlled_leq_instructions,
     scan_controlled_les_instructions,
     scan_controlled_lfl_instructions,
@@ -120,6 +121,24 @@ def _awa_record() -> bytes:
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x83"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _lcd_record() -> bytes:
+    fields = (
+        b"N7:0",
+        b"N7:1",
+        b"N7:2",
+        b"N7:3",
+        b"N7:4",
+        b"N7:5",
+        b"No",
+    )
+    return (
+        b"\x08\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x01\x3f\x00\x00\xb2"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -923,6 +942,25 @@ def test_awa_exposes_configurable_and_automatic_fields() -> None:
         ("string_length", "15"),
         ("characters_sent", "0"),
         ("error", "0"),
+    ]
+
+
+def test_lcd_exposes_six_sources_and_display_input_choice() -> None:
+    result = scan_controlled_lcd_instructions(
+        _lcd_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("LCD", 0xB2)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("l2_source_a", "N7:0"),
+        ("l2_source_b", "N7:1"),
+        ("l3_source_a", "N7:2"),
+        ("l3_source_b", "N7:3"),
+        ("l4_source_a", "N7:4"),
+        ("l4_source_b", "N7:5"),
+        ("display_with_input", "No"),
     ]
 
 

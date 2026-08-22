@@ -224,7 +224,7 @@ FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
 INT,
 PID, PTO, PWM, DLG, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
-ASC, ASR, and AWA only when
+ASC, ASR, AWA, and LCD only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
@@ -305,6 +305,8 @@ integer-word `result` operands.
 ASR reports two ordered string operands as `source_a` and `source_b`.
 AWA reports configurable `channel`, string `source`, `control`, and literal
 `string_length`, followed by automatic `characters_sent` and `error` fields.
+LCD reports the six ordered line-2 through line-4 source operands followed by
+the serialized `display_with_input` choice.
 The controlled AWT fixture produced a PROGRAM FILES payload byte-identical to
 the corresponding AWA fixture. The decoder therefore reports the shared
 selector `0x83` record as AWA and does not invent an AWT identity that is not

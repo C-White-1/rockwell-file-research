@@ -266,6 +266,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `DLG` | `0xAC` | Queue number `0` |
 | `GCD` | `0xAF` | Source `N7:0`; destination `N7:1` |
 | `INT` | `0x4B` | No operands |
+| `LCD` | `0xB2` | Six line sources; display-with-input `No` |
 | `SVC` | `0xA5` | Channel select `0000h` |
 | `MSG` | `0xB3` | MSG file `MG10:0`; setup payload unresolved |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
@@ -705,6 +706,12 @@ retaining a GCD-specific evidence profile.
 The controlled INT instruction uses selector `0x4B`, has no operands, and
 shares the established zero-operand frame. Its I/O-interrupt meaning remains
 explicit in an INT-specific evidence profile.
+
+The controlled LCD record uses selector `0xB2`, header `08 00`, and seven
+printable fields: ordered line-2, line-3, and line-4 source pairs `N7:0`
+through `N7:5`, followed by display-with-input value `No`. A trailing `01 3F`
+qualifier precedes the selector. The display choice is serialized directly;
+it is not inferred from an unresolved binary flag.
 
 The controlled AWA instruction uses selector `0x83`, header `06 00`, and six
 fields ordered channel `0`, source `ST9:0`, control `R6:0`, string length `15`,
