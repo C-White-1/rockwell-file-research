@@ -11,6 +11,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ahl_instructions,
     scan_controlled_aic_instructions,
     scan_controlled_and_instructions,
+    scan_controlled_ard_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
@@ -238,6 +239,16 @@ def _aic_record() -> bytes:
         + bytes([len(destination)])
         + destination
         + b"\x00\x00\x7f"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _ard_record() -> bytes:
+    fields = (b"0", b"ST9:0", b"R6:0", b"15", b"0", b"0")
+    return (
+        b"\x06\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x80"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -790,6 +801,24 @@ def test_aic_exposes_integer_source_and_string_destination() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("source", "N7:0"),
         ("destination", "ST9:0"),
+    ]
+
+
+def test_ard_exposes_configurable_and_automatic_fields() -> None:
+    result = scan_controlled_ard_instructions(
+        _ard_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ARD", 0x80)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("channel", "0"),
+        ("destination", "ST9:0"),
+        ("control", "R6:0"),
+        ("string_length", "15"),
+        ("characters_read", "0"),
+        ("error", "0"),
     ]
 
 
