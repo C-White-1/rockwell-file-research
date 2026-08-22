@@ -48,6 +48,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_scl_instructions,
     scan_controlled_scp_instructions,
     scan_controlled_simple_bit_instructions,
+    scan_controlled_sqc_instructions,
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
     scan_controlled_sus_instructions,
@@ -95,6 +96,16 @@ def _shift_record(*, selector: int) -> bytes:
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00"
         + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _sqc_record() -> bytes:
+    fields = (b"#N7:10", b"00FFh", b"N7:0", b"R6:0", b"3", b"0")
+    return (
+        b"\x06\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x2e"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -442,6 +453,24 @@ def test_bsr_differs_from_bsl_only_by_controlled_selector() -> None:
     assert (bsl.mnemonic, bsl.selector) == ("BSL", 0x2C)
     assert bsr.selector_offset == bsl.selector_offset
     assert bsr.operands == bsl.operands
+
+
+def test_sqc_exposes_ordered_sequencer_compare_operands() -> None:
+    result = scan_controlled_sqc_instructions(
+        _sqc_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SQC", 0x2E)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("file", "#N7:10"),
+        ("mask", "00FFh"),
+        ("source", "N7:0"),
+        ("control", "R6:0"),
+        ("length", "3"),
+        ("position", "0"),
+    ]
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:

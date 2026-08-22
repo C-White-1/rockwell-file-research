@@ -272,6 +272,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `BSR` | `0x2B` | File `#B3:1`; control `R6:0`; bit `B3:0/1`; length `16` |
 | `BSL` | `0x2C` | File `#B3:1`; control `R6:0`; bit `B3:0/1`; length `16` |
+| `SQC` | `0x2E` | File, mask, source, control, length, and position |
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
 | `NEQ` | `0x33` | Source A `N7:0`; source B `N7:1` |
 | `GRT` | `0x34` | Source A `N7:0`; source B `N7:1` |
@@ -536,6 +537,11 @@ not additional textual operands in the observed record.
 The controlled BSR record is field-identical to BSL but uses selector `0x2B`.
 It shares the strict bit-file shift recognizer while retaining a separate
 right-shift evidence profile.
+
+The controlled SQC instruction uses selector `0x2E`, header `06 00`, and six
+unqualified fields ordered `file`, `mask`, `source`, `control`, `length`, and
+`position`. RSLogix normalized mask `255` to serialized text `00FFh`, which is
+preserved as observed evidence.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

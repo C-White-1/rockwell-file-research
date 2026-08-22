@@ -59,6 +59,7 @@ _UID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uid/v1"
 _UIF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uif/v1"
 _BSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsl/v1"
 _BSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsr/v1"
+_SQC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqc/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -110,6 +111,22 @@ _EDGE_OUTPUT_IDENTITIES = {
 _SHIFT_IDENTITIES = {
     0x2B: ("BSR", _BSR_PROFILE),
     0x2C: ("BSL", _BSL_PROFILE),
+}
+_SEQUENCER_IDENTITIES = {
+    0x2E: (
+        "SQC",
+        _SQC_PROFILE,
+        ("file", "mask", "source", "control", "length", "position"),
+        (
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_MASK_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_INTEGER,
+        ),
+        0x06,
+    ),
 }
 _TIMER_IDENTITIES = {
     0xA7: ("TON", _TON_PROFILE),
@@ -607,6 +624,91 @@ def scan_controlled_bsr_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "BSR"
+    ]
+
+
+def _scan_controlled_sequencer_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled sequencer instruction records."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        field_count = payload[record_offset]
+        if payload[record_offset + 1] != 0 or field_count not in {5, 6}:
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(field_count):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != field_count or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 2] != b"\x00\x00":
+            continue
+        selector_offset = cursor + 2
+        identity = _SEQUENCER_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        mnemonic, profile, roles, patterns, expected_count = identity
+        if field_count != expected_count:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_sqc_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SQC records matching the controlled sequencer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_sequencer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SQC"
     ]
 
 
@@ -1891,6 +1993,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         _scan_controlled_shift_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        _scan_controlled_sequencer_instructions(
             payload,
             include_private_text=include_private_text,
         )
