@@ -265,6 +265,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `PWM` | `0xA1` | PWM number `0` |
 | `DLG` | `0xAC` | Queue number `0` |
 | `GCD` | `0xAF` | Source `N7:0`; destination `N7:1` |
+| `RCP` | `0xB0` | Recipe file `0`; recipe `1`; operation `Load` |
 | `INT` | `0x4B` | No operands |
 | `LCD` | `0xB2` | Six line sources; display-with-input `No` |
 | `SVC` | `0xA5` | Channel select `0000h` |
@@ -636,6 +637,11 @@ its own grammar rather than being treated as an ordinary word address.
 The controlled RAC record uses selector `0xA2`, header `02 00`, and two
 unqualified fields: high-speed counter `HSC0` and source `N7:0`. Both fields
 are serialized directly and exposed under a RAC-specific profile.
+
+The controlled RCP record uses selector `0xB0`, header `03 00`, and three
+directly serialized fields: recipe file number `0`, recipe number `1`, and
+file operation `Load`. Only the evidenced Load form is currently recognized;
+other editor operations require their own controlled fixtures.
 
 The controlled IIM instruction uses selector `0x5D`, header `03 00`, and three
 unqualified fields: slot `0`, mask `00FFh`, and length `1`. RSLogix normalized

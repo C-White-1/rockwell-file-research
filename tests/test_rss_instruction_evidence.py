@@ -65,6 +65,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_pto_instructions,
     scan_controlled_pwm_instructions,
     scan_controlled_rac_instructions,
+    scan_controlled_rcp_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -223,6 +224,16 @@ def _rac_record() -> bytes:
         b"\x02\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\xa2"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _rcp_record() -> bytes:
+    fields = (b"0", b"1", b"Load")
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\xb0"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -777,6 +788,21 @@ def test_rac_exposes_hsc_counter_and_source() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("counter", "HSC0"),
         ("source", "N7:0"),
+    ]
+
+
+def test_rcp_exposes_recipe_file_number_recipe_and_load_operation() -> None:
+    result = scan_controlled_rcp_instructions(
+        _rcp_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("RCP", 0xB0)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("recipe_file_number", "0"),
+        ("recipe_number", "1"),
+        ("file_operation", "Load"),
     ]
 
 
