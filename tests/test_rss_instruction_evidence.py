@@ -43,6 +43,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_osr_instructions,
     scan_controlled_pid_instructions,
     scan_controlled_pto_instructions,
+    scan_controlled_pwm_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -568,6 +569,25 @@ def test_pto_exposes_pulse_train_output_number() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("pto_number", "0"),
     ]
+
+
+def test_pwm_differs_from_pto_only_by_controlled_selector_and_role() -> None:
+    pwm = scan_controlled_pwm_instructions(
+        _record(operand="0", selector=0xA1),
+        include_private_text=True,
+    )[0]
+    pto = scan_controlled_pto_instructions(
+        _record(operand="0", selector=0xA0),
+        include_private_text=True,
+    )[0]
+
+    assert (pwm.mnemonic, pwm.selector) == ("PWM", 0xA1)
+    assert (pto.mnemonic, pto.selector) == ("PTO", 0xA0)
+    assert pwm.selector_offset == pto.selector_offset
+    assert [(item.role, item.value) for item in pwm.operands] == [
+        ("pwm_number", "0"),
+    ]
+    assert pwm.operands[0].value == pto.operands[0].value
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:

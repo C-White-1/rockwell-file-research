@@ -262,6 +262,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `OSR` | `0x9E` | Storage bit `B3:0/1`; output bit `B3:0/2` |
 | `PID` | `0x9F` | PID file `PD9:0`; process `N7:0`; control `N7:1` |
 | `PTO` | `0xA0` | PTO number `0` |
+| `PWM` | `0xA1` | PWM number `0` |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -569,6 +570,11 @@ The controlled PTO instruction uses selector `0xA0`, header `01 00`, and one
 unqualified decimal field. The entered PTO number `0` remained serialized as
 `0` and is reported with role `pto_number`; no separate setup dialog appeared
 for this fixture.
+
+The field-identical PWM record uses selector `0xA1`, immediately following PTO
+`0xA0`, and retains header `01 00` with literal value `0`. Its operand has the
+distinct role `pwm_number`; selector adjacency is recorded as evidence but is
+not used to infer untested instructions.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
