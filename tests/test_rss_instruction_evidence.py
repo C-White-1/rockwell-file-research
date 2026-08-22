@@ -20,6 +20,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_frd_instructions,
     scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
+    scan_controlled_hsl_instructions,
     scan_controlled_instructions,
     scan_controlled_jmp_instructions,
     scan_controlled_jsr_instructions,
@@ -156,6 +157,16 @@ def _msg_record() -> bytes:
         + b"\x01\x3f\x01\x3f\x01\x3f\x00\x00\xb3"
         + bytes(17)
         + b"\x0b500CPU Read"
+    )
+
+
+def _hsl_record() -> bytes:
+    fields = (b"HSC0", b"N7:0", b"N7:1", b"N7:2", b"N7:3")
+    return (
+        b"\x05\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x9b"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
 
@@ -582,6 +593,23 @@ def test_msg_exposes_file_but_not_unresolved_setup_fields() -> None:
     assert (result[0].mnemonic, result[0].selector) == ("MSG", 0xB3)
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("msg_file", "MG10:0"),
+    ]
+
+
+def test_hsl_exposes_ordered_high_speed_load_operands() -> None:
+    result = scan_controlled_hsl_instructions(
+        _hsl_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("HSL", 0x9B)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("hsc_number", "HSC0"),
+        ("high_preset", "N7:0"),
+        ("low_preset", "N7:1"),
+        ("output_high_source", "N7:2"),
+        ("output_low_source", "N7:3"),
     ]
 
 

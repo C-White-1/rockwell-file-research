@@ -289,6 +289,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `MEQ` | `0x38` | Source `N7:0`; mask `N7:1`; compare `N7:2` |
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
+| `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
 | `SWP` | `0x96` | File source `#N7:0`; length `3` |
 | `COP` | `0x22` | File source `#N7:0`; destination `#N7:10`; length `3` |
@@ -599,6 +600,15 @@ profile, and no selector or operand structure is assigned.
 `EEM` is likewise greyed out for the controlled MicroLogix 1100 Series B
 profile. It remains unavailable rather than being assigned a selector from
 documentation or selector adjacency.
+
+`HSC`, `HSE`, and `HSD` are greyed out for the controlled MicroLogix 1100
+Series B profile. HSL is separately supported by controlled evidence; no
+relationship among their selectors or operand layouts is inferred.
+
+The controlled HSL instruction uses selector `0x9B`, header `05 00`, and five
+unqualified fields: HSC number `HSC0`, high preset `N7:0`, low preset `N7:1`,
+output-high source `N7:2`, and output-low source `N7:3`. The HSC instance uses
+its own grammar rather than being treated as an ordinary word address.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

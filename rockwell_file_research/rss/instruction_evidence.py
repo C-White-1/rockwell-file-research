@@ -17,6 +17,7 @@ _CONTROLLED_FILE_BIT_OPERAND = re.compile(r"^#B\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_PID_OPERAND = re.compile(r"^PD\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_MESSAGE_OPERAND = re.compile(r"^MG\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_HSC_OPERAND = re.compile(r"^HSC\d+$", re.IGNORECASE)
 _CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
@@ -69,6 +70,7 @@ _PTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pto/v1"
 _PWM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pwm/v1"
 _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
+_HSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/hsl/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -897,6 +899,77 @@ def scan_controlled_msg_instructions(
                     ),
                 ),
                 evidence_profile=_MSG_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_hsl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize HSL records matching the controlled high-speed profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x05\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(5):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 5 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 3] != b"\x00\x00\x9b":
+            continue
+        selector_offset = cursor + 2
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (_CONTROLLED_HSC_OPERAND,) + tuple(
+            _CONTROLLED_WORD_OPERAND for _ in range(4)
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = (
+            "hsc_number",
+            "high_preset",
+            "low_preset",
+            "output_high_source",
+            "output_low_source",
+        )
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="HSL",
+                selector=0x9B,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_HSL_PROFILE,
             )
         )
     return evidence
@@ -2252,6 +2325,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_msg_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_hsl_instructions(
             payload,
             include_private_text=include_private_text,
         )

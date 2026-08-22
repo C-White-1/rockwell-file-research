@@ -85,6 +85,7 @@ opcodes.
 | `SVC` | `0xA5` | channel_select | Confirmed |
 | `MSG` | `0xB3` | msg_file; setup payload unresolved | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
+| `HSL` | `0x9B` | HSC number and four load sources | Confirmed |
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 | `SWP` | `0x96` | file source, literal length | Confirmed |
 | `COP` | `0x22` | file source, file destination, length | Confirmed |
@@ -94,7 +95,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **68**.
+Confirmed total: **69**.
 
 ## Unavailable instruction records
 
@@ -114,6 +115,9 @@ Confirmed total: **68**.
 | `XPY` | Arithmetic instruction greyed out | Unavailable |
 | `RMP` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `EEM` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `HSC` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `HSE` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `HSD` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
@@ -123,8 +127,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
-  `IIE`, `IID`.
+- High-speed and immediate I/O: `IIM`, `IOM`, `IIE`, `IID`.
 - ASCII and string: `ACI`, `ACN`, `AEX`, `AHL`, `AIC`, `ARD`, `ARL`, `ASC`,
   `ASR`, `AWA`, `AWT`.
 - Recipe, event, and specialised: `CEM`, `DCD`, `DDT`, `DEM`, `DLG`, `ENC`,
