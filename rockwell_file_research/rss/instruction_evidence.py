@@ -73,6 +73,7 @@ _DLG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/dlg/v1"
 _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
 _HSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/hsl/v1"
+_RAC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rac/v1"
 _IIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iim/v1"
 _IOM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iom/v1"
 _ACI_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aci/v1"
@@ -1002,6 +1003,67 @@ def scan_controlled_hsl_instructions(
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
                 evidence_profile=_HSL_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_rac_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize RAC records matching the controlled HSC-reset profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x02\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(2):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 2 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 3] != b"\x00\x00\xa2":
+            continue
+        selector_offset = cursor + 2
+        try:
+            counter, source = (value.decode("ascii") for _, value in fields)
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_HSC_OPERAND.fullmatch(counter) is None:
+            continue
+        if _CONTROLLED_WORD_OPERAND.fullmatch(source) is None:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = ("counter", "source")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="RAC",
+                selector=0xA2,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_RAC_PROFILE,
             )
         )
     return evidence
@@ -3273,6 +3335,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_hsl_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_rac_instructions(
             payload,
             include_private_text=include_private_text,
         )

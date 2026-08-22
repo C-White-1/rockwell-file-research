@@ -103,6 +103,7 @@ opcodes.
 | `PID` | `0x9F` | pid_file, process_variable, control_variable | Confirmed |
 | `PTO` | `0xA0` | pto_number | Confirmed |
 | `PWM` | `0xA1` | pwm_number | Confirmed |
+| `RAC` | `0xA2` | counter, source | Confirmed |
 | `SVC` | `0xA5` | channel_select | Confirmed |
 | `MSG` | `0xB3` | msg_file; setup payload unresolved | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
@@ -116,7 +117,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **87**.
+Confirmed total: **88**.
 
 ## Normalized palette entries
 
@@ -163,7 +164,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
+- Recipe, event, and specialised: `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
 selected processor's instruction palette and Rockwell documentation before it

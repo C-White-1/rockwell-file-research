@@ -306,6 +306,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `AWA` | `0x83` | Channel, source, control, length, sent count, error |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
+| `RAC` | `0xA2` | Counter `HSC0`; source `N7:0` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
 | `SWP` | `0x96` | File source `#N7:0`; length `3` |
 | `COP` | `0x22` | File source `#N7:0`; destination `#N7:10`; length `3` |
@@ -631,6 +632,10 @@ The controlled HSL instruction uses selector `0x9B`, header `05 00`, and five
 unqualified fields: HSC number `HSC0`, high preset `N7:0`, low preset `N7:1`,
 output-high source `N7:2`, and output-low source `N7:3`. The HSC instance uses
 its own grammar rather than being treated as an ordinary word address.
+
+The controlled RAC record uses selector `0xA2`, header `02 00`, and two
+unqualified fields: high-speed counter `HSC0` and source `N7:0`. Both fields
+are serialized directly and exposed under a RAC-specific profile.
 
 The controlled IIM instruction uses selector `0x5D`, header `03 00`, and three
 unqualified fields: slot `0`, mask `00FFh`, and length `1`. RSLogix normalized

@@ -64,6 +64,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_pid_instructions,
     scan_controlled_pto_instructions,
     scan_controlled_pwm_instructions,
+    scan_controlled_rac_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -212,6 +213,16 @@ def _hsl_record() -> bytes:
         b"\x05\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x9b"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _rac_record() -> bytes:
+    fields = (b"HSC0", b"N7:0")
+    return (
+        b"\x02\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\xa2"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -752,6 +763,20 @@ def test_hsl_exposes_ordered_high_speed_load_operands() -> None:
         ("low_preset", "N7:1"),
         ("output_high_source", "N7:2"),
         ("output_low_source", "N7:3"),
+    ]
+
+
+def test_rac_exposes_hsc_counter_and_source() -> None:
+    result = scan_controlled_rac_instructions(
+        _rac_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("RAC", 0xA2)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("counter", "HSC0"),
+        ("source", "N7:0"),
     ]
 
 

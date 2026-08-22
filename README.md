@@ -223,7 +223,7 @@ DIV, DCD, ENC, GCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
 INT,
-PID, PTO, PWM, DLG, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
+PID, PTO, PWM, DLG, MSG, SVC, HSL, RAC, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD,
 ASC, ASR, AWA, and LCD only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
@@ -287,6 +287,7 @@ as unresolved PROGRAM FILES evidence.
 SVC reports its serialized hexadecimal `channel_select` operand.
 HSL reports ordered `hsc_number`, `high_preset`, `low_preset`,
 `output_high_source`, and `output_low_source` operands.
+RAC reports its high-speed `counter` and reset `source` operands.
 IIM reports ordered `slot`, serialized `mask`, and `length` operands.
 IOM reports the same ordered immediate-I/O operand roles under its output
 profile.
