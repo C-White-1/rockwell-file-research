@@ -222,7 +222,7 @@ OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
-PID, PTO, PWM, MSG, SVC, HSL, IIM, and IOM only when
+PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, and ACI only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
@@ -286,6 +286,7 @@ HSL reports ordered `hsc_number`, `high_preset`, `low_preset`,
 IIM reports ordered `slot`, serialized `mask`, and `length` operands.
 IOM reports the same ordered immediate-I/O operand roles under its output
 profile.
+ACI reports a string-file `source` and integer-word `destination`.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

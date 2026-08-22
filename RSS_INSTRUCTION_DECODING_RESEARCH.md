@@ -290,6 +290,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
 | `IIM` | `0x5D` | Slot `0`; mask `00FFh`; length `1` |
 | `IOM` | `0x5E` | Slot `0`; mask `00FFh`; length `1` |
+| `ACI` | `0x7A` | String source `ST9:0`; integer destination `N7:0` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -621,6 +622,11 @@ The field-identical IOM record uses selector `0x5E`, immediately following IIM
 `0x5D`. It retains header `03 00` and ordered slot, mask, and length fields,
 with the normalized hexadecimal mask preserved under a distinct immediate-
 output evidence profile.
+
+The controlled ACI instruction uses selector `0x7A`, header `03 00`, string
+source `ST9:0`, and integer destination `N7:0`. A trailing `01 3F` qualifier
+occurs after the destination rather than after both operands. The recognizer
+requires distinct string and integer address grammars.
 
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.

@@ -4,6 +4,7 @@ import zlib
 
 from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_abs_instructions,
+    scan_controlled_aci_instructions,
     scan_controlled_add_instructions,
     scan_controlled_and_instructions,
     scan_controlled_bsl_instructions,
@@ -178,6 +179,16 @@ def _iim_record() -> bytes:
         b"\x03\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x5d"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _aci_record() -> bytes:
+    fields = (b"ST9:0", b"N7:0")
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x01\x3f\x00\x00\x7a"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -654,6 +665,20 @@ def test_iom_differs_from_iim_only_by_controlled_selector() -> None:
     assert (iim.mnemonic, iim.selector) == ("IIM", 0x5D)
     assert iom.selector_offset == iim.selector_offset
     assert iom.operands == iim.operands
+
+
+def test_aci_exposes_string_source_and_integer_destination() -> None:
+    result = scan_controlled_aci_instructions(
+        _aci_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ACI", 0x7A)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "ST9:0"),
+        ("destination", "N7:0"),
+    ]
 
 
 def test_pto_exposes_pulse_train_output_number() -> None:
