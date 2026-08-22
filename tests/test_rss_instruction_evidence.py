@@ -22,6 +22,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_cop_instructions,
     scan_controlled_ctd_instructions,
     scan_controlled_ctu_instructions,
+    scan_controlled_dcd_instructions,
     scan_controlled_div_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_ffl_instructions,
@@ -1552,6 +1553,21 @@ def test_frd_differs_from_tod_only_by_controlled_selector() -> None:
     assert (frd.mnemonic, frd.selector) == ("FRD", 0x18)
     assert tod.selector_offset == frd.selector_offset
     assert tod.operands == frd.operands
+
+
+def test_dcd_uses_qualified_source_and_destination() -> None:
+    dcd_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    dcd_payload[-8] = 0x20
+    dcd = scan_controlled_dcd_instructions(
+        bytes(dcd_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (dcd.mnemonic, dcd.selector) == ("DCD", 0x20)
+    assert [(item.role, item.value) for item in dcd.operands] == [
+        ("source", "N7:0"),
+        ("destination", "N7:1"),
+    ]
 
 
 def test_and_differs_from_add_only_by_controlled_selector() -> None:

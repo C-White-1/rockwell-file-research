@@ -219,7 +219,7 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
-DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
+DIV, DCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
 PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
@@ -246,7 +246,7 @@ FFL reports `source`, file `fifo`, `control`, `length`, and `position`.
 FFU reports file `fifo`, `destination`, `control`, `length`, and `position`.
 LFL reports `source`, file `lifo`, `control`, `length`, and `position`.
 LFU reports file `lifo`, `destination`, `control`, `length`, and `position`.
-TOD and FRD report `source` and `destination`.
+TOD, FRD, and DCD report `source` and `destination`.
 Meanwhile,
 TON, RTO, and TOF report timer, time base, preset, and accumulator. Unknown or differently
 framed selectors stay uninterpreted. RES currently accepts controlled timer and

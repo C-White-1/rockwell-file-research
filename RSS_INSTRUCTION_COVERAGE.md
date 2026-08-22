@@ -43,6 +43,7 @@ opcodes.
 | `MOV` | `0x1C` | source, destination | Confirmed |
 | `NEG` | `0x1E` | source, destination | Confirmed |
 | `SUS` | `0x1F` | suspend_id | Confirmed |
+| `DCD` | `0x20` | source, destination | Confirmed |
 | `AND` | `0x23` | source_a, source_b, destination | Confirmed |
 | `OR` | `0x24` | source_a, source_b, destination | Confirmed |
 | `XOR` | `0x25` | source_a, source_b, destination | Confirmed |
@@ -110,7 +111,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **81**.
+Confirmed total: **82**.
 
 ## Normalized palette entries
 
@@ -157,7 +158,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `DCD`, `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
+- Recipe, event, and specialised: `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
   `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
