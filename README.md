@@ -222,7 +222,7 @@ OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
-PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, ACI, ACN, and AEX only when
+PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, and AHL only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
@@ -290,6 +290,8 @@ ACI reports a string-file `source` and integer-word `destination`.
 ACN reports ordered string `source_a`, `source_b`, and `destination` operands.
 AEX reports ordered string `source`, integer `index` and `number`, and string
 `destination` operands.
+AHL reports `channel`, `and_mask`, `or_mask`, and `control`, followed by its
+automatic `channel_status` and `error` fields.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

@@ -77,6 +77,7 @@ _IOM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iom/v1"
 _ACI_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aci/v1"
 _ACN_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/acn/v1"
 _AEX_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aex/v1"
+_AHL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ahl/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -1277,6 +1278,83 @@ def scan_controlled_aex_instructions(
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
                 evidence_profile=_AEX_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_ahl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize AHL records matching the controlled handshake-lines profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x06\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(6):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 6 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 3] != b"\x00\x00\x7e":
+            continue
+        selector_offset = cursor + 2
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_MASK_OPERAND,
+            _CONTROLLED_MASK_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded[:4], strict=True)
+        ):
+            continue
+        if decoded[4:] != ["0", "0"]:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = (
+            "channel",
+            "and_mask",
+            "or_mask",
+            "control",
+            "channel_status",
+            "error",
+        )
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="AHL",
+                selector=0x7E,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_AHL_PROFILE,
             )
         )
     return evidence
@@ -2662,6 +2740,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_aex_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_ahl_instructions(
             payload,
             include_private_text=include_private_text,
         )
