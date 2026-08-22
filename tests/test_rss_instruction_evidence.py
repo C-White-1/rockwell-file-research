@@ -13,6 +13,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_and_instructions,
     scan_controlled_ard_instructions,
     scan_controlled_arl_instructions,
+    scan_controlled_asc_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
@@ -251,6 +252,16 @@ def _ard_record(*, selector: int = 0x80) -> bytes:
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00"
         + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _asc_record() -> bytes:
+    fields = (b"ST9:0", b"1", b"ST9:1", b"N7:0")
+    return (
+        b"\x05\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x01\x3f\x00\x00\x82"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -838,6 +849,22 @@ def test_arl_differs_from_ard_only_by_controlled_selector() -> None:
     assert (ard.mnemonic, ard.selector) == ("ARD", 0x80)
     assert arl.selector_offset == ard.selector_offset
     assert arl.operands == ard.operands
+
+
+def test_asc_exposes_search_operands_with_role_specific_types() -> None:
+    result = scan_controlled_asc_instructions(
+        _asc_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ASC", 0x82)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "ST9:0"),
+        ("index", "1"),
+        ("string_search", "ST9:1"),
+        ("result", "N7:0"),
+    ]
 
 
 def test_pto_exposes_pulse_train_output_number() -> None:
