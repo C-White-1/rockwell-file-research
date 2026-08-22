@@ -15,6 +15,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_arl_instructions,
     scan_controlled_asc_instructions,
     scan_controlled_asr_instructions,
+    scan_controlled_awa_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
@@ -104,6 +105,16 @@ def _edge_output_record(*, selector: int) -> bytes:
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00"
         + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _awa_record() -> bytes:
+    fields = (b"0", b"ST9:0", b"R6:0", b"15", b"0", b"0")
+    return (
+        b"\x06\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x83"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -889,6 +900,24 @@ def test_asr_exposes_two_string_sources() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("source_a", "ST9:0"),
         ("source_b", "ST9:1"),
+    ]
+
+
+def test_awa_exposes_configurable_and_automatic_fields() -> None:
+    result = scan_controlled_awa_instructions(
+        _awa_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("AWA", 0x83)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("channel", "0"),
+        ("source", "ST9:0"),
+        ("control", "R6:0"),
+        ("string_length", "15"),
+        ("characters_sent", "0"),
+        ("error", "0"),
     ]
 
 
