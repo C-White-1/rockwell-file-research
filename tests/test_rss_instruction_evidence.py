@@ -24,6 +24,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ctu_instructions,
     scan_controlled_dcd_instructions,
     scan_controlled_div_instructions,
+    scan_controlled_dlg_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_ffl_instructions,
     scan_controlled_ffu_instructions,
@@ -952,6 +953,19 @@ def test_pwm_differs_from_pto_only_by_controlled_selector_and_role() -> None:
         ("pwm_number", "0"),
     ]
     assert pwm.operands[0].value == pto.operands[0].value
+
+
+def test_dlg_exposes_queue_number() -> None:
+    result = scan_controlled_dlg_instructions(
+        _record(operand="0", selector=0xAC),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("DLG", 0xAC)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("queue_number", "0"),
+    ]
 
 
 def test_svc_preserves_hexadecimal_channel_selection() -> None:

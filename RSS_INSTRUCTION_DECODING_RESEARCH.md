@@ -263,6 +263,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `PID` | `0x9F` | PID file `PD9:0`; process `N7:0`; control `N7:1` |
 | `PTO` | `0xA0` | PTO number `0` |
 | `PWM` | `0xA1` | PWM number `0` |
+| `DLG` | `0xAC` | Queue number `0` |
 | `SVC` | `0xA5` | Channel select `0000h` |
 | `MSG` | `0xB3` | MSG file `MG10:0`; setup payload unresolved |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
@@ -591,6 +592,10 @@ The field-identical PWM record uses selector `0xA1`, immediately following PTO
 `0xA0`, and retains header `01 00` with literal value `0`. Its operand has the
 distinct role `pwm_number`; selector adjacency is recorded as evidence but is
 not used to infer untested instructions.
+
+The controlled DLG instruction uses selector `0xAC`, header `01 00`, and one
+unqualified decimal field containing queue number `0`. It reuses the strict
+single-unqualified-operand structure under a DLG-specific evidence profile.
 
 The controlled SVC instruction uses selector `0xA5`, header `01 00`, and one
 unqualified channel-selection field. Its default is serialized exactly as

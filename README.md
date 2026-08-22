@@ -222,7 +222,7 @@ OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, DCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
-PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
+PID, PTO, PWM, DLG, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
 ASC, ASR, and AWA only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
@@ -279,6 +279,7 @@ PID reports ordered `pid_file`, `process_variable`, and `control_variable`
 operands. PID tuning and status data remain separate DATA FILES evidence.
 PTO reports its literal `pto_number` operand.
 PWM reports its literal `pwm_number` operand.
+DLG reports its literal `queue_number` operand.
 MSG reports its `msg_file` operand while preserving its following setup bytes
 as unresolved PROGRAM FILES evidence.
 SVC reports its serialized hexadecimal `channel_select` operand.

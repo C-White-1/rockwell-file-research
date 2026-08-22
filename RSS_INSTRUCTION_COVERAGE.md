@@ -91,6 +91,7 @@ opcodes.
 | `UID` | `0xA8` | interrupt_types | Confirmed |
 | `UIE` | `0xA9` | interrupt_types | Confirmed |
 | `UIF` | `0xAA` | interrupt_types | Confirmed |
+| `DLG` | `0xAC` | queue_number | Confirmed |
 | `ABS` | `0x98` | source, destination | Confirmed |
 | `ONS` | `0xAB` | storage_bit | Confirmed |
 | `OSF` | `0x9D` | storage_bit, output_bit | Confirmed |
@@ -111,7 +112,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **82**.
+Confirmed total: **83**.
 
 ## Normalized palette entries
 
@@ -158,7 +159,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
+- Recipe, event, and specialised: `ENC`, `GCD`, `INT`, `LCD`,
   `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the

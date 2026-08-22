@@ -69,6 +69,7 @@ _SQO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqo/v1"
 _PID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pid/v1"
 _PTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pto/v1"
 _PWM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pwm/v1"
+_DLG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/dlg/v1"
 _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
 _HSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/hsl/v1"
@@ -125,6 +126,7 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0xA8: ("UID", _UID_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xAA: ("UIF", _UIF_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
+    0xAC: ("DLG", _DLG_PROFILE, "queue_number", _CONTROLLED_INTEGER),
 }
 _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
     0x08: ("MCR", _MCR_PROFILE),
@@ -2810,6 +2812,23 @@ def scan_controlled_pwm_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "PWM"
+    ]
+
+
+def scan_controlled_dlg_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize DLG records matching the controlled queue-number profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "DLG"
     ]
 
 
