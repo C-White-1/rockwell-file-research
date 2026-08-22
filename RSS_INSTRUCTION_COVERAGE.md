@@ -50,6 +50,7 @@ opcodes.
 | `DIV` | `0x2A` | source_a, source_b, destination | Confirmed |
 | `BSR` | `0x2B` | file, control, bit_address, length | Confirmed |
 | `BSL` | `0x2C` | file, control, bit_address, length | Confirmed |
+| `SQO` | `0x2D` | file/mask/destination/control/length/position | Confirmed |
 | `SQC` | `0x2E` | file, mask, source, control, length, position | Confirmed |
 | `OTE` | `0x2F` | operand | Confirmed |
 | `OTL` | `0x30` | operand | Confirmed |
@@ -88,7 +89,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **62**.
+Confirmed total: **63**.
 
 ## Unavailable instruction records
 
@@ -115,7 +116,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Shift and sequencer: `SQO`.
 - Process and control: `PID`, `PTO`, `PWM`, `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,

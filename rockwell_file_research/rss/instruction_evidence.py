@@ -61,6 +61,7 @@ _BSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsl/v1"
 _BSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsr/v1"
 _SQC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqc/v1"
 _SQL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sql/v1"
+_SQO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqo/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -114,6 +115,20 @@ _SHIFT_IDENTITIES = {
     0x2C: ("BSL", _BSL_PROFILE),
 }
 _SEQUENCER_IDENTITIES = {
+    0x2D: (
+        "SQO",
+        _SQO_PROFILE,
+        ("file", "mask", "destination", "control", "length", "position"),
+        (
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_MASK_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_INTEGER,
+        ),
+        0x06,
+    ),
     0x2E: (
         "SQC",
         _SQC_PROFILE,
@@ -740,6 +755,23 @@ def scan_controlled_sql_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SQL"
+    ]
+
+
+def scan_controlled_sqo_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SQO records matching the controlled sequencer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_sequencer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SQO"
     ]
 
 

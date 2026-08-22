@@ -272,6 +272,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `DIV` | `0x2A` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
 | `BSR` | `0x2B` | File `#B3:1`; control `R6:0`; bit `B3:0/1`; length `16` |
 | `BSL` | `0x2C` | File `#B3:1`; control `R6:0`; bit `B3:0/1`; length `16` |
+| `SQO` | `0x2D` | File, mask, destination, control, length, and position |
 | `SQC` | `0x2E` | File, mask, source, control, length, and position |
 | `SQL` | `0x40` | File, source, control, length, and position |
 | `EQU` | `0x32` | Source A `N7:0`; source B `N7:1` |
@@ -547,7 +548,12 @@ preserved as observed evidence.
 The controlled SQL instruction uses selector `0x40`, header `05 00`, and five
 unqualified fields ordered `file`, `source`, `control`, `length`, and
 `position`. Its record uses the same strict address-family validation as the
-other controlled sequencer records, without inferring SQO or other selectors.
+other controlled sequencer records, without inferring any untested selectors.
+
+The controlled SQO instruction uses selector `0x2D`, header `06 00`, and six
+unqualified fields ordered `file`, `mask`, `destination`, `control`, `length`,
+and `position`. RSLogix normalized the entered mask `255` to `00FFh`. The
+destination role is retained distinctly from SQC's source role.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
