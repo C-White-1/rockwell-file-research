@@ -27,6 +27,18 @@ six are the zero-based rung number. Controlled fixtures confirmed short,
 multiline, multiple-rung, and multiple-program-file comments. Record order in
 MEM DATABASE is not rung order, so exported evidence is sorted after decoding.
 
+RSLogix can alternatively attach a rung comment to an output address. A
+controlled `B3:0/1` fixture established the fixed-width key
+`B0003:000/01`; observed word addresses use forms such as `N0007:035` and
+`F0008:055`. The decoder preserves the encoded key and emits a normalized
+address such as `B3:0/1`, `N7:35`, or `F8:55`.
+
+Comments shorter than 255 bytes use a one-byte length. A controlled
+300-character comment confirmed that longer text uses `FF` followed by an
+unsigned 16-bit little-endian length (`FF 2C 01` for 300). The two bytes before
+either length form are zero; earlier record-identity bytes vary and are not
+interpreted.
+
 The fixture filename prefix is unrelated to the internal program-file number;
 the encoded attachment key and RSLogix **File/Rung** comment fields are
 authoritative.

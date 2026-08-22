@@ -9,14 +9,22 @@ from dataclasses import dataclass
 from rockwell_file_research.rss.compressed_section import decompress_section
 
 _RUNG_KEY = re.compile(rb"\x11RUNG([0-9]{6})-([0-9]{6})")
+_ADDRESS_KEY = re.compile(
+    rb"(?P<length>[\x09\x0c])"
+    rb"(?P<type>[A-Z])(?P<file>[0-9]{4}):(?P<element>[0-9]{3})"
+    rb"(?:/(?P<bit>[0-9]{2}))?"
+)
 
 
 @dataclass(frozen=True)
 class RungCommentRecord:
     """One length-delimited comment and its explicit file/rung attachment."""
 
-    program_file_number: int
-    rung_index: int
+    attachment_kind: str
+    attachment_key: str
+    program_file_number: int | None
+    rung_index: int | None
+    output_address: str | None
     text_offset: int
     key_offset: int
     length: int
@@ -46,24 +54,47 @@ def _is_comment_text(payload: bytes) -> bool:
 
 
 def _comment_before_key(payload: bytes, key_start: int) -> tuple[int, bytes] | None:
-    """Find the strict one-byte-length field immediately preceding a key."""
+    """Find the strict short or extended length field preceding a key."""
 
     comment_end = key_start - 1
     if comment_end < 1 or payload[comment_end] != 0:
         return None
-    lower = max(3, comment_end - 256)
+    lower = max(3, comment_end - 65_539)
     candidates: list[tuple[int, bytes]] = []
-    for length_offset in range(lower, comment_end):
-        length = payload[length_offset]
-        text_start = length_offset + 1
-        if text_start + length != comment_end:
+    for length in range(1, min(254, comment_end - lower) + 1):
+        text_start = comment_end - length
+        if payload[text_start - 1] != length:
+            continue
+        if payload[text_start - 3 : text_start - 1] != b"\x00\x00":
             continue
         text = payload[text_start:comment_end]
-        if payload[length_offset - 3 : length_offset] != b"\x00\x00\x00":
-            continue
         if _is_comment_text(text):
             candidates.append((text_start, text))
+    marker = payload.rfind(b"\xff", lower, comment_end - 2)
+    while marker >= lower:
+        text_start = marker + 3
+        length = int.from_bytes(payload[marker + 1 : text_start], "little")
+        if (
+            marker >= 2
+            and payload[marker - 2 : marker] == b"\x00\x00"
+            and text_start + length == comment_end
+        ):
+            text = payload[text_start:comment_end]
+            if _is_comment_text(text):
+                candidates.append((text_start, text))
+        marker = payload.rfind(b"\xff", lower, marker)
     return candidates[-1] if candidates else None
+
+
+def _canonical_address(match: re.Match[bytes]) -> str:
+    """Normalize an observed fixed-width RSLogix address attachment key."""
+
+    address = (
+        f"{match.group('type').decode('ascii')}"
+        f"{int(match.group('file'))}:{int(match.group('element'))}"
+    )
+    bit = match.group("bit")
+    return f"{address}/{int(bit)}" if bit is not None else address
 
 
 def inspect_mem_database(
@@ -83,8 +114,11 @@ def inspect_mem_database(
         decoded = encoded.decode("ascii")
         comments.append(
             RungCommentRecord(
+                attachment_kind="file_rung",
+                attachment_key=match.group(0)[1:].decode("ascii"),
                 program_file_number=int(match.group(1)),
                 rung_index=int(match.group(2)),
+                output_address=None,
                 text_offset=text_offset,
                 key_offset=match.start() + 1,
                 length=len(encoded),
@@ -92,7 +126,35 @@ def inspect_mem_database(
                 text=decoded if include_private_text else None,
             )
         )
-    comments.sort(key=lambda item: (item.program_file_number, item.rung_index))
+    for match in _ADDRESS_KEY.finditer(section.payload):
+        if match.group("length")[0] != len(match.group(0)) - 1:
+            continue
+        comment = _comment_before_key(section.payload, match.start())
+        if comment is None:
+            continue
+        text_offset, encoded = comment
+        comments.append(
+            RungCommentRecord(
+                attachment_kind="output_address",
+                attachment_key=match.group(0)[1:].decode("ascii"),
+                program_file_number=None,
+                rung_index=None,
+                output_address=_canonical_address(match),
+                text_offset=text_offset,
+                key_offset=match.start() + 1,
+                length=len(encoded),
+                sha256=hashlib.sha256(encoded).hexdigest(),
+                text=encoded.decode("ascii") if include_private_text else None,
+            )
+        )
+    comments.sort(
+        key=lambda item: (
+            item.attachment_kind,
+            item.program_file_number if item.program_file_number is not None else -1,
+            item.rung_index if item.rung_index is not None else -1,
+            item.output_address or "",
+        )
+    )
     return MemDatabaseInspection(
         envelope_version=section.envelope_version,
         header_size=section.header_size,

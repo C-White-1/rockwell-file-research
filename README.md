@@ -97,6 +97,7 @@ uv run rss-inventory `
   "private-fixtures\controller.rss" `
   --output "private-outputs\controller-inventory.json" `
   --operand-csv-output "private-outputs\controller-operands.csv" `
+  --rung-comment-csv-output "private-outputs\controller-rung-comments.csv" `
   --source-label fixture-001
 ```
 
@@ -114,6 +115,10 @@ The optional operand CSV contains one aggregate row per exact recovered source
 operand string. It reports total, direct, and indirect occurrences, program
 file coverage, distinct rung coverage, and all rung locations. Operand text and
 program names remain blank or hashed unless `--include-private-text` is used.
+The rung-comment CSV similarly leaves comment text blank by default while
+retaining its hash, byte provenance, file/rung identity, and whether the rung
+was independently corroborated. Use `--include-private-text` only when the
+report will remain controlled and private.
 This is an exact-string inventory rather than a claim that alternate address
 spellings are semantically equivalent.
 
@@ -209,7 +214,7 @@ Progress toward complete instruction coverage is maintained in the
 The corresponding engineer-facing creation and delivery contract is the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 
-RSS inventory schema `rss-inventory/v6` also emits one evidence-only record per
+RSS inventory schema `rss-inventory/v7` also emits one evidence-only record per
 corroborated rung. Each record contains its program-file identity, zero-based
 rung index, byte range and length, payload SHA-256, and direct/indirect operand
 counts. Printable non-operand regions within the same byte range are attached
@@ -219,9 +224,11 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Verified rung comments are decoded
 separately from `MEM DATABASE` using explicit `RUNGdddddd-dddddd` attachment
-keys. Comment text remains redacted unless private-text output is deliberately
-enabled, and each attachment reports whether its referenced PROGRAM FILES rung
-was independently corroborated. Version 4 additionally reports XIC, XIO,
+keys or fixed-width Output Address keys such as `B0003:000/01`. Output addresses
+are also emitted in normalized form, such as `B3:0/1`. Comment text remains
+redacted unless private-text output is deliberately enabled, and File/Rung
+attachments report whether the referenced PROGRAM FILES rung was independently
+corroborated. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, DCD, ENC, GCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,

@@ -21,6 +21,17 @@ def _record(file_number: int, rung_index: int, text: bytes) -> bytes:
     return b"\x01\x00\x04\x00\x00\x00" + bytes([len(text)]) + text + b"\x00\x11" + key
 
 
+def _address_record(key: bytes, text: bytes) -> bytes:
+    length = (
+        bytes([len(text)])
+        if len(text) < 255
+        else b"\xff" + len(text).to_bytes(2, "little")
+    )
+    return (
+        b"\x01\x00\x04\x05\x00\x00" + length + text + b"\x00" + bytes([len(key)]) + key
+    )
+
+
 def test_comments_are_sorted_and_multiline_text_is_preserved() -> None:
     payload = _record(3, 0, b"File three") + _record(2, 1, b"Line one\r\nLine two")
 
@@ -37,7 +48,6 @@ def test_private_text_is_redacted_but_integrity_evidence_remains() -> None:
         _envelope(_record(2, 0, b"Private comment")),
         include_private_text=False,
     )
-
     comment = inspected.comments[0]
     assert comment.text is None
     assert comment.length == len(b"Private comment")
@@ -51,3 +61,29 @@ def test_unframed_rung_like_text_is_not_promoted() -> None:
     )
 
     assert inspected.comments == []
+
+
+def test_output_address_attachment_is_normalized() -> None:
+    inspected = inspect_mem_database(
+        _envelope(_address_record(b"B0003:000/01", b"Output comment")),
+        include_private_text=True,
+    )
+
+    comment = inspected.comments[0]
+    assert comment.attachment_kind == "output_address"
+    assert comment.attachment_key == "B0003:000/01"
+    assert comment.output_address == "B3:0/1"
+    assert comment.text == "Output comment"
+
+
+def test_extended_comment_length_is_little_endian_uint16() -> None:
+    text = b"A" * 300
+    inspected = inspect_mem_database(
+        _envelope(_address_record(b"N0007:035", text)),
+        include_private_text=True,
+    )
+
+    comment = inspected.comments[0]
+    assert comment.output_address == "N7:35"
+    assert comment.length == 300
+    assert comment.text == "A" * 300

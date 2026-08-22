@@ -28,6 +28,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional aggregate CSV listing every recovered ladder operand",
     )
     parser.add_argument(
+        "--rung-comment-csv-output",
+        type=Path,
+        help="optional CSV listing decoded rung-comment attachments",
+    )
+    parser.add_argument(
         "--include-private-text",
         action="store_true",
         help="include decoded PROCESSOR text; keep the output private",
@@ -49,6 +54,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_label=args.source_label,
             include_private_text=args.include_private_text,
             operand_csv_destination=args.operand_csv_output,
+            rung_comment_csv_destination=args.rung_comment_csv_output,
         )
     except RSSInventoryError as error:
         parser.error(str(error))

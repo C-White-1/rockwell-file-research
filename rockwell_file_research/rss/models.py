@@ -211,8 +211,11 @@ class RSSProgramFileEvidence(TypedDict):
 class RSSRungCommentRecordEvidence(TypedDict):
     """One MEM DATABASE comment attached to an explicit ladder rung."""
 
-    program_file_number: int
-    rung_index: int
+    attachment_kind: str
+    attachment_key: str
+    program_file_number: int | None
+    rung_index: int | None
+    output_address: str | None
     text_offset: int
     key_offset: int
     length: int
