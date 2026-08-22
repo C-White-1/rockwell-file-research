@@ -63,6 +63,7 @@ opcodes.
 | `LEQ` | `0x37` | source_a, source_b | Confirmed |
 | `MEQ` | `0x38` | source, mask, compare | Confirmed |
 | `LIM` | `0x3F` | low_limit, test, high_limit | Confirmed |
+| `IIM` | `0x5D` | slot, mask, length | Confirmed |
 | `SQL` | `0x40` | file, source, control, length, position | Confirmed |
 | `XIC` | `0x39` | operand | Confirmed |
 | `XIO` | `0x3A` | operand | Confirmed |
@@ -95,7 +96,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **69**.
+Confirmed total: **70**.
 
 ## Unavailable instruction records
 
@@ -127,7 +128,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- High-speed and immediate I/O: `IIM`, `IOM`, `IIE`, `IID`.
+- High-speed and immediate I/O: `IOM`, `IIE`, `IID`.
 - ASCII and string: `ACI`, `ACN`, `AEX`, `AHL`, `AIC`, `ARD`, `ARL`, `ASC`,
   `ASR`, `AWA`, `AWT`.
 - Recipe, event, and specialised: `CEM`, `DCD`, `DDT`, `DEM`, `DLG`, `ENC`,

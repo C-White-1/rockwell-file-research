@@ -288,6 +288,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `LEQ` | `0x37` | Source A `N7:0`; source B `N7:1` |
 | `MEQ` | `0x38` | Source `N7:0`; mask `N7:1`; compare `N7:2` |
 | `LIM` | `0x3F` | Low limit `N7:0`; test `N7:1`; high limit `N7:2` |
+| `IIM` | `0x5D` | Slot `0`; mask `00FFh`; length `1` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -609,6 +610,11 @@ The controlled HSL instruction uses selector `0x9B`, header `05 00`, and five
 unqualified fields: HSC number `HSC0`, high preset `N7:0`, low preset `N7:1`,
 output-high source `N7:2`, and output-low source `N7:3`. The HSC instance uses
 its own grammar rather than being treated as an ordinary word address.
+
+The controlled IIM instruction uses selector `0x5D`, header `03 00`, and three
+unqualified fields: slot `0`, mask `00FFh`, and length `1`. RSLogix normalized
+the entered decimal mask `255` to hexadecimal text; the serialized form is
+preserved as evidence.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent

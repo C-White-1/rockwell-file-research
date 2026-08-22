@@ -71,6 +71,7 @@ _PWM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pwm/v1"
 _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
 _SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
 _HSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/hsl/v1"
+_IIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iim/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -125,6 +126,9 @@ _EDGE_OUTPUT_IDENTITIES = {
 _SHIFT_IDENTITIES = {
     0x2B: ("BSR", _BSR_PROFILE),
     0x2C: ("BSL", _BSL_PROFILE),
+}
+_IMMEDIATE_IO_IDENTITIES = {
+    0x5D: ("IIM", _IIM_PROFILE),
 }
 _SEQUENCER_IDENTITIES = {
     0x2D: (
@@ -973,6 +977,94 @@ def scan_controlled_hsl_instructions(
             )
         )
     return evidence
+
+
+def _scan_controlled_immediate_io_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize controlled immediate-I/O instruction records."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x03\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(3):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 3 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 2] != b"\x00\x00":
+            continue
+        selector_offset = cursor + 2
+        identity = _IMMEDIATE_IO_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_MASK_OPERAND,
+            _CONTROLLED_INTEGER,
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        mnemonic, profile = identity
+        roles = ("slot", "mask", "length")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=profile,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_iim_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize IIM records matching the controlled immediate-input profile."""
+
+    return [
+        item
+        for item in _scan_controlled_immediate_io_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "IIM"
+    ]
 
 
 def _scan_controlled_qualified_word_instructions(
@@ -2331,6 +2423,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_hsl_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        _scan_controlled_immediate_io_instructions(
             payload,
             include_private_text=include_private_text,
         )

@@ -21,6 +21,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
     scan_controlled_hsl_instructions,
+    scan_controlled_iim_instructions,
     scan_controlled_instructions,
     scan_controlled_jmp_instructions,
     scan_controlled_jsr_instructions,
@@ -166,6 +167,16 @@ def _hsl_record() -> bytes:
         b"\x05\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x9b"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _iim_record() -> bytes:
+    fields = (b"0", b"00FFh", b"1")
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x5d"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -610,6 +621,21 @@ def test_hsl_exposes_ordered_high_speed_load_operands() -> None:
         ("low_preset", "N7:1"),
         ("output_high_source", "N7:2"),
         ("output_low_source", "N7:3"),
+    ]
+
+
+def test_iim_exposes_slot_mask_and_length() -> None:
+    result = scan_controlled_iim_instructions(
+        _iim_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("IIM", 0x5D)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("slot", "0"),
+        ("mask", "00FFh"),
+        ("length", "1"),
     ]
 
 
