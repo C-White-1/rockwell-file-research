@@ -264,6 +264,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `PTO` | `0xA0` | PTO number `0` |
 | `PWM` | `0xA1` | PWM number `0` |
 | `DLG` | `0xAC` | Queue number `0` |
+| `GCD` | `0xAF` | Source `N7:0`; destination `N7:1` |
 | `SVC` | `0xA5` | Channel select `0000h` |
 | `MSG` | `0xB3` | MSG file `MG10:0`; setup payload unresolved |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
@@ -695,6 +696,10 @@ from selector proximity.
 The controlled ENC record uses selector `0x64` with the same qualified
 two-word framing and ordered source `N7:0` and destination `N7:1` fields. It
 retains an ENC-specific evidence profile.
+
+The controlled GCD record uses selector `0xAF` with qualified source `N7:0`
+and destination `N7:1` fields. It shares the proven two-word framing while
+retaining a GCD-specific evidence profile.
 
 The controlled AWA instruction uses selector `0x83`, header `06 00`, and six
 fields ordered channel `0`, source `ST9:0`, control `R6:0`, string length `15`,

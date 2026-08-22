@@ -31,6 +31,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ffu_instructions,
     scan_controlled_fll_instructions,
     scan_controlled_frd_instructions,
+    scan_controlled_gcd_instructions,
     scan_controlled_geq_instructions,
     scan_controlled_grt_instructions,
     scan_controlled_hsl_instructions,
@@ -1595,6 +1596,21 @@ def test_enc_uses_qualified_source_and_destination() -> None:
 
     assert (enc.mnemonic, enc.selector) == ("ENC", 0x64)
     assert [(item.role, item.value) for item in enc.operands] == [
+        ("source", "N7:0"),
+        ("destination", "N7:1"),
+    ]
+
+
+def test_gcd_uses_qualified_source_and_destination() -> None:
+    gcd_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    gcd_payload[-8] = 0xAF
+    gcd = scan_controlled_gcd_instructions(
+        bytes(gcd_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (gcd.mnemonic, gcd.selector) == ("GCD", 0xAF)
+    assert [(item.role, item.value) for item in gcd.operands] == [
         ("source", "N7:0"),
         ("destination", "N7:1"),
     ]
