@@ -68,6 +68,7 @@ _PID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pid/v1"
 _PTO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pto/v1"
 _PWM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pwm/v1"
 _MSG_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/msg/v1"
+_SVC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/svc/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -104,6 +105,7 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0xA0: ("PTO", _PTO_PROFILE, "pto_number", _CONTROLLED_INTEGER),
     0xA1: ("PWM", _PWM_PROFILE, "pwm_number", _CONTROLLED_INTEGER),
+    0xA5: ("SVC", _SVC_PROFILE, "channel_select", _CONTROLLED_MASK_OPERAND),
     0xA8: ("UID", _UID_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xAA: ("UIF", _UIF_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
@@ -1932,6 +1934,23 @@ def scan_controlled_pwm_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "PWM"
+    ]
+
+
+def scan_controlled_svc_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SVC records matching the controlled service profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SVC"
     ]
 
 

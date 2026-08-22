@@ -82,6 +82,7 @@ opcodes.
 | `PID` | `0x9F` | pid_file, process_variable, control_variable | Confirmed |
 | `PTO` | `0xA0` | pto_number | Confirmed |
 | `PWM` | `0xA1` | pwm_number | Confirmed |
+| `SVC` | `0xA5` | channel_select | Confirmed |
 | `MSG` | `0xB3` | msg_file; setup payload unresolved | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
@@ -93,7 +94,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **67**.
+Confirmed total: **68**.
 
 ## Unavailable instruction records
 
@@ -121,7 +122,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Messaging and communications: `SVC`, `EEM`.
+- Messaging and communications: `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
   `IIE`, `IID`.
 - ASCII and string: `ACI`, `ACN`, `AEX`, `AHL`, `AIC`, `ARD`, `ARL`, `ASC`,

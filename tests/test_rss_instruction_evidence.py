@@ -58,6 +58,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
     scan_controlled_sus_instructions,
+    scan_controlled_svc_instructions,
     scan_controlled_swp_instructions,
     scan_controlled_tnd_instructions,
     scan_controlled_tod_instructions,
@@ -614,6 +615,19 @@ def test_pwm_differs_from_pto_only_by_controlled_selector_and_role() -> None:
         ("pwm_number", "0"),
     ]
     assert pwm.operands[0].value == pto.operands[0].value
+
+
+def test_svc_preserves_hexadecimal_channel_selection() -> None:
+    result = scan_controlled_svc_instructions(
+        _record(operand="0000h", selector=0xA5),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SVC", 0xA5)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("channel_select", "0000h"),
+    ]
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:

@@ -263,6 +263,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `PID` | `0x9F` | PID file `PD9:0`; process `N7:0`; control `N7:1` |
 | `PTO` | `0xA0` | PTO number `0` |
 | `PWM` | `0xA1` | PWM number `0` |
+| `SVC` | `0xA5` | Channel select `0000h` |
 | `MSG` | `0xB3` | MSG file `MG10:0`; setup payload unresolved |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
@@ -576,6 +577,11 @@ The field-identical PWM record uses selector `0xA1`, immediately following PTO
 `0xA0`, and retains header `01 00` with literal value `0`. Its operand has the
 distinct role `pwm_number`; selector adjacency is recorded as evidence but is
 not used to infer untested instructions.
+
+The controlled SVC instruction uses selector `0xA5`, header `01 00`, and one
+unqualified channel-selection field. Its default is serialized exactly as
+`0000h` and is reported with role `channel_select`; the representation is
+preserved rather than converted to an integer.
 
 The controlled MSG instruction prefix uses selector `0xB3`, header `04 00`,
 and visible message-file operand `MG10:0`. Three `01 3F` markers precede the
