@@ -69,3 +69,45 @@ def test_private_csv_renders_decimal_and_16_bit_hex_values():
     assert indexed["N11:0"]["decimal_value"] == "123"
     assert indexed["N11:1"]["decimal_value"] == "-2"
     assert indexed["N11:1"]["hex_value"] == "FFFE"
+
+
+def test_binary_bit_expansion_preserves_words_and_derives_all_bit_addresses():
+    rows = list(
+        csv.DictReader(
+            io.StringIO(
+                render_data_value_csv(
+                    _inventory(include_values=True), expand_binary_bits=True
+                )
+            )
+        )
+    )
+    indexed = {row["address"]: row for row in rows}
+
+    assert indexed["B10:0"]["data_type"] == "binary_word"
+    assert indexed["B10:0/0"]["data_type"] == "binary_bit"
+    assert indexed["B10:0/0"]["bit_index"] == "0"
+    assert indexed["B10:0/0"]["decimal_value"] == "1"
+    assert indexed["B10:0/1"]["decimal_value"] == "0"
+    assert indexed["B10:1/15"]["decimal_value"] == "1"
+    assert len([row for row in rows if row["data_type"] == "binary_bit"]) == 32
+    assert [row["address"] for row in rows[:3]] == [
+        "B10:0",
+        "B10:0/0",
+        "B10:0/1",
+    ]
+
+
+def test_redacted_binary_bit_expansion_exposes_no_bit_values():
+    rows = list(
+        csv.DictReader(
+            io.StringIO(
+                render_data_value_csv(
+                    _inventory(include_values=False), expand_binary_bits=True
+                )
+            )
+        )
+    )
+    bits = [row for row in rows if row["data_type"] == "binary_bit"]
+
+    assert len(bits) == 32
+    assert all(row["decimal_value"] == "" for row in bits)

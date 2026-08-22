@@ -20,6 +20,7 @@ def export_inventory(
     operand_csv_destination: Path | None = None,
     rung_comment_csv_destination: Path | None = None,
     data_value_csv_destination: Path | None = None,
+    expand_binary_bits: bool = False,
 ) -> RSSInventory:
     """Write one deterministic RSS inventory JSON document."""
 
@@ -49,7 +50,7 @@ def export_inventory(
     if data_value_csv_destination is not None:
         data_value_csv_destination.parent.mkdir(parents=True, exist_ok=True)
         data_value_csv_destination.write_text(
-            render_data_value_csv(inventory),
+            render_data_value_csv(inventory, expand_binary_bits=expand_binary_bits),
             encoding="utf-8",
         )
     return inventory

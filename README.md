@@ -175,6 +175,34 @@ Use `--data-value-csv-output PATH` to flatten decoded integer elements and
 binary words for spreadsheet analysis. The CSV follows the inventory's privacy
 state: values remain blank by default and are populated only when
 `--include-private-values` is also supplied.
+Add `--expand-binary-bits` to include derived `B10:0/0` through `B10:0/15`
+rows alongside each decoded binary word. This expansion assigns neither tag
+names nor application meaning, and its bit values follow the same private-value
+boundary.
+
+Compare two RSS projects using corroborated data-file evidence:
+
+```powershell
+uv run rss-data-compare left.RSS right.RSS `
+  --output private-outputs/data-value-comparison.csv
+```
+
+Redacted comparisons prove unchanged arrays from matching SHA-256 evidence but
+do not guess which individual addresses changed when array hashes differ. Add
+`--include-private-values` for a controlled private report containing exact
+`equal`, `changed`, and missing-address results.
+
+Engineering meanings remain outside the generic parser. Supply variant-aware
+CSV profiles with `--left-semantic-profile` and `--right-semantic-profile` to
+translate exact private values into documented interpretations. A profile has
+the columns `address`, `semantic_name`, `raw_value`, `interpretation`, and
+`evidence`. Unlisted address/value combinations remain blank rather than being
+guessed. Because interpretation requires raw values, semantic profiles are
+useful only together with `--include-private-values`.
+Add `--semantic-only` to suppress unprofiled raw addresses. The report keeps
+raw `status` separate from `semantic_status`, allowing an unchanged numeric
+code to be reported as `semantic_changed` when two variant profiles document
+different meanings for that code.
 
 Decoded selections and status words can be checked without coupling their
 parsers through explicit `BitExpectation` records. Missing words or invalid
