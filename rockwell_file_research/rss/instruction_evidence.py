@@ -76,6 +76,7 @@ _IIM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iim/v1"
 _IOM_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/iom/v1"
 _ACI_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aci/v1"
 _ACN_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/acn/v1"
+_AEX_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aex/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -1208,6 +1209,74 @@ def scan_controlled_acn_instructions(
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
                 evidence_profile=_ACN_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_aex_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize AEX records matching the controlled string-extract profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(4):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 4 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 3] != b"\x00\x00\x7d":
+            continue
+        selector_offset = cursor + 2
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (
+            _CONTROLLED_STRING_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_STRING_OPERAND,
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = ("source", "index", "number", "destination")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="AEX",
+                selector=0x7D,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_AEX_PROFILE,
             )
         )
     return evidence
@@ -2587,6 +2656,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_acn_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_aex_instructions(
             payload,
             include_private_text=include_private_text,
         )

@@ -7,6 +7,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_aci_instructions,
     scan_controlled_acn_instructions,
     scan_controlled_add_instructions,
+    scan_controlled_aex_instructions,
     scan_controlled_and_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
@@ -200,6 +201,16 @@ def _acn_record() -> bytes:
         b"\x03\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x7b"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _aex_record() -> bytes:
+    fields = (b"ST9:0", b"N7:0", b"N7:1", b"ST9:1")
+    return (
+        b"\x04\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x7d"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -704,6 +715,22 @@ def test_acn_exposes_ordered_string_operands() -> None:
         ("source_a", "ST9:0"),
         ("source_b", "ST9:1"),
         ("destination", "ST9:2"),
+    ]
+
+
+def test_aex_exposes_mixed_string_and_integer_operands() -> None:
+    result = scan_controlled_aex_instructions(
+        _aex_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("AEX", 0x7D)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "ST9:0"),
+        ("index", "N7:0"),
+        ("number", "N7:1"),
+        ("destination", "ST9:1"),
     ]
 
 

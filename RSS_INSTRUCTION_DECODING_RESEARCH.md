@@ -292,6 +292,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `IOM` | `0x5E` | Slot `0`; mask `00FFh`; length `1` |
 | `ACI` | `0x7A` | String source `ST9:0`; integer destination `N7:0` |
 | `ACN` | `0x7B` | Sources `ST9:0`/`ST9:1`; destination `ST9:2` |
+| `AEX` | `0x7D` | Source `ST9:0`; index/number `N7:0`/`N7:1`; dest `ST9:1` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -633,6 +634,11 @@ The controlled ACN instruction uses selector `0x7B`, header `03 00`, and three
 unqualified string-file operands ordered source A `ST9:0`, source B `ST9:1`,
 and destination `ST9:2`. It retains a separate concatenate profile despite its
 selector adjacency to ACI.
+
+The controlled AEX instruction uses selector `0x7D`, header `04 00`, and four
+unqualified fields ordered source `ST9:0`, index `N7:0`, number `N7:1`, and
+destination `ST9:1`. Role-specific grammars distinguish its string and integer
+operands.
 
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.
