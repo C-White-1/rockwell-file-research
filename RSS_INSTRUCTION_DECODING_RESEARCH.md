@@ -310,6 +310,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `RAC` | `0xA2` | Counter `HSC0`; source `N7:0` |
+| `STS` | `0xA4` | Time `N7:0` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
 | `SWP` | `0x96` | File source `#N7:0`; length `3` |
 | `COP` | `0x22` | File source `#N7:0`; destination `#N7:10`; length `3` |
@@ -728,6 +729,10 @@ The controlled RTA instruction uses selector `0xAD`, has no operands, and
 shares the established zero-operand frame. This confirms its serialized
 identity but does not establish how the controller configures or applies the
 real-time-clock adjustment at runtime.
+
+The controlled STS instruction uses selector `0xA4`, header `01 00`, and one
+unqualified word operand `N7:0`, exposed with role `time` under its own
+selectable-timed-start evidence profile.
 
 The controlled LCD record uses selector `0xB2`, header `08 00`, and seven
 printable fields: ordered line-2, line-3, and line-4 source pairs `N7:0`

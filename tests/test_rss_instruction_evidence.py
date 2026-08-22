@@ -79,6 +79,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_sql_instructions,
     scan_controlled_sqo_instructions,
     scan_controlled_sqr_instructions,
+    scan_controlled_sts_instructions,
     scan_controlled_sub_instructions,
     scan_controlled_sus_instructions,
     scan_controlled_svc_instructions,
@@ -1072,6 +1073,19 @@ def test_svc_preserves_hexadecimal_channel_selection() -> None:
     assert (result[0].mnemonic, result[0].selector) == ("SVC", 0xA5)
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("channel_select", "0000h"),
+    ]
+
+
+def test_sts_exposes_time_word_operand() -> None:
+    result = scan_controlled_sts_instructions(
+        _record(operand="N7:0", selector=0xA4),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("STS", 0xA4)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("time", "N7:0"),
     ]
 
 

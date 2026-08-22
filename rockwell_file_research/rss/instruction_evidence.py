@@ -96,6 +96,7 @@ _GCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/gcd/v1"
 _INT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/int/v1"
 _REF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ref/v1"
 _RTA_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/rta/v1"
+_STS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sts/v1"
 _LCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lcd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
@@ -130,6 +131,7 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0x3B: ("LBL", _LBL_PROFILE, "label", _CONTROLLED_LABEL_OPERAND),
     0xA0: ("PTO", _PTO_PROFILE, "pto_number", _CONTROLLED_INTEGER),
     0xA1: ("PWM", _PWM_PROFILE, "pwm_number", _CONTROLLED_INTEGER),
+    0xA4: ("STS", _STS_PROFILE, "time", _CONTROLLED_WORD_OPERAND),
     0xA5: ("SVC", _SVC_PROFILE, "channel_select", _CONTROLLED_MASK_OPERAND),
     0xA8: ("UID", _UID_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xA9: ("UIE", _UIE_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
@@ -3090,6 +3092,23 @@ def scan_controlled_svc_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SVC"
+    ]
+
+
+def scan_controlled_sts_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize STS records matching the controlled timed-start profile."""
+
+    return [
+        item
+        for item in _scan_controlled_single_unqualified_operand_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "STS"
     ]
 
 

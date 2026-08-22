@@ -107,6 +107,7 @@ opcodes.
 | `PTO` | `0xA0` | pto_number | Confirmed |
 | `PWM` | `0xA1` | pwm_number | Confirmed |
 | `RAC` | `0xA2` | counter, source | Confirmed |
+| `STS` | `0xA4` | time | Confirmed |
 | `SVC` | `0xA5` | channel_select | Confirmed |
 | `MSG` | `0xB3` | msg_file; setup payload unresolved | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
@@ -120,7 +121,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **91**.
+Confirmed total: **92**.
 
 ## Normalized palette entries
 
@@ -162,12 +163,9 @@ Confirmed total: **91**.
 
 ## Candidate backlog
 
-These mnemonic labels were transcribed from the observed instruction palette.
-They remain untested unless they appear in the confirmed table. Palette state,
-processor support, and operand availability must be recorded while each
-fixture is created.
-
-- Recipe, event, and specialised: `STS`.
+No unresolved mnemonic candidates remain from the controlled MicroLogix 1100
+Series B palette transcription. Entries that could not produce fixtures are
+recorded as unavailable, structural, or normalized rather than guessed.
 
 `SOR` was removed as a palette-transcription error. The observed instruction
 is `SQR`, which is already confirmed as selector `0x46`; no separate SOR

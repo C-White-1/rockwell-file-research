@@ -223,7 +223,7 @@ DIV, DCD, ENC, GCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
 INT, REF, RTA,
-PID, PTO, PWM, DLG, MSG, SVC, HSL, RAC, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD,
+PID, PTO, PWM, STS, DLG, MSG, SVC, HSL, RAC, IIM, IOM, ACI, ACN, AEX, AHL, AIC,
 ASC, ASR, AWA, LCD, and RCP only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
@@ -288,6 +288,7 @@ DLG reports its literal `queue_number` operand.
 MSG reports its `msg_file` operand while preserving its following setup bytes
 as unresolved PROGRAM FILES evidence.
 SVC reports its serialized hexadecimal `channel_select` operand.
+STS reports its selectable-timed-start `time` word operand.
 HSL reports ordered `hsc_number`, `high_preset`, `low_preset`,
 `output_high_source`, and `output_low_source` operands.
 RAC reports its high-speed `counter` and reset `source` operands.
