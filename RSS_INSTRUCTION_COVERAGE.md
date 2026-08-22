@@ -110,6 +110,7 @@ Confirmed total: **66**.
 | `LN` | Mathematical instruction greyed out | Unavailable |
 | `LOG` | Mathematical instruction greyed out | Unavailable |
 | `XPY` | Arithmetic instruction greyed out | Unavailable |
+| `RMP` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
@@ -119,7 +120,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Process and control: `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
   `IIE`, `IID`.

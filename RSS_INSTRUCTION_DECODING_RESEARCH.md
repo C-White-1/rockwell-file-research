@@ -576,6 +576,10 @@ The field-identical PWM record uses selector `0xA1`, immediately following PTO
 distinct role `pwm_number`; selector adjacency is recorded as evidence but is
 not used to infer untested instructions.
 
+`RMP` is greyed out in the observed MicroLogix 1100 Series B instruction
+palette. No controlled fixture can therefore be created under this processor
+profile, and no selector or operand structure is assigned.
+
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
 changes to each field altered only its expected ASCII digit. Selector `0x27`,
