@@ -7,10 +7,11 @@ from rockwell_file_research.rss.models import RSSInventory
 
 FIELDNAMES = [
     "attachment_kind",
+    "attachment_source",
     "attachment_key",
     "program_file_number",
     "rung_index",
-    "output_address",
+    "address",
     "attachment_status",
     "comment",
     "comment_sha256",
@@ -30,16 +31,17 @@ def render_rung_comment_csv(inventory: RSSInventory) -> str:
         writer.writerow(
             {
                 "attachment_kind": record["attachment_kind"],
+                "attachment_source": record["attachment_source"],
                 "attachment_key": record["attachment_key"],
                 "program_file_number": record["program_file_number"],
                 "rung_index": record["rung_index"],
-                "output_address": record["output_address"] or "",
+                "address": record["address"] or "",
                 "attachment_status": (
                     "corroborated"
                     if record["program_rung_corroborated"]
                     else (
                         "address_attached"
-                        if record["attachment_kind"] == "output_address"
+                        if record["attachment_kind"] == "address"
                         else "uncorroborated"
                     )
                 ),

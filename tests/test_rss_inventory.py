@@ -149,10 +149,11 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert comments["records"] == [
         {
             "attachment_kind": "file_rung",
+            "attachment_source": "rslogix_file_rung",
             "attachment_key": "RUNG000002-000000",
             "program_file_number": 2,
             "rung_index": 0,
-            "output_address": None,
+            "address": None,
             "text_offset": comments["records"][0]["text_offset"],
             "key_offset": comments["records"][0]["key_offset"],
             "length": 22,
@@ -252,7 +253,7 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
-    assert inventory["schema_version"] == "rss-inventory/v7"
+    assert inventory["schema_version"] == "rss-inventory/v8"
     assert program_files["instructions"] == []
     assert program_files["rung_records"] == [
         {

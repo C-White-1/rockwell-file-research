@@ -214,7 +214,7 @@ Progress toward complete instruction coverage is maintained in the
 The corresponding engineer-facing creation and delivery contract is the
 [controlled RSS instruction-fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md).
 
-RSS inventory schema `rss-inventory/v7` also emits one evidence-only record per
+RSS inventory schema `rss-inventory/v8` also emits one evidence-only record per
 corroborated rung. Each record contains its program-file identity, zero-based
 rung index, byte range and length, payload SHA-256, and direct/indirect operand
 counts. Printable non-operand regions within the same byte range are attached
@@ -224,8 +224,10 @@ comments; TwinForge does not collapse those possibilities into a guessed
 meaning. The record deliberately contains neither reconstructed ladder source
 nor guessed instruction semantics. Verified rung comments are decoded
 separately from `MEM DATABASE` using explicit `RUNGdddddd-dddddd` attachment
-keys or fixed-width Output Address keys such as `B0003:000/01`. Output addresses
-are also emitted in normalized form, such as `B3:0/1`. Comment text remains
+keys or fixed-width keys from the RSLogix **Output Address** attachment option,
+such as `B0003:000/01`. These are modelled neutrally as address attachments and
+emitted in normalized form, such as `B3:0/1`; they do not imply physical output
+I/O direction. Comment text remains
 redacted unless private-text output is deliberately enabled, and File/Rung
 attachments report whether the referenced PROGRAM FILES rung was independently
 corroborated. Version 4 additionally reports XIC, XIO,

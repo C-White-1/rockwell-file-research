@@ -31,7 +31,7 @@ from rockwell_file_research.rss.models import (
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v7"
+SCHEMA_VERSION = "rss-inventory/v8"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -399,10 +399,11 @@ def build_inventory(
             "records": [
                 {
                     "attachment_kind": comment.attachment_kind,
+                    "attachment_source": comment.attachment_source,
                     "attachment_key": comment.attachment_key,
                     "program_file_number": comment.program_file_number,
                     "rung_index": comment.rung_index,
-                    "output_address": comment.output_address,
+                    "address": comment.address,
                     "text_offset": comment.text_offset,
                     "key_offset": comment.key_offset,
                     "length": comment.length,

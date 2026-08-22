@@ -21,10 +21,11 @@ class RungCommentRecord:
     """One length-delimited comment and its explicit file/rung attachment."""
 
     attachment_kind: str
+    attachment_source: str
     attachment_key: str
     program_file_number: int | None
     rung_index: int | None
-    output_address: str | None
+    address: str | None
     text_offset: int
     key_offset: int
     length: int
@@ -115,10 +116,11 @@ def inspect_mem_database(
         comments.append(
             RungCommentRecord(
                 attachment_kind="file_rung",
+                attachment_source="rslogix_file_rung",
                 attachment_key=match.group(0)[1:].decode("ascii"),
                 program_file_number=int(match.group(1)),
                 rung_index=int(match.group(2)),
-                output_address=None,
+                address=None,
                 text_offset=text_offset,
                 key_offset=match.start() + 1,
                 length=len(encoded),
@@ -135,11 +137,12 @@ def inspect_mem_database(
         text_offset, encoded = comment
         comments.append(
             RungCommentRecord(
-                attachment_kind="output_address",
+                attachment_kind="address",
+                attachment_source="rslogix_output_address",
                 attachment_key=match.group(0)[1:].decode("ascii"),
                 program_file_number=None,
                 rung_index=None,
-                output_address=_canonical_address(match),
+                address=_canonical_address(match),
                 text_offset=text_offset,
                 key_offset=match.start() + 1,
                 length=len(encoded),
@@ -152,7 +155,7 @@ def inspect_mem_database(
             item.attachment_kind,
             item.program_file_number if item.program_file_number is not None else -1,
             item.rung_index if item.rung_index is not None else -1,
-            item.output_address or "",
+            item.address or "",
         )
     )
     return MemDatabaseInspection(

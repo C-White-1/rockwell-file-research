@@ -27,11 +27,14 @@ six are the zero-based rung number. Controlled fixtures confirmed short,
 multiline, multiple-rung, and multiple-program-file comments. Record order in
 MEM DATABASE is not rung order, so exported evidence is sorted after decoding.
 
-RSLogix can alternatively attach a rung comment to an output address. A
+RSLogix can alternatively attach a rung comment using its **Output Address**
+option. This is a vendor UI term rather than proof of physical I/O direction. A
 controlled `B3:0/1` fixture established the fixed-width key
 `B0003:000/01`; observed word addresses use forms such as `N0007:035` and
 `F0008:055`. The decoder preserves the encoded key and emits a normalized
-address such as `B3:0/1`, `N7:35`, or `F8:55`.
+address such as `B3:0/1`, `N7:35`, or `F8:55`. The inventory therefore uses
+`attachment_kind: address` and records `rslogix_output_address` separately as
+the attachment source.
 
 Comments shorter than 255 bytes use a one-byte length. A controlled
 300-character comment confirmed that longer text uses `FF` followed by an

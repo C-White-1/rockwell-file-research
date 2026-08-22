@@ -63,16 +63,17 @@ def test_unframed_rung_like_text_is_not_promoted() -> None:
     assert inspected.comments == []
 
 
-def test_output_address_attachment_is_normalized() -> None:
+def test_rslogix_output_address_attachment_is_normalized_as_address() -> None:
     inspected = inspect_mem_database(
         _envelope(_address_record(b"B0003:000/01", b"Output comment")),
         include_private_text=True,
     )
 
     comment = inspected.comments[0]
-    assert comment.attachment_kind == "output_address"
+    assert comment.attachment_kind == "address"
+    assert comment.attachment_source == "rslogix_output_address"
     assert comment.attachment_key == "B0003:000/01"
-    assert comment.output_address == "B3:0/1"
+    assert comment.address == "B3:0/1"
     assert comment.text == "Output comment"
 
 
@@ -84,6 +85,6 @@ def test_extended_comment_length_is_little_endian_uint16() -> None:
     )
 
     comment = inspected.comments[0]
-    assert comment.output_address == "N7:35"
+    assert comment.address == "N7:35"
     assert comment.length == 300
     assert comment.text == "A" * 300

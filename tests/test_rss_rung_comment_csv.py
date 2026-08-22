@@ -16,10 +16,11 @@ def _inventory(*, include_text: bool) -> RSSInventory:
                 "records": [
                     {
                         "attachment_kind": "file_rung",
+                        "attachment_source": "rslogix_file_rung",
                         "attachment_key": "RUNG000002-000000",
                         "program_file_number": 2,
                         "rung_index": 0,
-                        "output_address": None,
+                        "address": None,
                         "text_offset": 100,
                         "key_offset": 120,
                         "length": 18,
@@ -28,11 +29,12 @@ def _inventory(*, include_text: bool) -> RSSInventory:
                         "program_rung_corroborated": True,
                     },
                     {
-                        "attachment_kind": "output_address",
+                        "attachment_kind": "address",
+                        "attachment_source": "rslogix_output_address",
                         "attachment_key": "B0003:000/01",
                         "program_file_number": 3,
                         "rung_index": 1,
-                        "output_address": "B3:0/1",
+                        "address": "B3:0/1",
                         "text_offset": 200,
                         "key_offset": 220,
                         "length": 5,
@@ -57,7 +59,7 @@ def test_report_distinguishes_corroborated_and_stale_attachments() -> None:
         "corroborated",
         "address_attached",
     ]
-    assert rows[1]["output_address"] == "B3:0/1"
+    assert rows[1]["address"] == "B3:0/1"
     assert rows[0]["comment"] == "Line one\r\nLine two"
 
 
