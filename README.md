@@ -171,6 +171,11 @@ available in redacted inventories.
 `corroborate_binary_data_file` requires the two redundant word arrays to agree
 before exposing a combined result.
 
+Use `--data-value-csv-output PATH` to flatten decoded integer elements and
+binary words for spreadsheet analysis. The CSV follows the inventory's privacy
+state: values remain blank by default and are populated only when
+`--include-private-values` is also supplied.
+
 Decoded selections and status words can be checked without coupling their
 parsers through explicit `BitExpectation` records. Missing words or invalid
 bit indexes remain unresolved instead of being coerced to false.

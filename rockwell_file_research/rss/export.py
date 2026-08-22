@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+from rockwell_file_research.rss.data_value_csv import render_data_value_csv
 from rockwell_file_research.rss.inventory import inventory_rss
 from rockwell_file_research.rss.models import RSSInventory
 from rockwell_file_research.rss.operand_csv import render_operand_inventory_csv
@@ -18,6 +19,7 @@ def export_inventory(
     include_private_values: bool = False,
     operand_csv_destination: Path | None = None,
     rung_comment_csv_destination: Path | None = None,
+    data_value_csv_destination: Path | None = None,
 ) -> RSSInventory:
     """Write one deterministic RSS inventory JSON document."""
 
@@ -42,6 +44,12 @@ def export_inventory(
         rung_comment_csv_destination.parent.mkdir(parents=True, exist_ok=True)
         rung_comment_csv_destination.write_text(
             render_rung_comment_csv(inventory),
+            encoding="utf-8",
+        )
+    if data_value_csv_destination is not None:
+        data_value_csv_destination.parent.mkdir(parents=True, exist_ok=True)
+        data_value_csv_destination.write_text(
+            render_data_value_csv(inventory),
             encoding="utf-8",
         )
     return inventory
