@@ -79,6 +79,7 @@ opcodes.
 | `ONS` | `0xAB` | storage_bit | Confirmed |
 | `OSF` | `0x9D` | storage_bit, output_bit | Confirmed |
 | `OSR` | `0x9E` | storage_bit, output_bit | Confirmed |
+| `PID` | `0x9F` | pid_file, process_variable, control_variable | Confirmed |
 | `SCP` | `0x95` | six ordered scaling fields | Confirmed |
 | `SCL` | `0x45` | source, rate, offset, destination | Confirmed |
 | `SWP` | `0x96` | file source, literal length | Confirmed |
@@ -89,7 +90,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **63**.
+Confirmed total: **64**.
 
 ## Unavailable instruction records
 
@@ -116,7 +117,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Process and control: `PID`, `PTO`, `PWM`, `RMP`.
+- Process and control: `PTO`, `PWM`, `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
   `IIE`, `IID`.

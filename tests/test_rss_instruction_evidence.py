@@ -41,6 +41,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_or_instructions,
     scan_controlled_osf_instructions,
     scan_controlled_osr_instructions,
+    scan_controlled_pid_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -128,6 +129,16 @@ def _sqo_record() -> bytes:
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x2d"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _pid_record() -> bytes:
+    fields = (b"PD9:0", b"N7:0", b"N7:1")
+    return (
+        b"\x04\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x01\x3f\x00\x00\x9f"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -527,6 +538,21 @@ def test_sqo_exposes_ordered_sequencer_output_operands() -> None:
         ("control", "R6:0"),
         ("length", "3"),
         ("position", "0"),
+    ]
+
+
+def test_pid_exposes_ordered_control_operands() -> None:
+    result = scan_controlled_pid_instructions(
+        _pid_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("PID", 0x9F)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("pid_file", "PD9:0"),
+        ("process_variable", "N7:0"),
+        ("control_variable", "N7:1"),
     ]
 
 

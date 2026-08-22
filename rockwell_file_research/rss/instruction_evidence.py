@@ -15,6 +15,7 @@ _CONTROLLED_MASK_OPERAND = re.compile(
 _CONTROLLED_FILE_WORD_OPERAND = re.compile(r"^#N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_FILE_BIT_OPERAND = re.compile(r"^#B\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_CONTROL_OPERAND = re.compile(r"^R\d+:\d+$", re.IGNORECASE)
+_CONTROLLED_PID_OPERAND = re.compile(r"^PD\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_LABEL_OPERAND = re.compile(r"^Q\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
@@ -62,6 +63,7 @@ _BSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsr/v1"
 _SQC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqc/v1"
 _SQL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sql/v1"
 _SQO_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqo/v1"
+_PID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/pid/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -773,6 +775,75 @@ def scan_controlled_sqo_instructions(
         )
         if item.mnemonic == "SQO"
     ]
+
+
+def scan_controlled_pid_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize PID records matching the controlled three-operand profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x04\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(3):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            fields.append((offset, payload[offset:end]))
+            cursor = end
+        if len(fields) != 3 or cursor + 12 > len(payload):
+            continue
+        if payload[cursor : cursor + 4] != b"\x01\x3f\x00\x00":
+            continue
+        selector_offset = cursor + 4
+        if payload[selector_offset] != 0x9F:
+            continue
+        try:
+            decoded = [value.decode("ascii") for _, value in fields]
+        except UnicodeDecodeError:
+            continue
+        patterns = (
+            _CONTROLLED_PID_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+        )
+        if any(
+            pattern.fullmatch(value) is None
+            for pattern, value in zip(patterns, decoded, strict=True)
+        ):
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        roles = ("pid_file", "process_variable", "control_variable")
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="PID",
+                selector=0x9F,
+                selector_offset=selector_offset,
+                operands=tuple(
+                    _operand(
+                        role=role,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, (offset, value) in zip(roles, fields, strict=True)
+                ),
+                evidence_profile=_PID_PROFILE,
+            )
+        )
+    return evidence
 
 
 def _scan_controlled_qualified_word_instructions(
@@ -2062,6 +2133,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         _scan_controlled_sequencer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_pid_instructions(
             payload,
             include_private_text=include_private_text,
         )

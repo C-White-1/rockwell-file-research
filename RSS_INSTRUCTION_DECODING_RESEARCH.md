@@ -260,6 +260,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `ABS` | `0x98` | Source `N7:0`; destination `N7:1` |
 | `ONS` | `0xAB` | Storage bit `B3:0/1` |
 | `OSR` | `0x9E` | Storage bit `B3:0/1`; output bit `B3:0/2` |
+| `PID` | `0x9F` | PID file `PD9:0`; process `N7:0`; control `N7:1` |
 | `OSF` | `0x9D` | Storage bit `B3:0/1`; output bit `B3:0/2` |
 | `NOT` | `0x1B` | Source `N7:0`; destination `N7:1` |
 | `AND` | `0x23` | Source A `N7:0`; source B `N7:1`; destination `N7:2` |
@@ -554,6 +555,14 @@ The controlled SQO instruction uses selector `0x2D`, header `06 00`, and six
 unqualified fields ordered `file`, `mask`, `destination`, `control`, `length`,
 and `position`. RSLogix normalized the entered mask `255` to `00FFh`. The
 destination role is retained distinctly from SQC's source role.
+
+The controlled PID instruction uses selector `0x9F` and a distinct `04 00`
+frame containing PID file `PD9:0`, process variable `N7:0`, and control
+variable `N7:1`. A trailing `01 3F` qualifier occurs after the three fields,
+not after every operand. The PID Setup dialog exposes tuning, scaling, mode,
+limit, alarm, and status values, but those values do not appear as printable
+operands in the PROGRAM FILES record. Their binary DATA FILES representation
+remains separate, unresolved evidence and is not inferred by this recognizer.
 
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
