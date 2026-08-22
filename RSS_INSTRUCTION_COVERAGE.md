@@ -113,6 +113,7 @@ Confirmed total: **68**.
 | `LOG` | Mathematical instruction greyed out | Unavailable |
 | `XPY` | Arithmetic instruction greyed out | Unavailable |
 | `RMP` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `EEM` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
@@ -122,7 +123,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Messaging and communications: `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
   `IIE`, `IID`.
 - ASCII and string: `ACI`, `ACN`, `AEX`, `AHL`, `AIC`, `ARD`, `ARL`, `ASC`,

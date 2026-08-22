@@ -596,6 +596,10 @@ can be decoded.
 palette. No controlled fixture can therefore be created under this processor
 profile, and no selector or operand structure is assigned.
 
+`EEM` is likewise greyed out for the controlled MicroLogix 1100 Series B
+profile. It remains unavailable rather than being assigned a selector from
+documentation or selector adjacency.
+
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
 changes to each field altered only its expected ASCII digit. Selector `0x27`,
