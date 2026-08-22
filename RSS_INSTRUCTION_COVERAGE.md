@@ -15,6 +15,9 @@ processor, firmware revision, or RSLogix edition.
   instruction catalogue, but no controlled fixture has been evaluated.
 - **Unavailable**: the selected processor/profile prevents creation of a
   fixture. Record the observed reason rather than guessing an encoding.
+- **Normalized**: a separately selected palette entry produces a record
+  byte-identical to another confirmed instruction, so the RSS evidence cannot
+  preserve a distinct mnemonic identity.
 - **Not applicable**: the entry is not a serialized ladder instruction for the
   selected profile.
 
@@ -109,6 +112,12 @@ opcodes.
 
 Confirmed total: **81**.
 
+## Normalized palette entries
+
+| Palette entry | Serialized evidence | Status |
+| --- | --- | --- |
+| `AWT` | Byte-identical to confirmed AWA selector `0x83` record | Normalized |
+
 ## Unavailable instruction records
 
 | Instruction | Observed constraint | Status |
@@ -148,7 +157,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- ASCII and string: `AWT`.
 - Recipe, event, and specialised: `DCD`, `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
   `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 

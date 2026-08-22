@@ -302,6 +302,10 @@ integer-word `result` operands.
 ASR reports two ordered string operands as `source_a` and `source_b`.
 AWA reports configurable `channel`, string `source`, `control`, and literal
 `string_length`, followed by automatic `characters_sent` and `error` fields.
+The controlled AWT fixture produced a PROGRAM FILES payload byte-identical to
+the corresponding AWA fixture. The decoder therefore reports the shared
+selector `0x83` record as AWA and does not invent an AWT identity that is not
+present in the serialized evidence.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

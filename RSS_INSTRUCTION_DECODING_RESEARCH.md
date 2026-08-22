@@ -685,6 +685,14 @@ fields ordered channel `0`, source `ST9:0`, control `R6:0`, string length `15`,
 characters sent `0`, and error `0`. The final two values are read-only in the
 editor but remain serialized evidence in the RSS record.
 
+An AWT fixture created with the same six values produced a decompressed
+PROGRAM FILES payload with the same length and SHA-256 as the AWA fixture. The
+payloads are byte-for-byte identical, including header `06 00`, all fields,
+selector `0x83`, and trailer. The outer RSS files differ, but that difference
+does not occur in the decoded PROGRAM FILES evidence. Under this controlled
+profile, AWT cannot be assigned a distinct serialized identity and is recorded
+as normalized to the confirmed AWA record.
+
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.
 
