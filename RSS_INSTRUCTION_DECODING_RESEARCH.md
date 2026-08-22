@@ -622,6 +622,9 @@ The field-identical IOM record uses selector `0x5E`, immediately following IIM
 with the normalized hexadecimal mask preserved under a distinct immediate-
 output evidence profile.
 
+`IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
+profile. Neither instruction is assigned a selector or operand structure.
+
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
 changes to each field altered only its expected ASCII digit. Selector `0x27`,

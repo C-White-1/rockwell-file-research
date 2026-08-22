@@ -120,6 +120,8 @@ Confirmed total: **71**.
 | `HSC` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `HSE` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `HSD` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `IIE` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `IID` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
@@ -129,7 +131,6 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- High-speed and immediate I/O: `IIE`, `IID`.
 - ASCII and string: `ACI`, `ACN`, `AEX`, `AHL`, `AIC`, `ARD`, `ARL`, `ASC`,
   `ASR`, `AWA`, `AWT`.
 - Recipe, event, and specialised: `CEM`, `DCD`, `DDT`, `DEM`, `DLG`, `ENC`,
