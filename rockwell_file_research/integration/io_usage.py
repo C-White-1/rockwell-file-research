@@ -36,13 +36,17 @@ class IOUsage:
 
 def _rung_lengths(inventory: RSSInventory) -> dict[tuple[int, int], int]:
     program_files = cast(Mapping[str, object], inventory.get("program_files", {}))
-    records = cast(Iterable[Mapping[str, object]], program_files.get("rung_records", []))
+    records = cast(
+        Iterable[Mapping[str, object]], program_files.get("rung_records", [])
+    )
     result: dict[tuple[int, int], int] = {}
     for record in records:
         file_number = record.get("program_file_number")
         rung_index = record.get("rung_index")
         byte_length = record.get("byte_length")
-        if all(isinstance(value, int) for value in (file_number, rung_index, byte_length)):
+        if all(
+            isinstance(value, int) for value in (file_number, rung_index, byte_length)
+        ):
             result[(cast(int, file_number), cast(int, rung_index))] = cast(
                 int, byte_length
             )

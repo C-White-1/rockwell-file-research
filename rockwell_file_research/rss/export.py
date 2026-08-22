@@ -15,6 +15,7 @@ def export_inventory(
     *,
     source_label: str | None = None,
     include_private_text: bool = False,
+    include_private_values: bool = False,
     operand_csv_destination: Path | None = None,
     rung_comment_csv_destination: Path | None = None,
 ) -> RSSInventory:
@@ -24,6 +25,7 @@ def export_inventory(
         source,
         source_label=source_label,
         include_private_text=include_private_text,
+        include_private_values=include_private_values,
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(

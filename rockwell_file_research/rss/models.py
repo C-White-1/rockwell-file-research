@@ -66,6 +66,28 @@ class RSSDataFileTextRegion(TypedDict):
     text: str | None
 
 
+class RSSIntegerDataFileEvidence(TypedDict):
+    """Structurally verified integer array with optional private values."""
+
+    file_number: int
+    header_offset: int
+    values_offset: int
+    element_count: int
+    values_sha256: str
+    values: list[int] | None
+
+
+class RSSBinaryDataFileEvidence(TypedDict):
+    """Structurally verified binary words with optional private values."""
+
+    file_number: int
+    header_offset: int
+    values_offset: int
+    element_count: int
+    values_sha256: str
+    words: list[int] | None
+
+
 class RSSDataFileRecordEvidence(TypedDict):
     """Cross-section evidence for one candidate data-file record."""
 
@@ -94,7 +116,10 @@ class RSSDataFileSectionEvidence(TypedDict):
     compressed_sha256: str
     uncompressed_sha256: str
     private_text_included: bool
+    private_values_included: bool
     text_regions: list[RSSDataFileTextRegion]
+    integer_value_arrays: list[RSSIntegerDataFileEvidence]
+    binary_word_arrays: list[RSSBinaryDataFileEvidence]
     diagnostics: list[str]
 
 

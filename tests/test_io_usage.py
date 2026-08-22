@@ -45,9 +45,7 @@ def _inventory() -> RSSInventory:
 
 
 def test_correlates_compact_and_canonical_io_spellings_without_data_loss():
-    (usage,) = correlate_io_usage(
-        ["I:0/16"], _inventory(), max_compact_rung_bytes=1024
-    )
+    (usage,) = correlate_io_usage(["I:0/16"], _inventory(), max_compact_rung_bytes=1024)
 
     assert usage.canonical_address == "I:0.1/0"
     assert usage.candidate_reference_count == 2

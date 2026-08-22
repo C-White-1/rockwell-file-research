@@ -37,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="include decoded PROCESSOR text; keep the output private",
     )
+    parser.add_argument(
+        "--include-private-values",
+        action="store_true",
+        help="include decoded data-file values; keep the output private",
+    )
     return parser
 
 
@@ -53,6 +58,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.output,
             source_label=args.source_label,
             include_private_text=args.include_private_text,
+            include_private_values=args.include_private_values,
             operand_csv_destination=args.operand_csv_output,
             rung_comment_csv_destination=args.rung_comment_csv_output,
         )

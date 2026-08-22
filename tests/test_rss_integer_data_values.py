@@ -23,9 +23,7 @@ def test_decodes_signed_integer_values_with_offsets_and_digest():
     values = (101, -2, 32767, -32768)
     value_bytes = b"".join(value.to_bytes(2, "little", signed=True) for value in values)
     prefix = b"unrelated" + bytes.fromhex("03 80 07") + bytes(7)
-    header = len(values).to_bytes(2, "little") + bytes.fromhex(
-        "01 00 00 00 FF FF"
-    )
+    header = len(values).to_bytes(2, "little") + bytes.fromhex("01 00 00 00 FF FF")
     record_offset = len(prefix + header + value_bytes)
     payload = prefix + header + value_bytes + b"catalogue record"
 
@@ -46,7 +44,10 @@ def test_rejects_same_shape_without_integer_type_marker():
     header = bytes.fromhex("02 00 01 00 00 00 FF FF")
     record_offset = len(prefix + header + values)
 
-    assert scan_integer_data_file_values(
-        prefix + header + values + b"catalogue",
-        [_record(record_offset)],
-    ) == []
+    assert (
+        scan_integer_data_file_values(
+            prefix + header + values + b"catalogue",
+            [_record(record_offset)],
+        )
+        == []
+    )

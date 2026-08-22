@@ -155,6 +155,26 @@ sections produce the same ordered identities and count candidates. Names and
 descriptions remain private-text fields; their hashes allow comparison in the
 redacted inventory.
 
+Inventory schema `rss-inventory/v9` adds structurally verified signed 16-bit
+integer arrays to each data-file section. Element counts, byte offsets, and
+value-array SHA-256 digests are emitted by default; actual values remain
+`null`. Use `--include-private-values` only for a controlled private output.
+This opt-in is intentionally independent of `--include-private-text`.
+Consumers can additionally require standard and extensional arrays to agree
+through `corroborate_integer_data_file`; disagreement is reported without
+selecting either section as authoritative.
+
+The same schema reports controlled-fixture-verified binary data files as
+unsigned little-endian 16-bit word arrays. Their values use the same
+`--include-private-values` boundary; offsets, counts, and hashes remain
+available in redacted inventories.
+`corroborate_binary_data_file` requires the two redundant word arrays to agree
+before exposing a combined result.
+
+Decoded selections and status words can be checked without coupling their
+parsers through explicit `BitExpectation` records. Missing words or invalid
+bit indexes remain unresolved instead of being coerced to false.
+
 ## PLC–HMI cross-reference
 
 Correlate PanelView tag addresses from a CCW XLSX report with the data-file
@@ -366,6 +386,12 @@ that every referenced rung controls an operator-facing function.
 Whole-word HMI bindings are also indexed separately where their address
 contains a ladder bit operand. The contained-bit rung index remains explicitly
 weaker evidence and is never merged with exact address matches.
+
+Configuration-aware I/O classification is kept separate from RSS operand
+usage. It reports `active`, `inactive`, `conditional`, or `unresolved` only
+from explicit saved-configuration constraints supplied by the caller. A ladder
+reference proves program capability, not that a field point was assigned or
+active in the saved installation configuration.
 
 The optional rung CSV flattens both indexes for spreadsheet analysis. Its
 `evidence_type` column is always either `exact` or `contained_bit`, preserving

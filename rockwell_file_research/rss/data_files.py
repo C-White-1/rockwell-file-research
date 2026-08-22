@@ -25,6 +25,7 @@ STANDARD_DATA_FILE_LABELS = frozenset(
 )
 SERIALIZATION_CLASSES = frozenset({"CDataFile", "CDataHolder", "CSlcMDataFile"})
 INTEGER_TYPE_MARKER = bytes.fromhex("03 80 07")
+BINARY_TYPE_MARKER = bytes.fromhex("03 80 03")
 INTEGER_HEADER_SUFFIX = bytes.fromhex("01 00 00 00 FF FF")
 
 
@@ -66,6 +67,18 @@ class IntegerDataFileValues:
 
 
 @dataclass(frozen=True)
+class BinaryDataFileWords:
+    """Unsigned 16-bit binary words with structural byte provenance."""
+
+    file_number: int
+    header_offset: int
+    values_offset: int
+    element_count: int
+    values_sha256: str
+    words: tuple[int, ...]
+
+
+@dataclass(frozen=True)
 class DataFileSection:
     """Verified compression and redacted text evidence for one section."""
 
@@ -77,6 +90,8 @@ class DataFileSection:
     uncompressed_sha256: str
     text_regions: list[DataFileTextRegion]
     records: list[DataFileRecord]
+    integer_values: list[IntegerDataFileValues]
+    binary_words: list[BinaryDataFileWords]
 
 
 def _classify(text: str | None) -> str:
@@ -171,11 +186,7 @@ def scan_integer_data_file_values(
                 max(0, header_offset - 32),
                 header_offset,
             )
-            if (
-                element_count > 0
-                and values_end == record.offset
-                and marker_offset >= 0
-            ):
+            if element_count > 0 and values_end == record.offset and marker_offset >= 0:
                 value_bytes = payload[values_offset:values_end]
                 matches.append(
                     IntegerDataFileValues(
@@ -189,6 +200,62 @@ def scan_integer_data_file_values(
                                 value_bytes[offset : offset + 2],
                                 "little",
                                 signed=True,
+                            )
+                            for offset in range(0, len(value_bytes), 2)
+                        ),
+                    )
+                )
+            suffix_offset = payload.find(
+                INTEGER_HEADER_SUFFIX,
+                suffix_offset + 1,
+                record.offset,
+            )
+        if len(matches) == 1:
+            decoded.append(matches[0])
+    return decoded
+
+
+def scan_binary_data_file_words(
+    payload: bytes,
+    records: list[DataFileRecord] | None = None,
+) -> list[BinaryDataFileWords]:
+    """Decode structurally delimited unsigned 16-bit binary word arrays.
+
+    Controlled B10 fixtures established the binary type marker, element-count
+    header, little-endian word stride, bit numbering, and exact adjacency to
+    the catalogue record. Ambiguous records remain uninterpreted.
+    """
+
+    candidates = records if records is not None else scan_data_file_records(payload)
+    decoded: list[BinaryDataFileWords] = []
+    for record in candidates:
+        matches: list[BinaryDataFileWords] = []
+        suffix_offset = payload.find(INTEGER_HEADER_SUFFIX, 0, record.offset)
+        while suffix_offset >= 2:
+            header_offset = suffix_offset - 2
+            element_count = int.from_bytes(
+                payload[header_offset : header_offset + 2], "little"
+            )
+            values_offset = header_offset + 8
+            values_end = values_offset + element_count * 2
+            marker_offset = payload.rfind(
+                BINARY_TYPE_MARKER,
+                max(0, header_offset - 32),
+                header_offset,
+            )
+            if element_count > 0 and values_end == record.offset and marker_offset >= 0:
+                value_bytes = payload[values_offset:values_end]
+                matches.append(
+                    BinaryDataFileWords(
+                        file_number=record.file_number,
+                        header_offset=header_offset,
+                        values_offset=values_offset,
+                        element_count=element_count,
+                        values_sha256=hashlib.sha256(value_bytes).hexdigest(),
+                        words=tuple(
+                            int.from_bytes(
+                                value_bytes[offset : offset + 2],
+                                "little",
                             )
                             for offset in range(0, len(value_bytes), 2)
                         ),
@@ -234,4 +301,6 @@ def inspect_data_file_section(
         uncompressed_sha256=section.uncompressed_sha256,
         text_regions=regions,
         records=records,
+        integer_values=scan_integer_data_file_values(section.payload, records),
+        binary_words=scan_binary_data_file_words(section.payload, records),
     )

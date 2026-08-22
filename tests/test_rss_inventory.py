@@ -33,7 +33,7 @@ class SyntheticCompoundDocument:
 
         def section(*, extensional: bool) -> bytes:
             description = b"synthetic private label"
-            name = b"OUTPUT"
+            name = b"INTEGER"
             extension = b"\x02\x00\x00\x00\x00\x00" if extensional else b""
             record = (
                 (0).to_bytes(2, "little")
@@ -47,7 +47,19 @@ class SyntheticCompoundDocument:
                 + bytes(8)
                 + (14).to_bytes(2, "little")
             )
-            data_file_payload = b"CDataHolder\x00" + record
+            integer_values = (123, -2)
+            value_bytes = b"".join(
+                value.to_bytes(2, "little", signed=True) for value in integer_values
+            )
+            value_header = bytes.fromhex("02 00 01 00 00 00 FF FF")
+            data_file_payload = (
+                b"CDataHolder\x00"
+                + bytes.fromhex("03 80 07")
+                + bytes(7)
+                + value_header
+                + value_bytes
+                + record
+            )
             return envelope(data_file_payload)
 
         self._streams = {
@@ -124,6 +136,12 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
     assert catalogue["records"][0]["file_number"] == 0
     assert catalogue["records"][0]["unknown_numeric_candidate"] == 14
     assert catalogue["records"][0]["name"] is None
+    integer_values = data_files["integer_value_arrays"]
+    assert integer_values[0]["file_number"] == 0
+    assert integer_values[0]["element_count"] == 2
+    assert integer_values[0]["values"] is None
+    assert len(integer_values[0]["values_sha256"]) == 64
+    assert data_files["binary_word_arrays"] == []
     program_files = inventory["program_files"]
     assert program_files["present"] is True
     assert program_files["compression"] == "zlib"
@@ -224,11 +242,11 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
     assert [region["text"] for region in data_regions] == [
         "CDataHolder",
         "synthetic private label",
-        "OUTPUT",
+        "INTEGER",
     ]
     record = inventory["data_file_catalogue"]["records"][0]
     assert record["description"] == "synthetic private label"
-    assert record["name"] == "OUTPUT"
+    assert record["name"] == "INTEGER"
     program_files = inventory["program_files"]
     assert [operand["operand"] for operand in program_files["operands"]] == [
         "B3:0/0",
@@ -253,7 +271,7 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
-    assert inventory["schema_version"] == "rss-inventory/v8"
+    assert inventory["schema_version"] == "rss-inventory/v9"
     assert program_files["instructions"] == []
     assert program_files["rung_records"] == [
         {
@@ -286,6 +304,24 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
             ],
         }
     ]
+
+
+def test_private_integer_values_require_independent_explicit_opt_in(tmp_path) -> None:
+    source = tmp_path / "synthetic.rss"
+    source.write_bytes(b"source")
+
+    inventory = build_inventory(
+        source,
+        SyntheticCompoundDocument(),
+        include_private_values=True,
+    )
+
+    section = inventory["data_file_sections"][0]
+    assert section["private_text_included"] is False
+    assert section["private_values_included"] is True
+    assert section["integer_value_arrays"][0]["values"] == [123, -2]
+    assert section["binary_word_arrays"] == []
+    assert all(region["text"] is None for region in section["text_regions"])
 
 
 def test_compressed_section_rejects_declared_length_mismatch() -> None:

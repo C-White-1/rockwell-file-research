@@ -17,10 +17,12 @@ from rockwell_file_research.rss.data_files import (
 )
 from rockwell_file_research.rss.mem_database import inspect_mem_database
 from rockwell_file_research.rss.models import (
+    RSSBinaryDataFileEvidence,
     RSSCompoundMetadata,
     RSSDataFileRecordEvidence,
     RSSDataFileSectionEvidence,
     RSSDataFileTextRegion,
+    RSSIntegerDataFileEvidence,
     RSSInventory,
     RSSProcessorTextRegion,
     RSSProgramFileEvidence,
@@ -31,7 +33,7 @@ from rockwell_file_research.rss.models import (
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v8"
+SCHEMA_VERSION = "rss-inventory/v9"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -73,6 +75,7 @@ def build_inventory(
     *,
     source_label: str | None = None,
     include_private_text: bool = False,
+    include_private_values: bool = False,
 ) -> RSSInventory:
     """Build an inventory from a compound document without parsing payloads."""
 
@@ -140,7 +143,10 @@ def build_inventory(
                     "compressed_sha256": "",
                     "uncompressed_sha256": "",
                     "private_text_included": include_private_text,
+                    "private_values_included": include_private_values,
                     "text_regions": [],
+                    "integer_value_arrays": [],
+                    "binary_word_arrays": [],
                     "diagnostics": [],
                 }
             )
@@ -161,6 +167,28 @@ def build_inventory(
             }
             for region in inspected.text_regions
         ]
+        integer_value_arrays: list[RSSIntegerDataFileEvidence] = [
+            {
+                "file_number": values.file_number,
+                "header_offset": values.header_offset,
+                "values_offset": values.values_offset,
+                "element_count": values.element_count,
+                "values_sha256": values.values_sha256,
+                "values": list(values.values) if include_private_values else None,
+            }
+            for values in inspected.integer_values
+        ]
+        binary_word_arrays: list[RSSBinaryDataFileEvidence] = [
+            {
+                "file_number": words.file_number,
+                "header_offset": words.header_offset,
+                "values_offset": words.values_offset,
+                "element_count": words.element_count,
+                "values_sha256": words.values_sha256,
+                "words": list(words.words) if include_private_values else None,
+            }
+            for words in inspected.binary_words
+        ]
         data_file_sections.append(
             {
                 "name": path.removesuffix("/ObjectData"),
@@ -173,11 +201,16 @@ def build_inventory(
                 "compressed_sha256": inspected.compressed_sha256,
                 "uncompressed_sha256": inspected.uncompressed_sha256,
                 "private_text_included": include_private_text,
+                "private_values_included": include_private_values,
                 "text_regions": text_regions,
+                "integer_value_arrays": integer_value_arrays,
+                "binary_word_arrays": binary_word_arrays,
                 "diagnostics": [
                     (
-                        "Data-file record numbers, element counts, and values remain "
-                        "uninterpreted pending repeatable boundary evidence."
+                        "Integer and binary arrays are decoded only when controlled-"
+                        "fixture type, header, stride, and catalogue-boundary "
+                        "invariants all hold; values remain private unless "
+                        "explicitly included."
                     )
                 ],
             }
@@ -478,6 +511,7 @@ def inventory_rss(
     *,
     source_label: str | None = None,
     include_private_text: bool = False,
+    include_private_values: bool = False,
 ) -> RSSInventory:
     """Open and structurally inventory one RSS project."""
 
@@ -488,4 +522,5 @@ def inventory_rss(
             document,
             source_label=source_label,
             include_private_text=include_private_text,
+            include_private_values=include_private_values,
         )
