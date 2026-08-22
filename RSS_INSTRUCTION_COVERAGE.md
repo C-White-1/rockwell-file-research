@@ -167,7 +167,11 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `SOR`, `STS`.
+- Recipe, event, and specialised: `STS`.
+
+`SOR` was removed as a palette-transcription error. The observed instruction
+is `SQR`, which is already confirmed as selector `0x46`; no separate SOR
+identity is evidenced.
 
 The backlog is a working transcription. It must be reconciled against the
 selected processor's instruction palette and Rockwell documentation before it
