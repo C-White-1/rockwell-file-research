@@ -15,6 +15,7 @@ from rockwell_file_research.rss.data_files import (
     DataFileRecord,
     inspect_data_file_section,
 )
+from rockwell_file_research.rss.mem_database import inspect_mem_database
 from rockwell_file_research.rss.models import (
     RSSCompoundMetadata,
     RSSDataFileRecordEvidence,
@@ -23,13 +24,14 @@ from rockwell_file_research.rss.models import (
     RSSInventory,
     RSSProcessorTextRegion,
     RSSProgramFileEvidence,
+    RSSRungCommentEvidence,
     RSSSectionEvidence,
     RSSStreamEvidence,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
-SCHEMA_VERSION = "rss-inventory/v5"
+SCHEMA_VERSION = "rss-inventory/v6"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -360,6 +362,64 @@ def build_inventory(
                 )
             ],
         }
+    mem_payload = stream_payloads.get("MEM DATABASE/ObjectData")
+    rung_comments: RSSRungCommentEvidence
+    if mem_payload is None:
+        rung_comments = {
+            "present": False,
+            "envelope_version": 0,
+            "header_size": 0,
+            "compression": "",
+            "compressed_size": 0,
+            "uncompressed_size": 0,
+            "compressed_sha256": "",
+            "uncompressed_sha256": "",
+            "private_text_included": include_private_text,
+            "records": [],
+            "diagnostics": [],
+        }
+    else:
+        inspected_mem = inspect_mem_database(
+            mem_payload, include_private_text=include_private_text
+        )
+        validated_rungs = {
+            (rung["program_file_number"], rung["rung_index"])
+            for rung in program_files["rung_records"]
+        }
+        rung_comments = {
+            "present": True,
+            "envelope_version": inspected_mem.envelope_version,
+            "header_size": inspected_mem.header_size,
+            "compression": "zlib",
+            "compressed_size": inspected_mem.compressed_size,
+            "uncompressed_size": inspected_mem.uncompressed_size,
+            "compressed_sha256": inspected_mem.compressed_sha256,
+            "uncompressed_sha256": inspected_mem.uncompressed_sha256,
+            "private_text_included": include_private_text,
+            "records": [
+                {
+                    "program_file_number": comment.program_file_number,
+                    "rung_index": comment.rung_index,
+                    "text_offset": comment.text_offset,
+                    "key_offset": comment.key_offset,
+                    "length": comment.length,
+                    "sha256": comment.sha256,
+                    "text": comment.text,
+                    "program_rung_corroborated": (
+                        comment.program_file_number,
+                        comment.rung_index,
+                    )
+                    in validated_rungs,
+                }
+                for comment in inspected_mem.comments
+            ],
+            "diagnostics": [
+                (
+                    "Rung comments are length-delimited MEM DATABASE text fields "
+                    "followed by explicit RUNGdddddd-dddddd attachment keys."
+                )
+            ],
+        }
     return {
         "schema_version": SCHEMA_VERSION,
         "format": RSS_FORMAT,
@@ -405,6 +465,7 @@ def build_inventory(
             ],
         },
         "program_files": program_files,
+        "rung_comments": rung_comments,
     }
 
 

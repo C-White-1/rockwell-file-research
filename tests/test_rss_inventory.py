@@ -54,6 +54,11 @@ class SyntheticCompoundDocument:
             "DATA FILES/ObjectData": section(extensional=False),
             "Extensional DATA FILES/ObjectData": section(extensional=True),
             "PROCESSOR/ObjectData": b"synthetic processor evidence",
+            "MEM DATABASE/ObjectData": envelope(
+                b"\x01\x00\x02\x00\x00\x00"
+                b"\x16synthetic rung comment\x00"
+                b"\x11RUNG000002-000000\x00\x00"
+            ),
             "PROGRAM FILES/ObjectData": envelope(
                 b"\x03\x80\x01\x00\x01\x00MAIN\x02\x00\x00"
                 b"CProgHolder\x00CLadFile\x00\x07\x80\x09\x80"
@@ -138,6 +143,21 @@ def test_inventory_preserves_unknown_streams_without_payload_export(tmp_path) ->
         program_files["rung_records"][0]["application_text_candidates"][0]["text"]
         is None
     )
+    comments = inventory["rung_comments"]
+    assert comments["present"] is True
+    assert comments["compression"] == "zlib"
+    assert comments["records"] == [
+        {
+            "program_file_number": 2,
+            "rung_index": 0,
+            "text_offset": comments["records"][0]["text_offset"],
+            "key_offset": comments["records"][0]["key_offset"],
+            "length": 22,
+            "sha256": comments["records"][0]["sha256"],
+            "text": None,
+            "program_rung_corroborated": True,
+        }
+    ]
 
 
 def test_missing_recognized_sections_are_explicit(tmp_path) -> None:
@@ -229,7 +249,7 @@ def test_private_processor_text_requires_explicit_opt_in(tmp_path) -> None:
         and operand["rung_end_offset"] is not None
         for operand in program_files["operands"]
     )
-    assert inventory["schema_version"] == "rss-inventory/v5"
+    assert inventory["schema_version"] == "rss-inventory/v6"
     assert program_files["instructions"] == []
     assert program_files["rung_records"] == [
         {

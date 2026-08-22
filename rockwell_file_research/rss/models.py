@@ -208,6 +208,35 @@ class RSSProgramFileEvidence(TypedDict):
     diagnostics: list[str]
 
 
+class RSSRungCommentRecordEvidence(TypedDict):
+    """One MEM DATABASE comment attached to an explicit ladder rung."""
+
+    program_file_number: int
+    rung_index: int
+    text_offset: int
+    key_offset: int
+    length: int
+    sha256: str
+    text: str | None
+    program_rung_corroborated: bool
+
+
+class RSSRungCommentEvidence(TypedDict):
+    """Verified MEM DATABASE envelope and rung-comment records."""
+
+    present: bool
+    envelope_version: int
+    header_size: int
+    compression: str
+    compressed_size: int
+    uncompressed_size: int
+    compressed_sha256: str
+    uncompressed_sha256: str
+    private_text_included: bool
+    records: list[RSSRungCommentRecordEvidence]
+    diagnostics: list[str]
+
+
 class RSSInventory(TypedDict):
     """Lossless-at-the-container-boundary inventory of an RSS project."""
 
@@ -223,3 +252,4 @@ class RSSInventory(TypedDict):
     data_file_sections: list[RSSDataFileSectionEvidence]
     data_file_catalogue: RSSDataFileCatalogueEvidence
     program_files: RSSProgramFileEvidence
+    rung_comments: RSSRungCommentEvidence

@@ -2,12 +2,40 @@
 
 ## Status
 
-Deferred pending access to tooling or evidence that can distinguish rung
-comments from other printable data embedded in an RSLogix 500 RSS rung.
+Implemented from controlled RSLogix Micro Starter Lite fixtures. Rung comments
+are decoded from `MEM DATABASE/ObjectData`, independently of printable text in
+the ladder payload.
 
-TwinForge currently preserves printable, non-operand regions within validated
-rung byte ranges as `application_text_candidate` evidence. It does not label
-those regions as comments.
+The inventory continues to preserve printable, non-operand PROGRAM FILES
+regions as `application_text_candidate` evidence. It labels text as a verified
+rung comment only when the separate MEM DATABASE attachment contract matches.
+
+## Confirmed binary contract
+
+`MEM DATABASE/ObjectData` uses the repository's observed 16-byte compressed
+section envelope followed by zlib data. In its decompressed payload, a rung
+comment record contains:
+
+1. A one-byte comment length.
+2. That many printable bytes; multiline text uses CRLF (`0D 0A`).
+3. A NUL terminator.
+4. The byte `11` (17 decimal), declaring the attachment-key length.
+5. An ASCII key `RUNGdddddd-dddddd`.
+
+The first six decimal digits are the RSLogix program-file number and the second
+six are the zero-based rung number. Controlled fixtures confirmed short,
+multiline, multiple-rung, and multiple-program-file comments. Record order in
+MEM DATABASE is not rung order, so exported evidence is sorted after decoding.
+
+The fixture filename prefix is unrelated to the internal program-file number;
+the encoded attachment key and RSLogix **File/Rung** comment fields are
+authoritative.
+
+Controlled File 2/File 3 testing also showed that MEM DATABASE can retain an
+attachment for a program file that is no longer present in the decoded PROGRAM
+FILES section. The inventory preserves such evidence but sets
+`program_rung_corroborated` to `false`. Consumers must not treat an
+uncorroborated attachment as proof that the referenced rung currently exists.
 
 ## Why stronger evidence is required
 

@@ -1,5 +1,8 @@
 # RSLogix 500 instruction coverage
 
+The completed first-pass audit is recorded in
+[RSS instruction coverage closeout audit](RSS_INSTRUCTION_COVERAGE_AUDIT.md).
+
 This register tracks controlled RSS instruction-decoding work for the
 RSLogix Micro Starter Lite MicroLogix 1100 Series B profile. It is a research
 queue, not a claim that every listed instruction is supported by every
