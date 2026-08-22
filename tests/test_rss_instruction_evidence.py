@@ -12,6 +12,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_aic_instructions,
     scan_controlled_and_instructions,
     scan_controlled_ard_instructions,
+    scan_controlled_arl_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
@@ -243,12 +244,13 @@ def _aic_record() -> bytes:
     )
 
 
-def _ard_record() -> bytes:
+def _ard_record(*, selector: int = 0x80) -> bytes:
     fields = (b"0", b"ST9:0", b"R6:0", b"15", b"0", b"0")
     return (
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
-        + b"\x00\x00\x80"
+        + b"\x00\x00"
+        + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -820,6 +822,22 @@ def test_ard_exposes_configurable_and_automatic_fields() -> None:
         ("characters_read", "0"),
         ("error", "0"),
     ]
+
+
+def test_arl_differs_from_ard_only_by_controlled_selector() -> None:
+    arl = scan_controlled_arl_instructions(
+        _ard_record(selector=0x81),
+        include_private_text=True,
+    )[0]
+    ard = scan_controlled_ard_instructions(
+        _ard_record(),
+        include_private_text=True,
+    )[0]
+
+    assert (arl.mnemonic, arl.selector) == ("ARL", 0x81)
+    assert (ard.mnemonic, ard.selector) == ("ARD", 0x80)
+    assert arl.selector_offset == ard.selector_offset
+    assert arl.operands == ard.operands
 
 
 def test_pto_exposes_pulse_train_output_number() -> None:

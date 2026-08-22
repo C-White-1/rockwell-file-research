@@ -80,6 +80,7 @@ _AEX_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aex/v1"
 _AHL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ahl/v1"
 _AIC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aic/v1"
 _ARD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ard/v1"
+_ARL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/arl/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -138,6 +139,10 @@ _SHIFT_IDENTITIES = {
 _IMMEDIATE_IO_IDENTITIES = {
     0x5D: ("IIM", _IIM_PROFILE),
     0x5E: ("IOM", _IOM_PROFILE),
+}
+_ASCII_READ_IDENTITIES = {
+    0x80: ("ARD", _ARD_PROFILE),
+    0x81: ("ARL", _ARL_PROFILE),
 }
 _SEQUENCER_IDENTITIES = {
     0x2D: (
@@ -1430,12 +1435,12 @@ def scan_controlled_aic_instructions(
     return evidence
 
 
-def scan_controlled_ard_instructions(
+def _scan_controlled_ascii_read_instructions(
     payload: bytes,
     *,
     include_private_text: bool = False,
 ) -> list[InstructionEvidence]:
-    """Recognize ARD records matching the controlled ASCII-read profile."""
+    """Recognize controlled ASCII-read instruction records."""
 
     evidence: list[InstructionEvidence] = []
     for record_offset in range(max(0, len(payload) - 1)):
@@ -1455,9 +1460,12 @@ def scan_controlled_ard_instructions(
             cursor = end
         if len(fields) != 6 or cursor + 10 > len(payload):
             continue
-        if payload[cursor : cursor + 3] != b"\x00\x00\x80":
+        if payload[cursor : cursor + 2] != b"\x00\x00":
             continue
         selector_offset = cursor + 2
+        identity = _ASCII_READ_IDENTITIES.get(payload[selector_offset])
+        if identity is None:
+            continue
         try:
             decoded = [value.decode("ascii") for _, value in fields]
         except UnicodeDecodeError:
@@ -1487,10 +1495,11 @@ def scan_controlled_ard_instructions(
             "characters_read",
             "error",
         )
+        mnemonic, profile = identity
         evidence.append(
             InstructionEvidence(
-                mnemonic="ARD",
-                selector=0x80,
+                mnemonic=mnemonic,
+                selector=payload[selector_offset],
                 selector_offset=selector_offset,
                 operands=tuple(
                     _operand(
@@ -1501,10 +1510,44 @@ def scan_controlled_ard_instructions(
                     )
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
-                evidence_profile=_ARD_PROFILE,
+                evidence_profile=profile,
             )
         )
     return evidence
+
+
+def scan_controlled_ard_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ARD records matching the controlled ASCII-read profile."""
+
+    return [
+        item
+        for item in _scan_controlled_ascii_read_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ARD"
+    ]
+
+
+def scan_controlled_arl_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ARL records matching the controlled ASCII-line-read profile."""
+
+    return [
+        item
+        for item in _scan_controlled_ascii_read_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ARL"
+    ]
 
 
 def _scan_controlled_qualified_word_instructions(
@@ -2904,7 +2947,7 @@ def scan_controlled_instructions(
         )
     )
     evidence.extend(
-        scan_controlled_ard_instructions(
+        _scan_controlled_ascii_read_instructions(
             payload,
             include_private_text=include_private_text,
         )

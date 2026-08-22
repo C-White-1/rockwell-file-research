@@ -296,6 +296,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `AHL` | `0x7E` | Channel, masks, control, automatic status/error |
 | `AIC` | `0x7F` | Integer source `N7:0`; string destination `ST9:0` |
 | `ARD` | `0x80` | Channel, string destination, control, length, status |
+| `ARL` | `0x81` | Channel, string destination, control, length, status |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -661,6 +662,10 @@ unqualified fields. Configurable fields are channel `0`, destination `ST9:0`,
 control `R6:0`, and literal string length `15`; the length field rejects an
 `N7` address. Characters Read and Error reject user input and are serialized
 as automatic `0` fields.
+
+The field-identical ARL record uses selector `0x81`, immediately following ARD
+`0x80`. It retains the same configurable and read-only field roles under a
+distinct ASCII line-read evidence profile.
 
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.
