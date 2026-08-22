@@ -221,7 +221,8 @@ nor guessed instruction semantics. Version 4 additionally reports XIC, XIO,
 OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
-RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, and BSL only when a record
+RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, and BSR only when a
+record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
 evidence-backed roles; MOV reports `source` followed by `destination`, while
@@ -265,6 +266,7 @@ UIE reports its literal `interrupt_types` mask.
 UID reports the same mask role under its own interrupt-disable profile.
 UIF reports the same mask role under its own evidence profile.
 BSL reports ordered `file`, `control`, `bit_address`, and `length` operands.
+BSR reports the same ordered shift operand roles under its own profile.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in

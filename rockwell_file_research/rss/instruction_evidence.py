@@ -58,6 +58,7 @@ _UIE_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uie/v1"
 _UID_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uid/v1"
 _UIF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uif/v1"
 _BSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsl/v1"
+_BSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsr/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -107,6 +108,7 @@ _EDGE_OUTPUT_IDENTITIES = {
     0x9E: ("OSR", _OSR_PROFILE),
 }
 _SHIFT_IDENTITIES = {
+    0x2B: ("BSR", _BSR_PROFILE),
     0x2C: ("BSL", _BSL_PROFILE),
 }
 _TIMER_IDENTITIES = {
@@ -588,6 +590,23 @@ def scan_controlled_bsl_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "BSL"
+    ]
+
+
+def scan_controlled_bsr_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize BSR records matching the controlled shift profile."""
+
+    return [
+        item
+        for item in _scan_controlled_shift_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "BSR"
     ]
 
 

@@ -7,6 +7,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_add_instructions,
     scan_controlled_and_instructions,
     scan_controlled_bsl_instructions,
+    scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
     scan_controlled_cop_instructions,
     scan_controlled_ctd_instructions,
@@ -425,6 +426,22 @@ def test_bsl_exposes_ordered_shift_operands() -> None:
         ("bit_address", "B3:0/1"),
         ("length", "16"),
     ]
+
+
+def test_bsr_differs_from_bsl_only_by_controlled_selector() -> None:
+    bsr = scan_controlled_bsr_instructions(
+        _shift_record(selector=0x2B),
+        include_private_text=True,
+    )[0]
+    bsl = scan_controlled_bsl_instructions(
+        _shift_record(selector=0x2C),
+        include_private_text=True,
+    )[0]
+
+    assert (bsr.mnemonic, bsr.selector) == ("BSR", 0x2B)
+    assert (bsl.mnemonic, bsl.selector) == ("BSL", 0x2C)
+    assert bsr.selector_offset == bsl.selector_offset
+    assert bsr.operands == bsl.operands
 
 
 def test_xic_selector_is_stable_across_controlled_operand_change() -> None:
