@@ -222,6 +222,7 @@ OTE, OTL, OTU, CLR, MOV, NEG, SQR, ABS, NOT, AND, OR, XOR, MVM, ADD, SUB, MUL,
 DIV, DCD, ENC, GCD, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
+INT,
 PID, PTO, PWM, DLG, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, ARL,
 ASC, ASR, and AWA only when
 a record
@@ -261,6 +262,7 @@ MCR reports no operands; zone-pairing semantics are not inferred from an
 isolated instruction record.
 SUS reports its literal `suspend_id` operand.
 TND reports no operands and acts as a temporary-end marker.
+INT reports no operands under its I/O-interrupt evidence profile.
 ONS reports its one-shot `storage_bit` operand.
 OSR reports ordered `storage_bit` and `output_bit` operands.
 OSF reports the same ordered edge-output operand roles under its own profile.

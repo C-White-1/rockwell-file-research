@@ -37,6 +37,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_hsl_instructions,
     scan_controlled_iim_instructions,
     scan_controlled_instructions,
+    scan_controlled_int_instructions,
     scan_controlled_iom_instructions,
     scan_controlled_jmp_instructions,
     scan_controlled_jsr_instructions,
@@ -2043,6 +2044,14 @@ def test_tnd_differs_from_other_zero_operand_markers_by_selector() -> None:
     assert (tnd.mnemonic, tnd.selector) == ("TND", 0x0B)
     assert ret.selector_offset == tnd.selector_offset
     assert ret.operands == tnd.operands == ()
+
+
+def test_int_is_a_zero_operand_io_interrupt_instruction() -> None:
+    result = scan_controlled_int_instructions(_zero_operand_record(0x4B))
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("INT", 0x4B)
+    assert result[0].operands == ()
 
 
 def test_controlled_ctu_exposes_ordered_structured_fields() -> None:

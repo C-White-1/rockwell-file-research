@@ -91,6 +91,7 @@ _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _DCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/dcd/v1"
 _ENC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/enc/v1"
 _GCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/gcd/v1"
+_INT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/int/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -130,11 +131,12 @@ _SINGLE_UNQUALIFIED_OPERAND_IDENTITIES = {
     0xAA: ("UIF", _UIF_PROFILE, "interrupt_types", _CONTROLLED_INTEGER),
     0xAC: ("DLG", _DLG_PROFILE, "queue_number", _CONTROLLED_INTEGER),
 }
-_ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES = {
+_ZERO_OPERAND_IDENTITIES = {
     0x08: ("MCR", _MCR_PROFILE),
     0x09: ("RET", _RET_PROFILE),
     0x0B: ("TND", _TND_PROFILE),
     0x3D: ("SBR", _SBR_PROFILE),
+    0x4B: ("INT", _INT_PROFILE),
 }
 _EDGE_OUTPUT_IDENTITIES = {
     0x9D: ("OSF", _OSF_PROFILE),
@@ -2938,18 +2940,16 @@ def scan_controlled_uif_instructions(
     ]
 
 
-def _scan_controlled_zero_operand_program_control_instructions(
+def _scan_controlled_zero_operand_instructions(
     payload: bytes,
 ) -> list[InstructionEvidence]:
-    """Recognize controlled zero-operand program-control records."""
+    """Recognize controlled zero-operand instruction records."""
 
     evidence: list[InstructionEvidence] = []
     for selector_offset in range(4, max(4, len(payload) - 7)):
         if payload[selector_offset - 4 : selector_offset] != b"\x00\x00\x00\x00":
             continue
-        identity = _ZERO_OPERAND_PROGRAM_CONTROL_IDENTITIES.get(
-            payload[selector_offset]
-        )
+        identity = _ZERO_OPERAND_IDENTITIES.get(payload[selector_offset])
         if identity is None:
             continue
         if payload[selector_offset + 1 : selector_offset + 8] != (
@@ -2974,7 +2974,7 @@ def scan_controlled_sbr_instructions(payload: bytes) -> list[InstructionEvidence
 
     return [
         item
-        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        for item in _scan_controlled_zero_operand_instructions(payload)
         if item.mnemonic == "SBR"
     ]
 
@@ -2984,7 +2984,7 @@ def scan_controlled_ret_instructions(payload: bytes) -> list[InstructionEvidence
 
     return [
         item
-        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        for item in _scan_controlled_zero_operand_instructions(payload)
         if item.mnemonic == "RET"
     ]
 
@@ -2994,7 +2994,7 @@ def scan_controlled_mcr_instructions(payload: bytes) -> list[InstructionEvidence
 
     return [
         item
-        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        for item in _scan_controlled_zero_operand_instructions(payload)
         if item.mnemonic == "MCR"
     ]
 
@@ -3004,8 +3004,18 @@ def scan_controlled_tnd_instructions(payload: bytes) -> list[InstructionEvidence
 
     return [
         item
-        for item in _scan_controlled_zero_operand_program_control_instructions(payload)
+        for item in _scan_controlled_zero_operand_instructions(payload)
         if item.mnemonic == "TND"
+    ]
+
+
+def scan_controlled_int_instructions(payload: bytes) -> list[InstructionEvidence]:
+    """Recognize INT records matching the controlled zero-operand profile."""
+
+    return [
+        item
+        for item in _scan_controlled_zero_operand_instructions(payload)
+        if item.mnemonic == "INT"
     ]
 
 
@@ -3158,7 +3168,7 @@ def scan_controlled_instructions(
             include_private_text=include_private_text,
         )
     )
-    evidence.extend(_scan_controlled_zero_operand_program_control_instructions(payload))
+    evidence.extend(_scan_controlled_zero_operand_instructions(payload))
     evidence.extend(
         _scan_controlled_edge_output_instructions(
             payload,
