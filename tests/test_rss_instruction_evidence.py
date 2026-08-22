@@ -9,6 +9,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_add_instructions,
     scan_controlled_aex_instructions,
     scan_controlled_ahl_instructions,
+    scan_controlled_aic_instructions,
     scan_controlled_and_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
@@ -222,6 +223,21 @@ def _ahl_record() -> bytes:
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x7e"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _aic_record() -> bytes:
+    source = b"N7:0"
+    destination = b"ST9:0"
+    return (
+        b"\x03\x00"
+        + bytes([len(source) + 1])
+        + source
+        + b"\x60\x01\x3f"
+        + bytes([len(destination)])
+        + destination
+        + b"\x00\x00\x7f"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -760,6 +776,20 @@ def test_ahl_exposes_configurable_and_automatic_fields() -> None:
         ("control", "N7:0"),
         ("channel_status", "0"),
         ("error", "0"),
+    ]
+
+
+def test_aic_exposes_integer_source_and_string_destination() -> None:
+    result = scan_controlled_aic_instructions(
+        _aic_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("AIC", 0x7F)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source", "N7:0"),
+        ("destination", "ST9:0"),
     ]
 
 

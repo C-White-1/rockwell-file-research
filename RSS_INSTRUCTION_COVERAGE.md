@@ -69,6 +69,7 @@ opcodes.
 | `ACN` | `0x7B` | source_a, source_b, string destination | Confirmed |
 | `AEX` | `0x7D` | source, index, number, destination | Confirmed |
 | `AHL` | `0x7E` | channel, masks, control, automatic status/error | Confirmed |
+| `AIC` | `0x7F` | integer source, string destination | Confirmed |
 | `SQL` | `0x40` | file, source, control, length, position | Confirmed |
 | `XIC` | `0x39` | operand | Confirmed |
 | `XIO` | `0x3A` | operand | Confirmed |
@@ -101,7 +102,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **75**.
+Confirmed total: **76**.
 
 ## Unavailable instruction records
 
@@ -142,7 +143,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- ASCII and string: `AIC`, `ARD`, `ARL`, `ASC`,
+- ASCII and string: `ARD`, `ARL`, `ASC`,
   `ASR`, `AWA`, `AWT`.
 - Recipe, event, and specialised: `DCD`, `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
   `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.

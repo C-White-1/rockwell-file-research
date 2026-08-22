@@ -78,6 +78,7 @@ _ACI_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aci/v1"
 _ACN_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/acn/v1"
 _AEX_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aex/v1"
 _AHL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ahl/v1"
+_AIC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/aic/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -1355,6 +1356,74 @@ def scan_controlled_ahl_instructions(
                     for role, (offset, value) in zip(roles, fields, strict=True)
                 ),
                 evidence_profile=_AHL_PROFILE,
+            )
+        )
+    return evidence
+
+
+def scan_controlled_aic_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize AIC records matching the controlled integer-to-string profile."""
+
+    evidence: list[InstructionEvidence] = []
+    for record_offset in range(max(0, len(payload) - 1)):
+        if payload[record_offset : record_offset + 2] != b"\x03\x00":
+            continue
+        source_length_offset = record_offset + 2
+        source_offset = source_length_offset + 1
+        source_end = source_offset + payload[source_length_offset]
+        if source_end + 4 >= len(payload):
+            continue
+        if source_end <= source_offset or payload[source_end - 1 : source_end + 2] != (
+            b"\x60\x01\x3f"
+        ):
+            continue
+        source = payload[source_offset : source_end - 1]
+        destination_length_offset = source_end + 2
+        destination_offset = destination_length_offset + 1
+        destination_end = destination_offset + payload[destination_length_offset]
+        if destination_end + 10 > len(payload):
+            continue
+        destination = payload[destination_offset:destination_end]
+        if payload[destination_end : destination_end + 3] != b"\x00\x00\x7f":
+            continue
+        selector_offset = destination_end + 2
+        try:
+            source_text = source.decode("ascii")
+            destination_text = destination.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _CONTROLLED_WORD_OPERAND.fullmatch(source_text) is None:
+            continue
+        if _CONTROLLED_STRING_OPERAND.fullmatch(destination_text) is None:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x0b\x80"
+        ):
+            continue
+        evidence.append(
+            InstructionEvidence(
+                mnemonic="AIC",
+                selector=0x7F,
+                selector_offset=selector_offset,
+                operands=(
+                    _operand(
+                        role="source",
+                        offset=source_offset,
+                        value=source,
+                        include_private_text=include_private_text,
+                    ),
+                    _operand(
+                        role="destination",
+                        offset=destination_offset,
+                        value=destination,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                evidence_profile=_AIC_PROFILE,
             )
         )
     return evidence
@@ -2746,6 +2815,12 @@ def scan_controlled_instructions(
     )
     evidence.extend(
         scan_controlled_ahl_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    evidence.extend(
+        scan_controlled_aic_instructions(
             payload,
             include_private_text=include_private_text,
         )

@@ -294,6 +294,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `ACN` | `0x7B` | Sources `ST9:0`/`ST9:1`; destination `ST9:2` |
 | `AEX` | `0x7D` | Source `ST9:0`; index/number `N7:0`/`N7:1`; dest `ST9:1` |
 | `AHL` | `0x7E` | Channel, masks, control, automatic status/error |
+| `AIC` | `0x7F` | Integer source `N7:0`; string destination `ST9:0` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -646,6 +647,13 @@ unqualified fields. Configurable inputs are channel `0`, AND mask `00FFh`, OR
 mask `000Fh`, and control `N7:0`. Channel Status and Error reject user input
 and are serialized as automatic `0` fields. Their read-only UI behavior is
 preserved separately from the configurable operand roles.
+
+The controlled AIC instruction uses selector `0x7F`, header `03 00`, integer
+source `N7:0`, and string destination `ST9:0`. Bytes `60 01 3F` occur after
+the printable source before the destination; `60` is included in the source
+field's declared length. These bytes are required by the controlled profile
+but remain semantically unresolved. AIC is not modeled as merely ACI with its
+operand order reversed.
 
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.
