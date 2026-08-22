@@ -298,6 +298,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `ARD` | `0x80` | Channel, string destination, control, length, status |
 | `ARL` | `0x81` | Channel, string destination, control, length, status |
 | `ASC` | `0x82` | Source `ST9:0`; index `1`; search `ST9:1`; result `N7:0` |
+| `ASR` | `0x85` | Source A `ST9:0`; source B `ST9:1` |
 | `SCP` | `0x95` | Six scaling fields `N7:0` through `N7:5` |
 | `HSL` | `0x9B` | HSC `HSC0`; high/low and output sources `N7:0`-`N7:3` |
 | `SCL` | `0x45` | Source, rate, offset, destination `N7:0` through `N7:3` |
@@ -674,6 +675,9 @@ fields ordered source `ST9:0`, index `1`, string search `ST9:1`, and result
 semantically representative string/literal/string/integer operand pattern.
 The editor's acceptance of literals in every field is retained as UI evidence
 but is not generalized into the controlled decoder.
+
+The controlled ASR instruction uses selector `0x85`, header `02 00`, and two
+unqualified string operands ordered source A `ST9:0` and source B `ST9:1`.
 
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.

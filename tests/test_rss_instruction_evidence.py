@@ -14,6 +14,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_ard_instructions,
     scan_controlled_arl_instructions,
     scan_controlled_asc_instructions,
+    scan_controlled_asr_instructions,
     scan_controlled_bsl_instructions,
     scan_controlled_bsr_instructions,
     scan_controlled_clr_instructions,
@@ -262,6 +263,16 @@ def _asc_record() -> bytes:
         b"\x05\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x01\x3f\x00\x00\x82"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _asr_record() -> bytes:
+    fields = (b"ST9:0", b"ST9:1")
+    return (
+        b"\x02\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x85"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -864,6 +875,20 @@ def test_asc_exposes_search_operands_with_role_specific_types() -> None:
         ("index", "1"),
         ("string_search", "ST9:1"),
         ("result", "N7:0"),
+    ]
+
+
+def test_asr_exposes_two_string_sources() -> None:
+    result = scan_controlled_asr_instructions(
+        _asr_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ASR", 0x85)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source_a", "ST9:0"),
+        ("source_b", "ST9:1"),
     ]
 
 

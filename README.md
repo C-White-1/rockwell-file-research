@@ -223,7 +223,7 @@ DIV, EQU, NEQ, GRT, GEQ, LES, LEQ, MEQ, LIM, SCP, SCL, SWP, COP, FLL, FFL,
 FFU, LFL, LFU, TOD, FRD, TON, RTO, TOF, RES, CTU, CTD, JMP, LBL, JSR, SBR,
 RET, MCR, SUS, TND, ONS, OSR, OSF, UIE, UID, UIF, BSL, BSR, SQC, SQL, SQO,
 PID, PTO, PWM, MSG, SVC, HSL, IIM, IOM, ACI, ACN, AEX, AHL, AIC, ARD, and
-ARL, and ASC only when
+ARL, ASC, and ASR only when
 a record
 matches a controlled RSLogix Micro Starter Lite profile. Instruction operands
 are ordered and assigned
@@ -299,6 +299,7 @@ ARD reports configurable `channel`, `destination`, `control`, and literal
 ARL reports the same ordered fields under its line-read profile.
 ASC reports string `source`, literal `index`, string `string_search`, and
 integer-word `result` operands.
+ASR reports two ordered string operands as `source_a` and `source_b`.
 
 The additional evidence required before classifying any of these strings as a
 rung comment is documented in
