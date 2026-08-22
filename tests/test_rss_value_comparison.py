@@ -9,6 +9,7 @@ from rockwell_file_research.rss.models import RSSInventory
 from rockwell_file_research.rss.value_comparison import (
     compare_data_values,
     render_data_value_comparison_csv,
+    render_data_value_comparison_markdown,
 )
 from rockwell_file_research.rss.value_semantics import load_semantic_value_profile
 
@@ -184,3 +185,34 @@ def test_semantic_profile_rejects_duplicate_address_value_rules(
         assert "duplicate rule" in str(error)
     else:
         raise AssertionError("duplicate semantic rule was accepted")
+
+
+def test_markdown_report_summarizes_raw_and_semantic_changes(tmp_path: Path) -> None:
+    left_path = tmp_path / "left.csv"
+    right_path = tmp_path / "right.csv"
+    header = "address,semantic_name,raw_value,interpretation,evidence\n"
+    left_path.write_text(
+        header + "N11:1,drive_type,2,PF4-series VFD,Left manual\n",
+        encoding="utf-8",
+    )
+    right_path.write_text(
+        header + "N11:1,drive_type,2,PF525 VFD,Right manual\n",
+        encoding="utf-8",
+    )
+
+    report = render_data_value_comparison_markdown(
+        compare_data_values(
+            _inventory(integer=[1, 2], words=[0x00A5]),
+            _inventory(integer=[1, 2], words=[0x00A5]),
+        ),
+        left_profile=load_semantic_value_profile(left_path),
+        right_profile=load_semantic_value_profile(right_path),
+        semantic_only=True,
+    )
+
+    assert "| Reported addresses | 1 |" in report
+    assert "| Raw value changes | 0 |" in report
+    assert "| Semantic changes | 1 |" in report
+    assert "PF4-series VFD" in report
+    assert "PF525 VFD" in report
+    assert "not a live controller observation" in report

@@ -8,6 +8,7 @@ from rockwell_file_research.rss.inventory import inventory_rss
 from rockwell_file_research.rss.value_comparison import (
     compare_data_values,
     render_data_value_comparison_csv,
+    render_data_value_comparison_markdown,
 )
 from rockwell_file_research.rss.value_semantics import load_semantic_value_profile
 
@@ -21,6 +22,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("left", type=Path)
     parser.add_argument("right", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--markdown-output",
+        type=Path,
+        help="optional engineer-readable Markdown comparison report",
+    )
     parser.add_argument(
         "--left-semantic-profile",
         type=Path,
@@ -78,6 +84,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         semantic_only=args.semantic_only,
     )
     args.output.write_text(rendered, encoding="utf-8")
+    if args.markdown_output is not None:
+        args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+        args.markdown_output.write_text(
+            render_data_value_comparison_markdown(
+                comparisons,
+                left_profile=left_profile,
+                right_profile=right_profile,
+                semantic_only=args.semantic_only,
+            ),
+            encoding="utf-8",
+        )
     output_rows = max(0, rendered.count("\n") - 1)
     print(
         f"Wrote {output_rows} comparison rows from "

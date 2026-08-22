@@ -203,6 +203,9 @@ Add `--semantic-only` to suppress unprofiled raw addresses. The report keeps
 raw `status` separate from `semantic_status`, allowing an unchanged numeric
 code to be reported as `semantic_changed` when two variant profiles document
 different meanings for that code.
+Use `--markdown-output PATH` to create an engineer-readable summary alongside
+the complete CSV evidence. Its scope statement explicitly distinguishes saved
+project values from live controller state.
 
 Decoded selections and status words can be checked without coupling their
 parsers through explicit `BitExpectation` records. Missing words or invalid

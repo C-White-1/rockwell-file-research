@@ -271,3 +271,78 @@ def render_data_value_comparison_csv(
             }
         )
     return stream.getvalue()
+
+
+def _markdown_cell(value: str) -> str:
+    """Escape one generated Markdown table cell."""
+
+    return value.replace("|", "\\|").replace("\r", " ").replace("\n", " ")
+
+
+def render_data_value_comparison_markdown(
+    comparisons: tuple[DataValueComparison, ...],
+    *,
+    left_profile: SemanticValueProfile | None = None,
+    right_profile: SemanticValueProfile | None = None,
+    semantic_only: bool = False,
+) -> str:
+    """Render the same comparison evidence as a concise engineering report."""
+
+    csv_text = render_data_value_comparison_csv(
+        comparisons,
+        left_profile=left_profile,
+        right_profile=right_profile,
+        semantic_only=semantic_only,
+    )
+    rows = list(csv.DictReader(io.StringIO(csv_text)))
+    semantic_changes = sum(row["semantic_status"] == "semantic_changed" for row in rows)
+    raw_changes = sum(row["status"] == "changed" for row in rows)
+    unresolved = sum(
+        row["status"] in {"unresolved", "redacted_difference"} for row in rows
+    )
+    lines = [
+        "# RSS Data-Value Comparison",
+        "",
+        "> Scope: saved project values only; this is not a live controller observation.",
+        "",
+        "## Summary",
+        "",
+        "| Measure | Count |",
+        "| --- | ---: |",
+        f"| Reported addresses | {len(rows)} |",
+        f"| Raw value changes | {raw_changes} |",
+        f"| Semantic changes | {semantic_changes} |",
+        f"| Unresolved or redacted differences | {unresolved} |",
+        "",
+        "## Settings",
+        "",
+        "<!-- markdownlint-disable MD013 -->",
+        "| Address | Setting | Raw status | Semantic status | Left value | Left meaning | Right value | Right meaning |",
+        "| --- | --- | --- | --- | ---: | --- | ---: | --- |",
+    ]
+    for row in rows:
+        cells = [
+            row["address"],
+            row["semantic_name"].replace("_", " ").title(),
+            row["status"],
+            row["semantic_status"],
+            row["left_decimal_value"],
+            row["left_interpretation"],
+            row["right_decimal_value"],
+            row["right_interpretation"],
+        ]
+        lines.append("| " + " | ".join(_markdown_cell(cell) for cell in cells) + " |")
+    lines.extend(
+        [
+            "<!-- markdownlint-enable MD013 -->",
+            "",
+            "## Evidence boundary",
+            "",
+            "Semantic names and interpretations come only from supplied evidence",
+            "profiles. Unprofiled values remain unnamed. Raw equality and semantic",
+            "equality are reported separately because variant-specific profiles may",
+            "assign different meanings to the same numeric value.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
