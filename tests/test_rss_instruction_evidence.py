@@ -5,6 +5,7 @@ import zlib
 from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_abs_instructions,
     scan_controlled_aci_instructions,
+    scan_controlled_acn_instructions,
     scan_controlled_add_instructions,
     scan_controlled_and_instructions,
     scan_controlled_bsl_instructions,
@@ -189,6 +190,16 @@ def _aci_record() -> bytes:
         b"\x03\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x01\x3f\x00\x00\x7a"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _acn_record() -> bytes:
+    fields = (b"ST9:0", b"ST9:1", b"ST9:2")
+    return (
+        b"\x03\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x7b"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -678,6 +689,21 @@ def test_aci_exposes_string_source_and_integer_destination() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("source", "ST9:0"),
         ("destination", "N7:0"),
+    ]
+
+
+def test_acn_exposes_ordered_string_operands() -> None:
+    result = scan_controlled_acn_instructions(
+        _acn_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("ACN", 0x7B)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("source_a", "ST9:0"),
+        ("source_b", "ST9:1"),
+        ("destination", "ST9:2"),
     ]
 
 
