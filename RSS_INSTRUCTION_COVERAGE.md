@@ -126,6 +126,13 @@ Confirmed total: **75**.
 | `HSD` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `IIE` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `IID` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `CEM` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `DDT` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `DEM` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `RHC` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `RPI` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `STD` | Greyed out for MicroLogix 1100 Series B | Unavailable |
+| `STE` | Greyed out for MicroLogix 1100 Series B | Unavailable |
 | `END` | Automatic ladder-file marker; not selectable in palette | Structural |
 
 ## Candidate backlog
@@ -137,9 +144,8 @@ fixture is created.
 
 - ASCII and string: `AIC`, `ARD`, `ARL`, `ASC`,
   `ASR`, `AWA`, `AWT`.
-- Recipe, event, and specialised: `CEM`, `DCD`, `DDT`, `DEM`, `DLG`, `ENC`,
-  `GCD`, `INT`, `LCD`, `RAC`, `RCP`, `REF`, `RHC`, `RPI`, `RTA`, `SOR`,
-  `STE`, `STS`, `STD`.
+- Recipe, event, and specialised: `DCD`, `DLG`, `ENC`, `GCD`, `INT`, `LCD`,
+  `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
 selected processor's instruction palette and Rockwell documentation before it
@@ -163,6 +169,6 @@ For each candidate:
 
 ## Next fixture
 
-The next planned fixture candidate is `LFU`. Its availability and operand
+The next planned fixture candidate is `AIC`. Its availability and operand
 fields must first be confirmed in the selected processor's instruction
 palette before assigning a filename.

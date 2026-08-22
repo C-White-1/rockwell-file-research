@@ -650,6 +650,10 @@ preserved separately from the configurable operand roles.
 `IIE` and `IID` are greyed out for the controlled MicroLogix 1100 Series B
 profile. Neither instruction is assigned a selector or operand structure.
 
+`CEM`, `DDT`, `DEM`, `RHC`, `RPI`, `STD`, and `STE` are also greyed out for
+the controlled MicroLogix 1100 Series B profile. They remain unavailable and
+are not assigned selectors or operand structures.
+
 The controlled ADD record uses the same `01 3F`-qualified word operands as
 MOV, with three ordered fields: Source A, Source B, and destination. Independent
 changes to each field altered only its expected ASCII digit. Selector `0x27`,
