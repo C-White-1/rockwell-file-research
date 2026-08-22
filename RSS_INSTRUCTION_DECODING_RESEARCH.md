@@ -314,6 +314,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `TOD` | `0x17` | Source `N7:0`; destination `N7:1` |
 | `FRD` | `0x18` | Source `N7:0`; destination `N7:1` |
 | `DCD` | `0x20` | Source `N7:0`; destination `N7:1` |
+| `ENC` | `0x64` | Source `N7:0`; destination `N7:1` |
 | `TON` | `0xA7` | Timer `T4:0`; time base `1.0`; preset `5`; accumulator `0` |
 | `UID` | `0xA8` | Interrupt types `1` |
 | `UIE` | `0xA9` | Interrupt types `1` |
@@ -690,6 +691,10 @@ The controlled DCD record uses selector `0x20` and the shared qualified
 two-word framing. Its ordered fields are source `N7:0` and destination `N7:1`.
 It is recognized under a DCD-specific evidence profile rather than inferred
 from selector proximity.
+
+The controlled ENC record uses selector `0x64` with the same qualified
+two-word framing and ordered source `N7:0` and destination `N7:1` fields. It
+retains an ENC-specific evidence profile.
 
 The controlled AWA instruction uses selector `0x83`, header `06 00`, and six
 fields ordered channel `0`, source `ST9:0`, control `R6:0`, string length `15`,

@@ -25,6 +25,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_dcd_instructions,
     scan_controlled_div_instructions,
     scan_controlled_dlg_instructions,
+    scan_controlled_enc_instructions,
     scan_controlled_equ_instructions,
     scan_controlled_ffl_instructions,
     scan_controlled_ffu_instructions,
@@ -1579,6 +1580,21 @@ def test_dcd_uses_qualified_source_and_destination() -> None:
 
     assert (dcd.mnemonic, dcd.selector) == ("DCD", 0x20)
     assert [(item.role, item.value) for item in dcd.operands] == [
+        ("source", "N7:0"),
+        ("destination", "N7:1"),
+    ]
+
+
+def test_enc_uses_qualified_source_and_destination() -> None:
+    enc_payload = bytearray(_mov_record(source="N7:0", destination="N7:1"))
+    enc_payload[-8] = 0x64
+    enc = scan_controlled_enc_instructions(
+        bytes(enc_payload),
+        include_private_text=True,
+    )[0]
+
+    assert (enc.mnemonic, enc.selector) == ("ENC", 0x64)
+    assert [(item.role, item.value) for item in enc.operands] == [
         ("source", "N7:0"),
         ("destination", "N7:1"),
     ]

@@ -89,6 +89,7 @@ _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
 _DCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/dcd/v1"
+_ENC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/enc/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
 _XOR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/xor/v1"
@@ -289,6 +290,7 @@ _QUALIFIED_WORD_IDENTITIES = {
     0x1C: ("MOV", _MOV_PROFILE, ("source", "destination"), 0x04),
     0x1E: ("NEG", _NEG_PROFILE, ("source", "destination"), 0x04),
     0x20: ("DCD", _DCD_PROFILE, ("source", "destination"), 0x04),
+    0x64: ("ENC", _ENC_PROFILE, ("source", "destination"), 0x04),
     0x23: (
         "AND",
         _AND_PROFILE,
@@ -2370,6 +2372,23 @@ def scan_controlled_dcd_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "DCD"
+    ]
+
+
+def scan_controlled_enc_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize ENC records matching the controlled qualified-word profile."""
+
+    return [
+        item
+        for item in _scan_controlled_qualified_word_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "ENC"
     ]
 
 

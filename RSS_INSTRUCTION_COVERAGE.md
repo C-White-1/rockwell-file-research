@@ -69,6 +69,7 @@ opcodes.
 | `LIM` | `0x3F` | low_limit, test, high_limit | Confirmed |
 | `IIM` | `0x5D` | slot, mask, length | Confirmed |
 | `IOM` | `0x5E` | slot, mask, length | Confirmed |
+| `ENC` | `0x64` | source, destination | Confirmed |
 | `ACI` | `0x7A` | string source, integer destination | Confirmed |
 | `ACN` | `0x7B` | source_a, source_b, string destination | Confirmed |
 | `AEX` | `0x7D` | source, index, number, destination | Confirmed |
@@ -112,7 +113,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **83**.
+Confirmed total: **84**.
 
 ## Normalized palette entries
 
@@ -159,7 +160,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `ENC`, `GCD`, `INT`, `LCD`,
+- Recipe, event, and specialised: `GCD`, `INT`, `LCD`,
   `RAC`, `RCP`, `REF`, `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
