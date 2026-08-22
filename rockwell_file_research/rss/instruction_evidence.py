@@ -60,6 +60,7 @@ _UIF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/uif/v1"
 _BSL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsl/v1"
 _BSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/bsr/v1"
 _SQC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sqc/v1"
+_SQL_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/sql/v1"
 _TND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tnd/v1"
 _TOD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/tod/v1"
 _FRD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/frd/v1"
@@ -126,6 +127,19 @@ _SEQUENCER_IDENTITIES = {
             _CONTROLLED_INTEGER,
         ),
         0x06,
+    ),
+    0x40: (
+        "SQL",
+        _SQL_PROFILE,
+        ("file", "source", "control", "length", "position"),
+        (
+            _CONTROLLED_FILE_WORD_OPERAND,
+            _CONTROLLED_WORD_OPERAND,
+            _CONTROLLED_CONTROL_OPERAND,
+            _CONTROLLED_INTEGER,
+            _CONTROLLED_INTEGER,
+        ),
+        0x05,
     ),
 }
 _TIMER_IDENTITIES = {
@@ -709,6 +723,23 @@ def scan_controlled_sqc_instructions(
             include_private_text=include_private_text,
         )
         if item.mnemonic == "SQC"
+    ]
+
+
+def scan_controlled_sql_instructions(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionEvidence]:
+    """Recognize SQL records matching the controlled sequencer profile."""
+
+    return [
+        item
+        for item in _scan_controlled_sequencer_instructions(
+            payload,
+            include_private_text=include_private_text,
+        )
+        if item.mnemonic == "SQL"
     ]
 
 

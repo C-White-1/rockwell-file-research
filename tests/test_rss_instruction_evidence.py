@@ -49,6 +49,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_scp_instructions,
     scan_controlled_simple_bit_instructions,
     scan_controlled_sqc_instructions,
+    scan_controlled_sql_instructions,
     scan_controlled_sqr_instructions,
     scan_controlled_sub_instructions,
     scan_controlled_sus_instructions,
@@ -106,6 +107,16 @@ def _sqc_record() -> bytes:
         b"\x06\x00"
         + b"".join(bytes([len(field)]) + field for field in fields)
         + b"\x00\x00\x2e"
+        + b"\x00\x00\x00\x00\x00\x0b\x80"
+    )
+
+
+def _sql_record() -> bytes:
+    fields = (b"#N7:10", b"N7:0", b"R6:0", b"3", b"0")
+    return (
+        b"\x05\x00"
+        + b"".join(bytes([len(field)]) + field for field in fields)
+        + b"\x00\x00\x40"
         + b"\x00\x00\x00\x00\x00\x0b\x80"
     )
 
@@ -466,6 +477,23 @@ def test_sqc_exposes_ordered_sequencer_compare_operands() -> None:
     assert [(item.role, item.value) for item in result[0].operands] == [
         ("file", "#N7:10"),
         ("mask", "00FFh"),
+        ("source", "N7:0"),
+        ("control", "R6:0"),
+        ("length", "3"),
+        ("position", "0"),
+    ]
+
+
+def test_sql_exposes_ordered_sequencer_load_operands() -> None:
+    result = scan_controlled_sql_instructions(
+        _sql_record(),
+        include_private_text=True,
+    )
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("SQL", 0x40)
+    assert [(item.role, item.value) for item in result[0].operands] == [
+        ("file", "#N7:10"),
         ("source", "N7:0"),
         ("control", "R6:0"),
         ("length", "3"),

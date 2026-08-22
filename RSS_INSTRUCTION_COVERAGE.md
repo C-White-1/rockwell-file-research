@@ -62,6 +62,7 @@ opcodes.
 | `LEQ` | `0x37` | source_a, source_b | Confirmed |
 | `MEQ` | `0x38` | source, mask, compare | Confirmed |
 | `LIM` | `0x3F` | low_limit, test, high_limit | Confirmed |
+| `SQL` | `0x40` | file, source, control, length, position | Confirmed |
 | `XIC` | `0x39` | operand | Confirmed |
 | `XIO` | `0x3A` | operand | Confirmed |
 | `LBL` | `0x3B` | label | Confirmed |
@@ -87,7 +88,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **61**.
+Confirmed total: **62**.
 
 ## Unavailable instruction records
 
@@ -114,7 +115,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Shift and sequencer: `SQL`, `SQO`.
+- Shift and sequencer: `SQO`.
 - Process and control: `PID`, `PTO`, `PWM`, `RMP`.
 - Messaging and communications: `MSG`, `SVC`, `EEM`.
 - High-speed and immediate I/O: `HSC`, `HSE`, `HSD`, `HSL`, `IIM`, `IOM`,
