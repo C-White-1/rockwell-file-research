@@ -66,6 +66,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_pwm_instructions,
     scan_controlled_rac_instructions,
     scan_controlled_rcp_instructions,
+    scan_controlled_ref_instructions,
     scan_controlled_res_instructions,
     scan_controlled_ret_instructions,
     scan_controlled_rto_instructions,
@@ -2140,6 +2141,14 @@ def test_int_is_a_zero_operand_io_interrupt_instruction() -> None:
 
     assert len(result) == 1
     assert (result[0].mnemonic, result[0].selector) == ("INT", 0x4B)
+    assert result[0].operands == ()
+
+
+def test_ref_is_a_zero_operand_instruction() -> None:
+    result = scan_controlled_ref_instructions(_zero_operand_record(0x48))
+
+    assert len(result) == 1
+    assert (result[0].mnemonic, result[0].selector) == ("REF", 0x48)
     assert result[0].operands == ()
 
 

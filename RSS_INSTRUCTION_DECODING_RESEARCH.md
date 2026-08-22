@@ -267,6 +267,7 @@ selector byte while the operand and surrounding record bytes remained fixed.
 | `GCD` | `0xAF` | Source `N7:0`; destination `N7:1` |
 | `RCP` | `0xB0` | Recipe file `0`; recipe `1`; operation `Load` |
 | `INT` | `0x4B` | No operands |
+| `REF` | `0x48` | No operands |
 | `LCD` | `0xB2` | Six line sources; display-with-input `No` |
 | `SVC` | `0xA5` | Channel select `0000h` |
 | `MSG` | `0xB3` | MSG file `MG10:0`; setup payload unresolved |
@@ -717,6 +718,10 @@ retaining a GCD-specific evidence profile.
 The controlled INT instruction uses selector `0x4B`, has no operands, and
 shares the established zero-operand frame. Its I/O-interrupt meaning remains
 explicit in an INT-specific evidence profile.
+
+The controlled REF instruction uses selector `0x48`, has no operands, and
+shares the established zero-operand frame under a REF-specific evidence
+profile.
 
 The controlled LCD record uses selector `0xB2`, header `08 00`, and seven
 printable fields: ordered line-2, line-3, and line-4 source pairs `N7:0`

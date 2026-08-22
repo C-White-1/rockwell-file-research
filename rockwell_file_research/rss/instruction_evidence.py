@@ -94,6 +94,7 @@ _DCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/dcd/v1"
 _ENC_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/enc/v1"
 _GCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/gcd/v1"
 _INT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/int/v1"
+_REF_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ref/v1"
 _LCD_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/lcd/v1"
 _AND_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/and/v1"
 _OR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/or/v1"
@@ -139,6 +140,7 @@ _ZERO_OPERAND_IDENTITIES = {
     0x09: ("RET", _RET_PROFILE),
     0x0B: ("TND", _TND_PROFILE),
     0x3D: ("SBR", _SBR_PROFILE),
+    0x48: ("REF", _REF_PROFILE),
     0x4B: ("INT", _INT_PROFILE),
 }
 _EDGE_OUTPUT_IDENTITIES = {
@@ -3216,6 +3218,16 @@ def scan_controlled_int_instructions(payload: bytes) -> list[InstructionEvidence
         item
         for item in _scan_controlled_zero_operand_instructions(payload)
         if item.mnemonic == "INT"
+    ]
+
+
+def scan_controlled_ref_instructions(payload: bytes) -> list[InstructionEvidence]:
+    """Recognize REF records matching the controlled zero-operand profile."""
+
+    return [
+        item
+        for item in _scan_controlled_zero_operand_instructions(payload)
+        if item.mnemonic == "REF"
     ]
 
 

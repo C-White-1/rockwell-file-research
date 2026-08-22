@@ -86,6 +86,7 @@ opcodes.
 | `LBL` | `0x3B` | label | Confirmed |
 | `SBR` | `0x3D` | none | Confirmed |
 | `SQR` | `0x46` | source, destination | Confirmed |
+| `REF` | `0x48` | none | Confirmed |
 | `INT` | `0x4B` | none | Confirmed |
 | `RTO` | `0xA3` | timer, time_base, preset, accumulator | Confirmed |
 | `TOF` | `0xA6` | timer, time_base, preset, accumulator | Confirmed |
@@ -118,7 +119,7 @@ opcodes.
 | `LFL` | `0x43` | source, LIFO, control, length, position | Confirmed |
 | `LFU` | `0x44` | LIFO, destination, control, length, position | Confirmed |
 
-Confirmed total: **89**.
+Confirmed total: **90**.
 
 ## Normalized palette entries
 
@@ -165,7 +166,7 @@ They remain untested unless they appear in the confirmed table. Palette state,
 processor support, and operand availability must be recorded while each
 fixture is created.
 
-- Recipe, event, and specialised: `REF`, `RTA`, `SOR`, `STS`.
+- Recipe, event, and specialised: `RTA`, `SOR`, `STS`.
 
 The backlog is a working transcription. It must be reconciled against the
 selected processor's instruction palette and Rockwell documentation before it
