@@ -439,6 +439,12 @@ class InstructionCandidateEvidence:
     evidence_profile: str
     operands: tuple[InstructionCandidateOperandEvidence, ...]
     diagnostics: tuple[str, ...]
+    program_file_number: int | None
+    program_file_name_sha256: str | None
+    program_file_name: str | None
+    rung_index: int | None
+    rung_start_offset: int | None
+    rung_end_offset: int | None
 
 
 _ML1400_SIMPLE_BIT_CANDIDATES = {
@@ -447,6 +453,7 @@ _ML1400_SIMPLE_BIT_CANDIDATES = {
     0x31: ("OTU", "destination", "write"),
     0x39: ("XIC", "condition", "read"),
     0x3A: ("XIO", "condition", "read"),
+    0xAB: ("ONS", "storage_bit", "read_write"),
 }
 _ML1400_SIMPLE_BIT_CANDIDATE_PROFILE = "rslogix500/ml1400/simple-bit-candidate/v1"
 
@@ -534,9 +541,640 @@ def scan_ml1400_simple_bit_candidates(
                     ),
                 ),
                 diagnostics=tuple(diagnostics),
+                program_file_number=None,
+                program_file_name_sha256=None,
+                program_file_name=None,
+                rung_index=None,
+                rung_start_offset=None,
+                rung_end_offset=None,
             )
         )
     return candidates
+
+
+def _ml1400_candidate_operand(
+    *,
+    role: str,
+    access: str,
+    offset: int,
+    value: bytes,
+    include_private_text: bool,
+) -> InstructionCandidateOperandEvidence:
+    decoded = value.decode("ascii")
+    return InstructionCandidateOperandEvidence(
+        role=role,
+        access=access,
+        address_family=_address_family(decoded),
+        offset=offset,
+        length=len(value),
+        sha256=hashlib.sha256(value).hexdigest(),
+        value=decoded if include_private_text else None,
+    )
+
+
+def _scan_ml1400_multi_field_candidates(
+    payload: bytes,
+    *,
+    field_count: int,
+    selector: int,
+    mnemonic: str,
+    roles: tuple[str, ...],
+    accesses: tuple[str, ...],
+    include_private_text: bool,
+    expected_field_values: dict[int, bytes] | None = None,
+    trailer_class: int = 0x07,
+    allow_empty_fields: bool = False,
+) -> list[InstructionCandidateEvidence]:
+    """Recognize one exact ML1400 length-prefixed instruction family."""
+
+    evidence: list[InstructionCandidateEvidence] = []
+    prefix = field_count.to_bytes(2, "little")
+    for record_offset in range(max(0, len(payload) - 20)):
+        if payload[record_offset : record_offset + 2] != prefix:
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(field_count):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if (not length and not allow_empty_fields) or end > len(payload):
+                break
+            value = payload[offset:end]
+            try:
+                value.decode("ascii")
+            except UnicodeDecodeError:
+                break
+            fields.append((offset, value))
+            cursor = end
+        if len(fields) != field_count or cursor + 10 > len(payload):
+            continue
+        if expected_field_values is not None and any(
+            field_index >= len(fields) or fields[field_index][1] != expected_value
+            for field_index, expected_value in expected_field_values.items()
+        ):
+            continue
+        if payload[cursor : cursor + 2] != b"\x01\x00":
+            continue
+        selector_offset = cursor + 2
+        if payload[selector_offset] != selector:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00" + bytes((trailer_class, 0))
+        ):
+            continue
+        evidence.append(
+            InstructionCandidateEvidence(
+                proposed_mnemonic=mnemonic,
+                selector=selector,
+                selector_offset=selector_offset,
+                confidence="probable",
+                evidence_profile=(f"rslogix500/ml1400/{mnemonic.lower()}-candidate/v1"),
+                operands=tuple(
+                    _ml1400_candidate_operand(
+                        role=role,
+                        access=access,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, access, (offset, value) in zip(
+                        roles, accesses, fields, strict=True
+                    )
+                ),
+                diagnostics=(
+                    (
+                        "Selector, operands, and instruction-family framing "
+                        "correlate with controlled and contextual evidence; "
+                        "ML1400 identity remains probable."
+                    ),
+                ),
+                program_file_number=None,
+                program_file_name_sha256=None,
+                program_file_name=None,
+                rung_index=None,
+                rung_start_offset=None,
+                rung_end_offset=None,
+            )
+        )
+    return evidence
+
+
+def _scan_ml1400_cpt_candidates(
+    payload: bytes,
+    *,
+    include_private_text: bool,
+) -> list[InstructionCandidateEvidence]:
+    """Recognize length-declared ML1400 compute-expression records."""
+
+    evidence: list[InstructionCandidateEvidence] = []
+    for record_offset in range(max(0, len(payload) - 20)):
+        if payload[record_offset : record_offset + 2] != b"\x03\x00":
+            continue
+        cursor = record_offset + 2
+        fields: list[tuple[int, bytes]] = []
+        for _ in range(3):
+            if cursor >= len(payload):
+                break
+            length = payload[cursor]
+            offset = cursor + 1
+            end = offset + length
+            if not length or end > len(payload):
+                break
+            value = payload[offset:end]
+            try:
+                value.decode("ascii")
+            except UnicodeDecodeError:
+                break
+            fields.append((offset, value))
+            cursor = end
+        if len(fields) != 3 or cursor + 10 > len(payload):
+            continue
+        if payload[cursor : cursor + 2] != b"\x01\x00":
+            continue
+        selector_offset = cursor + 2
+        if payload[selector_offset] != 0x8A:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 6] != bytes(5):
+            continue
+        compiled_length = int.from_bytes(
+            payload[selector_offset + 6 : selector_offset + 8], "little"
+        )
+        compiled_offset = selector_offset + 9
+        if (
+            compiled_length <= 0
+            or payload[selector_offset + 8] != 0x8A
+            or compiled_offset + compiled_length > len(payload)
+        ):
+            continue
+        evidence.append(
+            InstructionCandidateEvidence(
+                proposed_mnemonic="CPT",
+                selector=0x8A,
+                selector_offset=selector_offset,
+                confidence="probable",
+                evidence_profile="rslogix500/ml1400/cpt-candidate/v1",
+                operands=tuple(
+                    _ml1400_candidate_operand(
+                        role=role,
+                        access=access,
+                        offset=offset,
+                        value=value,
+                        include_private_text=include_private_text,
+                    )
+                    for role, access, (offset, value) in zip(
+                        ("destination", "result_metadata", "expression"),
+                        ("write", "metadata", "read"),
+                        fields,
+                        strict=True,
+                    )
+                ),
+                diagnostics=(
+                    (
+                        "CPT selector, repeated selector, declared compiled "
+                        "length, and three-field framing are exact; ML1400 "
+                        "identity remains probable."
+                    ),
+                ),
+                program_file_number=None,
+                program_file_name_sha256=None,
+                program_file_name=None,
+                rung_index=None,
+                rung_start_offset=None,
+                rung_end_offset=None,
+            )
+        )
+    return evidence
+
+
+def _scan_ml1400_msg_candidates(
+    payload: bytes,
+    *,
+    include_private_text: bool,
+) -> list[InstructionCandidateEvidence]:
+    """Recognize ML1400 MSG prefixes and their repeated setup reference."""
+
+    evidence = _scan_ml1400_multi_field_candidates(
+        payload,
+        field_count=3,
+        selector=0x9C,
+        mnemonic="MSG",
+        roles=("message_control", "setup_label", "data_reference"),
+        accesses=("read_write", "metadata", "unknown"),
+        include_private_text=include_private_text,
+        trailer_class=0x0D,
+        allow_empty_fields=True,
+    )
+    enriched: list[InstructionCandidateEvidence] = []
+    for candidate in evidence:
+        data_reference = candidate.operands[2]
+        reference_end = data_reference.offset + data_reference.length
+        search_end = min(len(payload), candidate.selector_offset + 128)
+        repeated_offset = payload.find(
+            payload[data_reference.offset : reference_end],
+            candidate.selector_offset + 8,
+            search_end,
+        )
+        if (
+            repeated_offset <= 0
+            or payload[repeated_offset - 1] != data_reference.length
+        ):
+            enriched.append(candidate)
+            continue
+        repeated_value = payload[
+            repeated_offset : repeated_offset + data_reference.length
+        ]
+        enriched.append(
+            InstructionCandidateEvidence(
+                proposed_mnemonic=candidate.proposed_mnemonic,
+                selector=candidate.selector,
+                selector_offset=candidate.selector_offset,
+                confidence=candidate.confidence,
+                evidence_profile=candidate.evidence_profile,
+                operands=candidate.operands
+                + (
+                    _ml1400_candidate_operand(
+                        role="setup_data_reference",
+                        access="metadata",
+                        offset=repeated_offset,
+                        value=repeated_value,
+                        include_private_text=include_private_text,
+                    ),
+                ),
+                diagnostics=candidate.diagnostics
+                + (
+                    (
+                        "The expanded message setup repeats the data reference; "
+                        "it is preserved as metadata without inferring transfer "
+                        "direction."
+                    ),
+                ),
+                program_file_number=None,
+                program_file_name_sha256=None,
+                program_file_name=None,
+                rung_index=None,
+                rung_start_offset=None,
+                rung_end_offset=None,
+            )
+        )
+    return enriched
+
+
+def scan_ml1400_instruction_candidates(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionCandidateEvidence]:
+    """Recognize exact ML1400 candidate families without confirming opcodes."""
+
+    evidence = scan_ml1400_simple_bit_candidates(
+        payload, include_private_text=include_private_text
+    )
+    evidence.extend(
+        _scan_ml1400_cpt_candidates(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    families = (
+        (1, 0x15, "JSR", ("subroutine",), ("reference",)),
+        (1, 0x13, "RES", ("timer_or_counter",), ("write",)),
+        (
+            3,
+            0x11,
+            "CTU",
+            ("counter", "preset", "accumulator"),
+            ("read_write", "read", "read_write"),
+        ),
+        (
+            4,
+            0xA7,
+            "TON",
+            ("timer", "time_base", "preset", "accumulator"),
+            ("read_write", "read", "read", "read_write"),
+        ),
+    )
+    for field_count, selector, mnemonic, roles, accesses in families:
+        evidence.extend(
+            _scan_ml1400_multi_field_candidates(
+                payload,
+                field_count=field_count,
+                selector=selector,
+                mnemonic=mnemonic,
+                roles=roles,
+                accesses=accesses,
+                include_private_text=include_private_text,
+            )
+        )
+    timer_roles = ("timer", "time_base", "preset", "accumulator")
+    timer_accesses = ("read_write", "read", "read", "read_write")
+    timer_variants = (
+        (0x0E, "RTO", "0.01"),
+        (0x0F, "TON", "0.01"),
+        (0x10, "TOF", "0.01"),
+        (0x54, "RTO", "1.0"),
+        (0x56, "TON", "1.0"),
+    )
+    for selector, mnemonic, time_base in timer_variants:
+        evidence.extend(
+            _scan_ml1400_multi_field_candidates(
+                payload,
+                field_count=4,
+                selector=selector,
+                mnemonic=mnemonic,
+                roles=timer_roles,
+                accesses=timer_accesses,
+                include_private_text=include_private_text,
+                expected_field_values={1: time_base.encode("ascii")},
+            )
+        )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=3,
+            selector=0x22,
+            mnemonic="COP",
+            roles=("source", "destination", "length"),
+            accesses=("read", "write", "read"),
+            include_private_text=include_private_text,
+            trailer_class=0x13,
+        )
+    )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=3,
+            selector=0x21,
+            mnemonic="FLL",
+            roles=("source", "destination", "length"),
+            accesses=("read", "write", "read"),
+            include_private_text=include_private_text,
+            trailer_class=0x13,
+        )
+    )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=4,
+            selector=0x2C,
+            mnemonic="BSL",
+            roles=("file", "control", "bit_address", "length"),
+            accesses=("read_write", "read_write", "read", "read"),
+            include_private_text=include_private_text,
+            trailer_class=0x13,
+        )
+    )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=4,
+            selector=0x1C,
+            mnemonic="MOV",
+            roles=("source", "source_format", "destination", "destination_format"),
+            accesses=("read", "metadata", "write", "metadata"),
+            include_private_text=include_private_text,
+            trailer_class=0x0D,
+        )
+    )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=12,
+            selector=0x95,
+            mnemonic="SCP",
+            roles=(
+                "input",
+                "input_metadata",
+                "input_minimum",
+                "input_minimum_metadata",
+                "input_maximum",
+                "input_maximum_metadata",
+                "scaled_minimum",
+                "scaled_minimum_metadata",
+                "scaled_maximum",
+                "scaled_maximum_metadata",
+                "output",
+                "output_metadata",
+            ),
+            accesses=(
+                "read",
+                "metadata",
+                "read",
+                "metadata",
+                "read",
+                "metadata",
+                "read",
+                "metadata",
+                "read",
+                "metadata",
+                "write",
+                "metadata",
+            ),
+            include_private_text=include_private_text,
+            trailer_class=0x25,
+        )
+    )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=4,
+            selector=0x9F,
+            mnemonic="PID",
+            roles=(
+                "pid_file",
+                "process_variable",
+                "control_variable",
+                "setup_metadata",
+            ),
+            accesses=("read_write", "read", "write", "metadata"),
+            include_private_text=include_private_text,
+            expected_field_values={3: b""},
+            trailer_class=0x13,
+            allow_empty_fields=True,
+        )
+    )
+    comparison_roles = (
+        "source_a",
+        "source_a_format",
+        "source_b",
+        "source_b_format",
+    )
+    comparison_accesses = ("read", "metadata", "read", "metadata")
+    for selector, mnemonic in (
+        (0x32, "EQU"),
+        (0x33, "NEQ"),
+        (0x34, "GRT"),
+        (0x35, "GEQ"),
+        (0x36, "LES"),
+        (0x37, "LEQ"),
+    ):
+        evidence.extend(
+            _scan_ml1400_multi_field_candidates(
+                payload,
+                field_count=4,
+                selector=selector,
+                mnemonic=mnemonic,
+                roles=comparison_roles,
+                accesses=comparison_accesses,
+                include_private_text=include_private_text,
+                trailer_class=0x0D,
+            )
+        )
+    evidence.extend(
+        _scan_ml1400_multi_field_candidates(
+            payload,
+            field_count=6,
+            selector=0x3F,
+            mnemonic="LIM",
+            roles=(
+                "low_limit",
+                "low_limit_format",
+                "test",
+                "test_format",
+                "high_limit",
+                "high_limit_format",
+            ),
+            accesses=("read", "metadata", "read", "metadata", "read", "metadata"),
+            include_private_text=include_private_text,
+            trailer_class=0x13,
+        )
+    )
+    arithmetic_roles = (
+        "source_a",
+        "source_a_format",
+        "source_b",
+        "source_b_format",
+        "destination",
+        "destination_format",
+    )
+    arithmetic_accesses = (
+        "read",
+        "metadata",
+        "read",
+        "metadata",
+        "write",
+        "metadata",
+    )
+    for selector, mnemonic in (
+        (0x27, "ADD"),
+        (0x28, "SUB"),
+        (0x29, "MUL"),
+        (0x2A, "DIV"),
+    ):
+        evidence.extend(
+            _scan_ml1400_multi_field_candidates(
+                payload,
+                field_count=6,
+                selector=selector,
+                mnemonic=mnemonic,
+                roles=arithmetic_roles,
+                accesses=arithmetic_accesses,
+                include_private_text=include_private_text,
+                trailer_class=0x13,
+            )
+        )
+    evidence.extend(
+        _scan_ml1400_msg_candidates(
+            payload,
+            include_private_text=include_private_text,
+        )
+    )
+    known_offsets = {item.selector_offset for item in evidence}
+    evidence.extend(
+        _scan_ml1400_unknown_multi_field_candidates(
+            payload,
+            excluded_selector_offsets=known_offsets,
+            include_private_text=include_private_text,
+        )
+    )
+    return sorted(evidence, key=lambda item: item.selector_offset)
+
+
+def _scan_ml1400_unknown_multi_field_candidates(
+    payload: bytes,
+    *,
+    excluded_selector_offsets: set[int],
+    include_private_text: bool,
+) -> list[InstructionCandidateEvidence]:
+    """Preserve exact ML1400 records whose selector identity is unknown."""
+
+    evidence: list[InstructionCandidateEvidence] = []
+    seen_offsets: set[int] = set()
+    for field_count in range(1, 13):
+        prefix = field_count.to_bytes(2, "little")
+        for record_offset in range(max(0, len(payload) - 20)):
+            if payload[record_offset : record_offset + 2] != prefix:
+                continue
+            cursor = record_offset + 2
+            fields: list[tuple[int, bytes]] = []
+            for _ in range(field_count):
+                if cursor >= len(payload):
+                    break
+                length = payload[cursor]
+                offset = cursor + 1
+                end = offset + length
+                if not length or end > len(payload):
+                    break
+                value = payload[offset:end]
+                try:
+                    value.decode("ascii")
+                except UnicodeDecodeError:
+                    break
+                fields.append((offset, value))
+                cursor = end
+            if len(fields) != field_count or cursor + 10 > len(payload):
+                continue
+            if payload[cursor : cursor + 2] != b"\x01\x00":
+                continue
+            selector_offset = cursor + 2
+            if (
+                selector_offset in excluded_selector_offsets
+                or selector_offset in seen_offsets
+            ):
+                continue
+            if payload[selector_offset + 1 : selector_offset + 8] != (
+                b"\x00\x00\x00\x00\x00\x07\x00"
+            ):
+                continue
+            selector = payload[selector_offset]
+            evidence.append(
+                InstructionCandidateEvidence(
+                    proposed_mnemonic="UNKNOWN",
+                    selector=selector,
+                    selector_offset=selector_offset,
+                    confidence="unclassified",
+                    evidence_profile=(
+                        "rslogix500/ml1400/unknown-multi-field-record/v1"
+                    ),
+                    operands=tuple(
+                        _ml1400_candidate_operand(
+                            role=f"operand_{index}",
+                            access="unknown",
+                            offset=offset,
+                            value=value,
+                            include_private_text=include_private_text,
+                        )
+                        for index, (offset, value) in enumerate(fields, start=1)
+                    ),
+                    diagnostics=(
+                        (
+                            "Exact ML1400 multi-field record framing is "
+                            "preserved, but the selector has no confirmed or "
+                            "probable mnemonic."
+                        ),
+                    ),
+                    program_file_number=None,
+                    program_file_name_sha256=None,
+                    program_file_name=None,
+                    rung_index=None,
+                    rung_start_offset=None,
+                    rung_end_offset=None,
+                )
+            )
+            seen_offsets.add(selector_offset)
+    return evidence
 
 
 def _operand(

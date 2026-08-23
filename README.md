@@ -97,6 +97,10 @@ uv run rss-inventory `
   "private-fixtures\controller.rss" `
   --output "private-outputs\controller-inventory.json" `
   --operand-csv-output "private-outputs\controller-operands.csv" `
+  --candidate-access-csv-output "private-outputs\controller-access.csv" `
+  --candidate-coverage-csv-output "private-outputs\controller-coverage.csv" `
+  --unknown-candidate-csv-output "private-outputs\controller-unknown.csv" `
+  --candidate-ladder-output "private-outputs\controller-ladder.md" `
   --rung-comment-csv-output "private-outputs\controller-rung-comments.csv" `
   --source-label fixture-001
 ```
@@ -121,6 +125,17 @@ was independently corroborated. Use `--include-private-text` only when the
 report will remain controlled and private.
 This is an exact-string inventory rather than a claim that alternate address
 spellings are semantically equivalent.
+
+The unknown-candidate CSV aggregates unclassified instruction records by their
+selector byte. It reports hexadecimal and decimal selectors, counts,
+operand-count shapes, address families, program-file and rung coverage, and
+the framing profile. It intentionally does not infer a mnemonic from a selector
+byte alone.
+
+The candidate-coverage CSV compares recovered rung operands with operand fields
+attributed to probable instructions. It identifies rungs needing further record
+decoding, but deliberately calls this operand attribution rather than complete
+instruction or topology coverage.
 
 The `PROCESSOR` section receives conservative additional treatment. Printable
 regions are catalogued by classification, byte offset, length, and SHA-256,
@@ -155,7 +170,7 @@ sections produce the same ordered identities and count candidates. Names and
 descriptions remain private-text fields; their hashes allow comparison in the
 redacted inventory.
 
-Inventory schema `rss-inventory/v11` retains structurally verified signed 16-bit
+Inventory schema `rss-inventory/v12` retains structurally verified signed 16-bit
 integer arrays to each data-file section. Element counts, byte offsets, and
 value-array SHA-256 digests are emitted by default; actual values remain
 `null`. Use `--include-private-values` only for a controlled private output.
@@ -277,13 +292,22 @@ Schema v10 exposes resolved topology on each validated `rung_record`. Nodes are
 ordered instructions or recursive parallel branches with ordered legs. A
 `null` topology means the rung is empty or its structure is not supported by
 the controlled evidence profile; TwinForge does not invent missing structure.
-Schema v11 separately exposes `instruction_candidates` for exact, observed
-MicroLogix 1400 simple-bit framing. Each candidate retains the raw selector,
-byte offsets, operand hash, proposed mnemonic, confidence, evidence profile,
-address family, and read/write access interpretation. These candidates remain
+Schema v11 introduced `instruction_candidates` for exact, observed MicroLogix
+1400 framing. Candidate profiles cover the simple-bit family plus ONS, JSR,
+CTU, and TON multi-field records. Each candidate retains the raw selector, byte
+offsets, operand hashes and roles, proposed mnemonic, confidence, evidence
+profile, address family, and access interpretation. These candidates remain
 `probable`: they do not populate confirmed `instructions` or rung `topology`.
 An incompatible write to an input-family address is preserved with a diagnostic
 rather than silently accepted or discarded.
+Schema v12 adds program-file and zero-based rung provenance to every candidate.
+Use `--candidate-access-csv-output PATH` to produce one privacy-aware row per
+candidate operand. Operand and program names remain blank unless
+`--include-private-text` is supplied; hashes, access roles, address families,
+selector evidence, and rung offsets remain available in redacted output.
+Use `--candidate-ladder-output PATH` for a rung-grouped, ladder-like Markdown
+view. It preserves serialized instruction order but explicitly labels branch
+topology as unresolved; it is an evidence aid, not reconstructed source.
 The available documentation, Laddis binary-ladder findings, controlled
 differential procedure, and acceptance criteria for an evidence-backed opcode
 registry are documented in

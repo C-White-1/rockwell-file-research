@@ -92,9 +92,13 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_uie_instructions,
     scan_controlled_uif_instructions,
     scan_controlled_xor_instructions,
+    scan_ml1400_instruction_candidates,
     scan_ml1400_simple_bit_candidates,
 )
-from rockwell_file_research.rss.program_files import inspect_program_file_section
+from rockwell_file_research.rss.program_files import (
+    decode_controlled_rung_topology,
+    inspect_program_file_section,
+)
 
 
 def _record(*, operand: str, selector: int) -> bytes:
@@ -149,6 +153,74 @@ def test_ml1400_candidate_rejects_controlled_ml1100_framing() -> None:
         scan_ml1400_simple_bit_candidates(_record(operand="B3:0/0", selector=0x39))
         == []
     )
+
+
+def _ml1400_multi_field_record(
+    *, fields: tuple[str, ...], selector: int, trailer_class: int = 0x07
+) -> bytes:
+    encoded = tuple(field.encode("ascii") for field in fields)
+    return (
+        len(fields).to_bytes(2, "little")
+        + b"".join(bytes([len(field)]) + field for field in encoded)
+        + b"\x01\x00"
+        + bytes([selector])
+        + b"\x00\x00\x00\x00\x00"
+        + bytes((trailer_class, 0))
+    )
+
+
+def test_ml1400_candidate_families_share_processor_specific_framing() -> None:
+    payload = b"".join(
+        (
+            _ml1400_record(operand="B3:0/0", selector=0xAB),
+            _ml1400_multi_field_record(fields=("U:3",), selector=0x15),
+            _ml1400_multi_field_record(fields=("T4:1",), selector=0x13),
+            _ml1400_multi_field_record(fields=("C5:2",), selector=0x13),
+            _ml1400_multi_field_record(fields=("C5:0", "3", "0"), selector=0x11),
+            _ml1400_multi_field_record(
+                fields=("T4:0", "0.001", "5000", "0"), selector=0xA7
+            ),
+        )
+    )
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert [item.proposed_mnemonic for item in candidates] == [
+        "ONS",
+        "JSR",
+        "RES",
+        "RES",
+        "CTU",
+        "TON",
+    ]
+    assert [len(item.operands) for item in candidates] == [1, 1, 1, 1, 3, 4]
+    assert candidates[0].operands[0].access == "read_write"
+    assert candidates[1].operands[0].access == "reference"
+    assert candidates[2].operands[0].address_family == "timer"
+    assert candidates[2].operands[0].access == "write"
+    assert candidates[3].operands[0].address_family == "counter"
+    assert candidates[4].operands[0].address_family == "counter"
+    assert candidates[5].operands[0].address_family == "timer"
+
+
+def test_ml1400_unknown_multifield_selector_is_preserved() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(fields=("N7:0", "N7:1"), selector=0x58),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "UNKNOWN"
+    assert candidates[0].selector == 0x58
+    assert candidates[0].confidence == "unclassified"
+    assert [operand.role for operand in candidates[0].operands] == [
+        "operand_1",
+        "operand_2",
+    ]
+    assert [operand.access for operand in candidates[0].operands] == [
+        "unknown",
+        "unknown",
+    ]
 
 
 def _edge_output_record(*, selector: int) -> bytes:
@@ -2277,3 +2349,465 @@ def test_ctd_differs_from_ctu_only_by_controlled_selector() -> None:
     assert (ctd.mnemonic, ctd.selector) == ("CTD", 0x12)
     assert ctu.selector_offset == ctd.selector_offset
     assert ctu.operands == ctd.operands
+
+
+def test_ml1400_timer_variants_require_selector_and_time_base() -> None:
+    variants = (
+        (0x0E, "RTO", "0.01"),
+        (0x0F, "TON", "0.01"),
+        (0x10, "TOF", "0.01"),
+        (0x54, "RTO", "1.0"),
+        (0x56, "TON", "1.0"),
+    )
+    payload = b"".join(
+        _ml1400_multi_field_record(
+            fields=(f"T4:{index}", time_base, "100", "0"),
+            selector=selector,
+        )
+        for index, (selector, _, time_base) in enumerate(variants)
+    )
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert [item.proposed_mnemonic for item in candidates] == [
+        mnemonic for _, mnemonic, _ in variants
+    ]
+    assert [item.operands[1].value for item in candidates] == [
+        time_base for _, _, time_base in variants
+    ]
+
+
+def test_ml1400_timer_variant_rejects_mismatched_time_base() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("T4:0", "1.0", "100", "0"),
+            selector=0x0F,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "UNKNOWN"
+    assert candidates[0].selector == 0x0F
+
+
+def test_ml1400_cop_requires_three_fields_and_trailer_class() -> None:
+    accepted = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("#N201:0", "#N202:0", "100"),
+            selector=0x22,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+    rejected = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("#N201:0", "#N202:0", "100"),
+            selector=0x22,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(accepted) == 1
+    assert accepted[0].proposed_mnemonic == "COP"
+    assert [operand.role for operand in accepted[0].operands] == [
+        "source",
+        "destination",
+        "length",
+    ]
+    assert [operand.access for operand in accepted[0].operands] == [
+        "read",
+        "write",
+        "read",
+    ]
+    assert len(rejected) == 1
+    assert rejected[0].proposed_mnemonic == "UNKNOWN"
+
+
+def test_ml1400_fll_requires_three_fields_and_trailer_class() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("0", "#N202:0", "100"),
+            selector=0x21,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "FLL"
+    assert [operand.role for operand in candidates[0].operands] == [
+        "source",
+        "destination",
+        "length",
+    ]
+    assert [operand.access for operand in candidates[0].operands] == [
+        "read",
+        "write",
+        "read",
+    ]
+
+
+def test_ml1400_bsl_preserves_shift_file_roles() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("#N7:6", "R6:0", "N7:6/4", "4"),
+            selector=0x2C,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "BSL"
+    assert [operand.role for operand in candidates[0].operands] == [
+        "file",
+        "control",
+        "bit_address",
+        "length",
+    ]
+    assert [operand.access for operand in candidates[0].operands] == [
+        "read_write",
+        "read_write",
+        "read",
+        "read",
+    ]
+
+
+def test_ml1400_mov_preserves_format_metadata() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("1", "1", "MG15:26.NOD", "2"),
+            selector=0x1C,
+            trailer_class=0x0D,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "MOV"
+    assert [operand.role for operand in candidates[0].operands] == [
+        "source",
+        "source_format",
+        "destination",
+        "destination_format",
+    ]
+    assert [operand.access for operand in candidates[0].operands] == [
+        "read",
+        "metadata",
+        "write",
+        "metadata",
+    ]
+
+
+def test_ml1400_equ_and_msg_preserve_metadata_and_unknown_direction() -> None:
+    payload = b"".join(
+        (
+            _ml1400_multi_field_record(
+                fields=("C5:0.ACC", "1", "1", "1"),
+                selector=0x32,
+                trailer_class=0x0D,
+            ),
+            _ml1400_multi_field_record(
+                fields=("MG15:11", "Setup Screen", "N16:5"),
+                selector=0x9C,
+                trailer_class=0x0D,
+            ),
+        )
+    )
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert [item.proposed_mnemonic for item in candidates] == ["EQU", "MSG"]
+    assert [operand.access for operand in candidates[0].operands] == [
+        "read",
+        "metadata",
+        "read",
+        "metadata",
+    ]
+    assert [operand.role for operand in candidates[1].operands] == [
+        "message_control",
+        "setup_label",
+        "data_reference",
+    ]
+    assert candidates[1].operands[1].access == "metadata"
+    assert candidates[1].operands[2].access == "unknown"
+
+
+def test_ml1400_msg_associates_repeated_setup_data_reference() -> None:
+    record = _ml1400_multi_field_record(
+        fields=("MG15:11", "Setup Screen", "N16:5"),
+        selector=0x9C,
+        trailer_class=0x0D,
+    )
+    payload = record + bytes(24) + b"\x05N16:5" + bytes(24)
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert len(candidates) == 1
+    assert [operand.role for operand in candidates[0].operands] == [
+        "message_control",
+        "setup_label",
+        "data_reference",
+        "setup_data_reference",
+    ]
+    assert candidates[0].operands[-1].access == "metadata"
+    assert candidates[0].operands[-1].value == "N16:5"
+    assert "without inferring transfer direction" in candidates[0].diagnostics[-1]
+
+
+def test_ml1400_msg_accepts_explicitly_empty_setup_label() -> None:
+    record = _ml1400_multi_field_record(
+        fields=("MG15:16", "", "N16:10"),
+        selector=0x9C,
+        trailer_class=0x0D,
+    )
+    payload = record + bytes(24) + b"\x06N16:10" + bytes(24)
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "MSG"
+    assert [operand.value for operand in candidates[0].operands] == [
+        "MG15:16",
+        "",
+        "N16:10",
+        "N16:10",
+    ]
+    assert candidates[0].operands[1].access == "metadata"
+
+
+def test_ml1400_msg_does_not_associate_distant_matching_text() -> None:
+    record = _ml1400_multi_field_record(
+        fields=("MG15:11", "Setup Screen", "N16:5"),
+        selector=0x9C,
+        trailer_class=0x0D,
+    )
+    payload = record + bytes(192) + b"\x05N16:5"
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert len(candidates) == 1
+    assert [operand.role for operand in candidates[0].operands] == [
+        "message_control",
+        "setup_label",
+        "data_reference",
+    ]
+
+
+def test_ml1400_comparison_family_uses_controlled_selectors() -> None:
+    identities = (
+        (0x32, "EQU"),
+        (0x33, "NEQ"),
+        (0x34, "GRT"),
+        (0x35, "GEQ"),
+        (0x36, "LES"),
+        (0x37, "LEQ"),
+    )
+    payload = b"".join(
+        _ml1400_multi_field_record(
+            fields=("N7:0", "2", "0", "1"),
+            selector=selector,
+            trailer_class=0x0D,
+        )
+        for selector, _ in identities
+    )
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert [item.proposed_mnemonic for item in candidates] == [
+        mnemonic for _, mnemonic in identities
+    ]
+    assert all(
+        [operand.access for operand in item.operands]
+        == ["read", "metadata", "read", "metadata"]
+        for item in candidates
+    )
+
+
+def test_ml1400_lim_alternates_logical_fields_and_metadata() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("1", "1", "N11:0", "2", "2", "2"),
+            selector=0x3F,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "LIM"
+    logical = [
+        operand for operand in candidates[0].operands if operand.access != "metadata"
+    ]
+    assert [(operand.role, operand.value) for operand in logical] == [
+        ("low_limit", "1"),
+        ("test", "N11:0"),
+        ("high_limit", "2"),
+    ]
+    assert all(operand.access == "read" for operand in logical)
+
+
+def test_ml1400_scp_alternates_logical_fields_and_metadata() -> None:
+    candidates = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=(
+                "F8:52",
+                "15.27197",
+                "N7:8",
+                "6256",
+                "N7:9",
+                "31152",
+                "4.0",
+                "4.0",
+                "20.0",
+                "20.0",
+                "F8:0",
+                "-0.01075077",
+            ),
+            selector=0x95,
+            trailer_class=0x25,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(candidates) == 1
+    assert candidates[0].proposed_mnemonic == "SCP"
+    logical = [
+        operand for operand in candidates[0].operands if operand.access != "metadata"
+    ]
+    assert [operand.value for operand in logical] == [
+        "F8:52",
+        "N7:8",
+        "N7:9",
+        "4.0",
+        "20.0",
+        "F8:0",
+    ]
+    assert [operand.access for operand in logical] == [
+        "read",
+        "read",
+        "read",
+        "read",
+        "read",
+        "write",
+    ]
+
+
+def test_ml1400_pid_requires_explicit_empty_setup_field() -> None:
+    accepted = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("PD12:0", "N7:50", "N7:51", ""),
+            selector=0x9F,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+    rejected = scan_ml1400_instruction_candidates(
+        _ml1400_multi_field_record(
+            fields=("PD12:0", "N7:50", "N7:51", "unexpected"),
+            selector=0x9F,
+            trailer_class=0x13,
+        ),
+        include_private_text=True,
+    )
+
+    assert len(accepted) == 1
+    assert accepted[0].proposed_mnemonic == "PID"
+    assert [operand.value for operand in accepted[0].operands] == [
+        "PD12:0",
+        "N7:50",
+        "N7:51",
+        "",
+    ]
+    assert [operand.access for operand in accepted[0].operands] == [
+        "read_write",
+        "read",
+        "write",
+        "metadata",
+    ]
+    assert rejected == []
+
+
+def test_ml1400_cpt_validates_compiled_expression_length() -> None:
+    fields = ("F8:12", "81.0", " F8:10 - ( F8:10 * 0.1 ) ")
+    encoded_fields = b"".join(
+        bytes((len(field.encode("ascii")),)) + field.encode("ascii") for field in fields
+    )
+    compiled = b"\x29\x07\x08\x08\x00"
+    record = (
+        b"\x03\x00"
+        + encoded_fields
+        + b"\x01\x00\x8a"
+        + bytes(5)
+        + len(compiled).to_bytes(2, "little")
+        + b"\x8a"
+        + compiled
+    )
+
+    accepted = scan_ml1400_instruction_candidates(record, include_private_text=True)
+    rejected = scan_ml1400_instruction_candidates(
+        record[:-1], include_private_text=True
+    )
+
+    assert len(accepted) == 1
+    assert accepted[0].proposed_mnemonic == "CPT"
+    assert [operand.role for operand in accepted[0].operands] == [
+        "destination",
+        "result_metadata",
+        "expression",
+    ]
+    assert [operand.access for operand in accepted[0].operands] == [
+        "write",
+        "metadata",
+        "read",
+    ]
+    assert rejected == []
+
+
+def test_ml1400_arithmetic_family_uses_controlled_selectors() -> None:
+    identities = (
+        (0x27, "ADD"),
+        (0x28, "SUB"),
+        (0x29, "MUL"),
+        (0x2A, "DIV"),
+    )
+    payload = b"".join(
+        _ml1400_multi_field_record(
+            fields=("N7:0", "1", "2", "2", "N7:1", "68"),
+            selector=selector,
+            trailer_class=0x13,
+        )
+        for selector, _ in identities
+    )
+
+    candidates = scan_ml1400_instruction_candidates(payload, include_private_text=True)
+
+    assert [item.proposed_mnemonic for item in candidates] == [
+        mnemonic for _, mnemonic in identities
+    ]
+    assert all(
+        [operand.access for operand in item.operands]
+        == ["read", "metadata", "read", "metadata", "write", "metadata"]
+        for item in candidates
+    )
+
+
+def test_topology_decoder_preserves_caller_evidence_profile() -> None:
+    payload = (
+        b"\xff\xff\x80\x00\x05\x00CRung"
+        + b"\xff\xff\x80\x00\x0a\x00CBranchLeg"
+        + b"\xff\xff\x80\x00\x04\x00CIns"
+        + _record(operand="B3:0/0", selector=0x39)
+    )
+    instructions = scan_controlled_simple_bit_instructions(payload)
+
+    topology = decode_controlled_rung_topology(
+        payload,
+        instructions,
+        evidence_profile="test/processor-specific-topology/v1",
+    )
+
+    assert topology is not None
+    assert topology.kind == "series"
+    assert topology.evidence_profile == "test/processor-specific-topology/v1"

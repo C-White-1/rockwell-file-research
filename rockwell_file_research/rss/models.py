@@ -202,6 +202,12 @@ class RSSProgramInstructionCandidateEvidence(TypedDict):
     evidence_profile: str
     operands: list[RSSProgramInstructionCandidateOperandEvidence]
     diagnostics: list[str]
+    program_file_number: int | None
+    program_file_name_sha256: str | None
+    program_file_name: str | None
+    rung_index: int | None
+    rung_start_offset: int | None
+    rung_end_offset: int | None
 
 
 class RSSProgramFileRecordEvidence(TypedDict):
@@ -262,6 +268,7 @@ class RSSProgramRungEvidence(TypedDict):
     application_text_candidate_count: int
     application_text_candidates: list[RSSProgramTextRegion]
     topology: RSSRungTopologyEvidence | None
+    candidate_topology: RSSRungTopologyEvidence | None
 
 
 class RSSProgramFileEvidence(TypedDict):

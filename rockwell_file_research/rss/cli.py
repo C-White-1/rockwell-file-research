@@ -38,6 +38,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="optional privacy-aware CSV listing decoded data-file elements",
     )
     parser.add_argument(
+        "--candidate-access-csv-output",
+        type=Path,
+        help="optional CSV listing probable instruction operand access",
+    )
+    parser.add_argument(
+        "--candidate-coverage-csv-output",
+        type=Path,
+        help="optional rung-level probable-instruction operand coverage CSV",
+    )
+    parser.add_argument(
+        "--candidate-ladder-output",
+        type=Path,
+        help="optional Markdown view of probable instructions grouped by rung",
+    )
+    parser.add_argument(
+        "--unknown-candidate-csv-output",
+        type=Path,
+        help="optional aggregate CSV of unclassified instruction selectors",
+    )
+    parser.add_argument(
         "--expand-binary-bits",
         action="store_true",
         help="add derived B-file bit rows to the data-value CSV",
@@ -72,6 +92,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             operand_csv_destination=args.operand_csv_output,
             rung_comment_csv_destination=args.rung_comment_csv_output,
             data_value_csv_destination=args.data_value_csv_output,
+            candidate_access_csv_destination=args.candidate_access_csv_output,
+            candidate_coverage_csv_destination=args.candidate_coverage_csv_output,
+            candidate_ladder_destination=args.candidate_ladder_output,
+            unknown_candidate_csv_destination=args.unknown_candidate_csv_output,
             expand_binary_bits=args.expand_binary_bits,
         )
     except RSSInventoryError as error:

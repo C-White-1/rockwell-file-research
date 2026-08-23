@@ -5,14 +5,14 @@ from __future__ import annotations
 import hashlib
 import re
 from bisect import bisect_right
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from rockwell_file_research.rss.compressed_section import decompress_section
 from rockwell_file_research.rss.instruction_evidence import (
     InstructionCandidateEvidence,
     InstructionEvidence,
     scan_controlled_instructions,
-    scan_ml1400_simple_bit_candidates,
+    scan_ml1400_instruction_candidates,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
 
@@ -89,6 +89,7 @@ class ProgramRungRecord:
     application_text_candidate_count: int
     application_text_candidates: list[ProgramTextRegion]
     topology: ControlledRungTopology | None
+    candidate_topology: ControlledRungTopology | None
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,10 @@ _BRANCH_CLASS = b"\xff\xff\x80\x00\x07\x00CBranch"
 _NESTED_BRANCH_REFERENCE = b"\x0d\x80\x04\x00"
 _BRANCH_LEG_END = b"\x0b\x80\x00\x00\x00\x00\x05\x00\x00\x00\x00"
 _BRANCH_END = b"\x0b\x80\x00\x00\x00\x00\x03\x00\x00\x00\x00"
-_TOPOLOGY_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-topology/v1"
+_CONTROLLED_TOPOLOGY_PROFILE = (
+    "rslogix-micro-starter-lite/ml1100-series-b/simple-topology/v1"
+)
+_ML1400_CANDIDATE_TOPOLOGY_PROFILE = "rslogix500/ml1400/simple-topology-candidate/v1"
 
 
 def _topology_instruction(item: InstructionEvidence) -> TopologyInstruction:
@@ -213,8 +217,9 @@ def decode_controlled_rung_topology(
     *,
     start_offset: int = 0,
     end_offset: int | None = None,
+    evidence_profile: str = _CONTROLLED_TOPOLOGY_PROFILE,
 ) -> ControlledRungTopology | None:
-    """Decode proven topology within one validated rung byte range."""
+    """Decode topology while retaining the caller's evidence boundary."""
 
     classes = (_RUNG_CLASS, _RUNG_LEG_CLASS, _INSTRUCTION_CLASS)
     if any(payload.count(marker) != 1 for marker in classes):
@@ -242,7 +247,7 @@ def decode_controlled_rung_topology(
         return ControlledRungTopology(
             "series",
             tuple(_topology_instruction(item) for item in ordered),
-            _TOPOLOGY_PROFILE,
+            evidence_profile,
         )
     branch_offset, marker_length = min(branch_candidates)
     decoded = _decode_parallel(
@@ -294,7 +299,32 @@ def decode_controlled_rung_topology(
         cursor = instruction.selector_offset + 1
     if consumed != {item.selector_offset for item in ordered}:
         return None
-    return ControlledRungTopology("series_parallel", tuple(items), _TOPOLOGY_PROFILE)
+    return ControlledRungTopology("series_parallel", tuple(items), evidence_profile)
+
+
+def _candidate_serialized_order(
+    instructions: list[InstructionEvidence],
+    *,
+    start_offset: int,
+    end_offset: int,
+) -> ControlledRungTopology | None:
+    """Preserve probable instruction order without asserting continuity."""
+
+    ordered = sorted(
+        (
+            item
+            for item in instructions
+            if start_offset <= item.selector_offset < end_offset
+        ),
+        key=lambda item: item.selector_offset,
+    )
+    if not ordered:
+        return None
+    return ControlledRungTopology(
+        "serialized_order",
+        tuple(_topology_instruction(item) for item in ordered),
+        _ML1400_CANDIDATE_TOPOLOGY_PROFILE,
+    )
 
 
 @dataclass(frozen=True)
@@ -557,10 +587,55 @@ def inspect_program_file_section(
         section.payload,
         include_private_text=include_private_text,
     )
-    instruction_candidates = scan_ml1400_simple_bit_candidates(
+    instruction_candidates = scan_ml1400_instruction_candidates(
         section.payload,
         include_private_text=include_private_text,
     )
+    scoped_candidates: list[InstructionCandidateEvidence] = []
+    for candidate in instruction_candidates:
+        record_index = bisect_right(record_offsets, candidate.selector_offset) - 1
+        record = private_records[record_index] if record_index >= 0 else None
+        rung_index = (
+            bisect_right(record.rung_start_offsets, candidate.selector_offset) - 1
+            if record is not None
+            else -1
+        )
+        scoped_candidates.append(
+            replace(
+                candidate,
+                program_file_number=record.file_number if record else None,
+                program_file_name_sha256=record.name_sha256 if record else None,
+                program_file_name=(
+                    record.name if include_private_text and record else None
+                ),
+                rung_index=rung_index if rung_index >= 0 else None,
+                rung_start_offset=(
+                    record.rung_start_offsets[rung_index]
+                    if record is not None and rung_index >= 0
+                    else None
+                ),
+                rung_end_offset=(
+                    (
+                        record.rung_start_offsets[rung_index + 1]
+                        if rung_index + 1 < len(record.rung_start_offsets)
+                        else record.end_offset
+                    )
+                    if record is not None and rung_index >= 0
+                    else None
+                ),
+            )
+        )
+    instruction_candidates = scoped_candidates
+    candidate_instructions = [
+        InstructionEvidence(
+            mnemonic=candidate.proposed_mnemonic,
+            selector=candidate.selector,
+            selector_offset=candidate.selector_offset,
+            operands=(),
+            evidence_profile=candidate.evidence_profile,
+        )
+        for candidate in instruction_candidates
+    ]
     rung_records: list[ProgramRungRecord] = []
     for record in public_records:
         if not record.rung_boundaries_validated:
@@ -607,6 +682,11 @@ def inspect_program_file_section(
                     topology=decode_controlled_rung_topology(
                         section.payload,
                         instructions,
+                        start_offset=start_offset,
+                        end_offset=end_offset,
+                    ),
+                    candidate_topology=_candidate_serialized_order(
+                        candidate_instructions,
                         start_offset=start_offset,
                         end_offset=end_offset,
                     ),

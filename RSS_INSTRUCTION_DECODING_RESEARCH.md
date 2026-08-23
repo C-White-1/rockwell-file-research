@@ -883,19 +883,151 @@ controlled MicroLogix 1100 Series B profile. Schema `rss-inventory/v11`
 therefore adds a separate `instruction_candidates` collection; it does not
 weaken the acceptance criteria for confirmed `instructions`.
 
-The candidate recognizer requires all observed ML1400 framing bytes, a valid
-SLC-style bit operand, and one of five selectors correlated independently with
-the ML1100 controlled corpus. It proposes `XIC`, `XIO`, `OTE`, `OTL`, or `OTU`
-with `probable` confidence and records whether the operand is read or written.
-It also classifies the address family as input, output, binary, timer, counter,
-status, or other. Access direction corroborates a selector hypothesis but does
-not by itself distinguish XIC from XIO or OTE from OTL and OTU.
+The candidate recognizer requires all observed ML1400 framing fields and a
+selector correlated independently with the ML1100 controlled corpus. It first
+covered the one-bit `XIC`, `XIO`, `OTE`, `OTL`, and `OTU` family. Comparison by
+operand count and length-prefixed field structure then established reusable
+processor-specific candidate profiles for `ONS`, single-reference `JSR`,
+single-reference `RES`, three-field `CTU`, and four-field `TON` records.
+
+The probable ML1400 `RES` profile requires one timer-or-counter operand and
+selector `0x13`. That selector and operand shape were independently isolated by
+controlled MicroLogix 1100 timer and counter reset fixtures. This cross-profile
+correlation supports a probable identity, not a confirmed ML1400 decoding rule.
+
+Private ML1400 rung context exposes additional timer variants whose selector
+changes with the serialized time base. Probable profiles therefore require the
+complete four-field timer record and the exact selector/time-base pair:
+
+| Mnemonic | Time base | Selector |
+| --- | --- | --- |
+| `RTO` | `0.01` | `0x0E` |
+| `TON` | `0.01` | `0x0F` |
+| `TOF` | `0.01` | `0x10` |
+| `RTO` | `1.0` | `0x54` |
+| `TON` | `1.0` | `0x56` |
+
+The `TON` correlations are reinforced by downstream reads of the same timer's
+done bit in delay and alarm rungs. The `RTO` variants occur in accumulated-time
+contexts and the `TOF` variant in message-completion timing. These remain
+probable: neither a selector byte nor a time-base string is accepted alone.
+
+The probable ML1400 `COP` profile retains the controlled selector `0x22` and
+three ordered fields: source, destination, and length. Its processor-specific
+record uses trailer class `0x13`, so acceptance requires that complete framing
+rather than merely finding the selector or three adjacent strings. Recipe-load
+and recipe-save rungs provide repeated independent occurrences, including
+indirect file operands.
+
+The probable ML1400 `FLL` profile uses the adjacent controlled selector `0x21`
+only with its independently corroborated source, destination, and length
+fields and processor-specific trailer class `0x13`. Repeated recipe and
+initialization rungs show literal fill sources and indirect integer or float
+file destinations. Selector adjacency to `COP` is not itself treated as
+evidence.
+
+The probable ML1400 `BSL` profile uses controlled selector `0x2C`, four
+ordered fields (`file`, `control`, `bit_address`, and `length`), and trailer
+class `0x13`. Both pump variants contain the same complete record in process
+setup. The file and control are read/write, while the source bit and length are
+reads. No ML1400 `BSR` profile is inferred from selector proximity.
+
+The probable ML1400 `MOV` profile uses selector `0x1C`, four serialized fields,
+and trailer class `0x0D`. The first and third fields are the logical source and
+destination. The second and fourth fields are retained as format/type metadata;
+they remain available in structured evidence but are suppressed from the
+human-readable ladder operand list. This prevents serialization metadata from
+being mistaken for additional ladder operands.
+
+The probable ML1400 comparison profile uses four serialized fields and trailer
+class `0x0D`. Controlled selectors identify `EQU` (`0x32`), `NEQ` (`0x33`),
+`GRT` (`0x34`), `GEQ` (`0x35`), `LES` (`0x36`), and `LEQ` (`0x37`). As with
+`MOV`, alternating fields hold logical operands and format metadata; only the
+two comparison sources are shown in the ladder view.
+
+The probable ML1400 `LIM` profile uses selector `0x3F`, six serialized fields,
+and trailer class `0x13`. Low limit, test value, and high limit alternate with
+retained format metadata. Both pump variants contain the same complete framing
+with `N11:0` as the test value; all three logical values are reads.
+
+The probable ML1400 `MSG` profile uses selector `0x9C`, three fields, and
+trailer class `0x0D`. It preserves the message-control address, setup label,
+and data reference. The setup label is metadata rather than a ladder operand,
+and may be explicitly empty in the compact observed form. The data reference
+remains `unknown` access because read-versus-write direction depends on
+configuration not yet decoded. In the PF525 evidence, an expanded setup block
+repeats the exact length-prefixed data-reference bytes within a bounded
+128-byte window following the selector. That repeat is associated with the
+same MSG candidate as `setup_data_reference` metadata. It is neither rendered
+as another ladder operand nor fabricated as another instruction. PF4 did not
+match this observed expanded layout, so its message evidence remains unchanged.
+
+The probable ML1400 `SCP` profile uses controlled selector `0x95`, 12
+serialized fields, and trailer class `0x25`. Six logical fields—input, input
+minimum, input maximum, scaled minimum, scaled maximum, and output—alternate
+with six retained calculation/display metadata fields. Only logical fields are
+rendered as ladder operands. The output is classified as a write; the other
+logical fields are reads.
+
+The probable ML1400 `PID` profile uses controlled selector `0x9F`, trailer
+class `0x13`, and exactly four serialized fields. The first three are the PID
+file, process variable, and control variable; the fourth must be explicitly
+empty and is retained as setup metadata. Empty fields remain rejected by every
+other generic ML1400 family. The PID file is read/write, the process variable
+is read, and the control variable is written.
+
+The probable ML1400 `CPT` profile uses selector `0x8A` and three fields:
+destination, retained result metadata, and expression text. Its variable
+trailer declares the compiled-expression byte length and repeats selector
+`0x8A`; the parser validates both before accepting the record. The destination
+is a write and the expression is retained as a read expression. The metadata
+field remains structured evidence but is omitted from the ladder operand list.
+
+The probable ML1400 arithmetic profile uses six serialized fields and trailer
+class `0x13`. Controlled selectors identify `ADD` (`0x27`), `SUB` (`0x28`),
+`MUL` (`0x29`), and `DIV` (`0x2A`). Source A, source B, and destination
+alternate with retained format metadata. The two sources are reads and the
+destination is a write.
+
+The evidence supports processor-specific framing strategies over shared
+instruction-family definitions. Exact private framing comparisons remain in
+ignored analysis outputs. Selectors are never interpreted without their full
+family and processor context.
+
+Every candidate remains at `probable` confidence and records operand access
+roles. Address families are classified as input, output, binary, timer,
+counter, status, or other. Access direction corroborates a selector hypothesis
+but does not by itself distinguish XIC from XIO or OTE from OTL and OTU.
 
 Private validation found input-family reads and output-family writes consistent
 with the proposed access roles, without promoting candidate instructions to
 confirmed identities. Exact private measurements remain in ignored analysis
 outputs. Candidate instructions stay excluded from resolved topology until
 record completeness and processor-specific identity are independently proven.
+Candidate-only topology uses the separate
+`rslogix500/ml1400/simple-topology-candidate/v1` evidence profile; it does not
+inherit the controlled ML1100 profile label merely because both processors
+share recognizable serialization-class markers. Its kind is explicitly
+`serialized_order`, not `series`: electrical continuity and branches remain
+unresolved until processor-specific topology framing is independently proven.
+
+Unclassified records with exact ML1400 multi-field framing are retained as
+`UNKNOWN`, including the selector in hexadecimal and decimal and all recovered
+operand evidence. The optional unknown-candidate CSV groups these records by
+selector so future controlled fixtures can prioritize common families. A
+selector is not promoted by numerical similarity to another processor profile.
+
+Rung-level candidate coverage is measured separately as operand attribution.
+It compares recovered address-operand offsets with fields owned by probable
+instructions. Full attribution does not prove that zero-operand instructions,
+numeric-only instructions, execution order, or branch topology are complete.
+
+Schema `rss-inventory/v12` associates each candidate with its enclosing program
+file and validated zero-based rung range. The optional candidate-access CSV
+therefore supports read/write cross-reference work without treating probable
+instructions as complete rung semantics. Its public-safe mode preserves hashes,
+selectors, address families, access roles, and byte provenance while redacting
+operand and program text.
 
 ## Acceptance criteria for one instruction
 
