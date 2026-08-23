@@ -155,7 +155,7 @@ sections produce the same ordered identities and count candidates. Names and
 descriptions remain private-text fields; their hashes allow comparison in the
 redacted inventory.
 
-Inventory schema `rss-inventory/v9` adds structurally verified signed 16-bit
+Inventory schema `rss-inventory/v10` retains structurally verified signed 16-bit
 integer arrays to each data-file section. Element counts, byte offsets, and
 value-array SHA-256 digests are emitted by default; actual values remain
 `null`. Use `--include-private-values` only for a controlled private output.
@@ -206,6 +206,10 @@ different meanings for that code.
 Use `--markdown-output PATH` to create an engineer-readable summary alongside
 the complete CSV evidence. Its scope statement explicitly distinguishes saved
 project values from live controller state.
+Optional `--left-cross-reference` and `--right-cross-reference` JSON inputs add
+HMI tag, consumer-count, ladder-occurrence, and zero-based rung evidence for
+each setting. These are usage correlations only; they do not prove runtime
+causality or execution state.
 
 Decoded selections and status words can be checked without coupling their
 parsers through explicit `BitExpectation` records. Missing words or invalid
@@ -260,6 +264,19 @@ description. Declared rung counts are corroborated against recurring
 the `MAIN` files additionally begin at their initial `CRung` class declaration.
 Only corroborated boundaries are used to scope operands to a rung index and
 byte range. Instruction opcodes and rung semantics remain uninterpreted.
+An experimental controlled-profile topology decoder now distinguishes simple
+series rungs from one-level parallel branches using the `CBranch` object and
+repeatable branch-leg framing established by fixtures `p07` through `p10` and
+`p128`. The latter proves ordered multiple-instruction ownership within one
+branch leg.
+It preserves ordered instruction references, recursive parallel branches, and
+consecutive branch nodes while rejecting malformed, unbalanced, or otherwise
+unproven structures.
+
+Schema v10 exposes resolved topology on each validated `rung_record`. Nodes are
+ordered instructions or recursive parallel branches with ordered legs. A
+`null` topology means the rung is empty or its structure is not supported by
+the controlled evidence profile; TwinForge does not invent missing structure.
 The available documentation, Laddis binary-ladder findings, controlled
 differential procedure, and acceptance criteria for an evidence-backed opcode
 registry are documented in

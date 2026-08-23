@@ -27,13 +27,21 @@ from rockwell_file_research.rss.models import (
     RSSProcessorTextRegion,
     RSSProgramFileEvidence,
     RSSRungCommentEvidence,
+    RSSRungTopologyEvidence,
+    RSSRungTopologyInstruction,
+    RSSRungTopologyParallel,
     RSSSectionEvidence,
     RSSStreamEvidence,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
-from rockwell_file_research.rss.program_files import inspect_program_file_section
+from rockwell_file_research.rss.program_files import (
+    ControlledRungTopology,
+    TopologyInstruction,
+    TopologyParallel,
+    inspect_program_file_section,
+)
 
-SCHEMA_VERSION = "rss-inventory/v9"
+SCHEMA_VERSION = "rss-inventory/v10"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -55,6 +63,47 @@ RECOGNIZED_SECTION_STREAMS = (
     "TRENDS/ObjectData",
     "Version/ObjectData",
 )
+
+
+def _serialize_topology_item(
+    item: object,
+) -> RSSRungTopologyInstruction | RSSRungTopologyParallel:
+    """Convert one recursive topology node to its JSON contract."""
+
+    if isinstance(item, TopologyInstruction):
+        instruction: RSSRungTopologyInstruction = {
+            "kind": "instruction",
+            "mnemonic": item.mnemonic,
+            "selector_offset": item.selector_offset,
+        }
+        return instruction
+    if isinstance(item, TopologyParallel):
+        parallel: RSSRungTopologyParallel = {
+            "kind": "parallel",
+            "offset": item.offset,
+            "legs": [
+                [_serialize_topology_item(member) for member in leg]
+                for leg in item.legs
+            ],
+        }
+        return parallel
+    raise TypeError(f"unsupported topology item: {type(item).__name__}")
+
+
+def _serialize_topology(
+    topology: ControlledRungTopology | None,
+) -> RSSRungTopologyEvidence | None:
+    """Preserve resolved topology or an explicit unresolved value."""
+
+    if topology is None:
+        return None
+    return {
+        "kind": topology.kind,
+        "evidence_profile": topology.evidence_profile,
+        "items": [_serialize_topology_item(item) for item in topology.items],
+    }
+
+
 DATA_FILE_SECTION_STREAMS = (
     "DATA FILES/ObjectData",
     "Extensional DATA FILES/ObjectData",
@@ -381,6 +430,7 @@ def build_inventory(
                         }
                         for candidate in rung.application_text_candidates
                     ],
+                    "topology": _serialize_topology(rung.topology),
                 }
                 for rung in inspected_program.rung_records
             ],

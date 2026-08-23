@@ -5,6 +5,9 @@ import io
 from pathlib import Path
 from typing import cast
 
+from rockwell_file_research.integration.configuration_impact import (
+    ConfigurationAddressImpact,
+)
 from rockwell_file_research.rss.models import RSSInventory
 from rockwell_file_research.rss.value_comparison import (
     compare_data_values,
@@ -208,6 +211,16 @@ def test_markdown_report_summarizes_raw_and_semantic_changes(tmp_path: Path) -> 
         left_profile=load_semantic_value_profile(left_path),
         right_profile=load_semantic_value_profile(right_path),
         semantic_only=True,
+        right_impacts={
+            "N11:1": ConfigurationAddressImpact(
+                address="N11:1",
+                binding_count=1,
+                hmi_tags=("DriveType",),
+                consumer_reference_count=2,
+                ladder_occurrence_count=3,
+                ladder_rungs=("P3:rung[7]", "P3:rung[8]"),
+            )
+        },
     )
 
     assert "| Reported addresses | 1 |" in report
@@ -216,3 +229,7 @@ def test_markdown_report_summarizes_raw_and_semantic_changes(tmp_path: Path) -> 
     assert "PF4-series VFD" in report
     assert "PF525 VFD" in report
     assert "not a live controller observation" in report
+    assert "Right HMI tags (1)" in report
+    assert "`DriveType`" in report
+    assert "Right ladder occurrences: 3" in report
+    assert "`P3:rung[7]`" in report

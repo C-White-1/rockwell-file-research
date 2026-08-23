@@ -4,6 +4,10 @@ import argparse
 from collections.abc import Sequence
 from pathlib import Path
 
+from rockwell_file_research.integration.configuration_impact import (
+    configuration_address_impact,
+    load_cross_reference,
+)
 from rockwell_file_research.rss.inventory import inventory_rss
 from rockwell_file_research.rss.value_comparison import (
     compare_data_values,
@@ -36,6 +40,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--right-semantic-profile",
         type=Path,
         help="optional evidence-backed CSV meanings for the right project",
+    )
+    parser.add_argument(
+        "--left-cross-reference",
+        type=Path,
+        help="optional PLC-HMI cross-reference JSON for the left project",
+    )
+    parser.add_argument(
+        "--right-cross-reference",
+        type=Path,
+        help="optional PLC-HMI cross-reference JSON for the right project",
     )
     parser.add_argument(
         "--include-private-values",
@@ -74,14 +88,46 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.right_semantic_profile is None
             else load_semantic_value_profile(args.right_semantic_profile)
         )
-    except (OSError, ValueError) as error:
+        left_cross_reference = (
+            None
+            if args.left_cross_reference is None
+            else load_cross_reference(args.left_cross_reference)
+        )
+        right_cross_reference = (
+            None
+            if args.right_cross_reference is None
+            else load_cross_reference(args.right_cross_reference)
+        )
+    except (OSError, TypeError, ValueError) as error:
         parser.error(str(error))
+    left_impacts = (
+        None
+        if left_cross_reference is None
+        else {
+            item.address: configuration_address_impact(
+                left_cross_reference, item.address
+            )
+            for item in comparisons
+        }
+    )
+    right_impacts = (
+        None
+        if right_cross_reference is None
+        else {
+            item.address: configuration_address_impact(
+                right_cross_reference, item.address
+            )
+            for item in comparisons
+        }
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     rendered = render_data_value_comparison_csv(
         comparisons,
         left_profile=left_profile,
         right_profile=right_profile,
         semantic_only=args.semantic_only,
+        left_impacts=left_impacts,
+        right_impacts=right_impacts,
     )
     args.output.write_text(rendered, encoding="utf-8")
     if args.markdown_output is not None:
@@ -92,6 +138,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 left_profile=left_profile,
                 right_profile=right_profile,
                 semantic_only=args.semantic_only,
+                left_impacts=left_impacts,
+                right_impacts=right_impacts,
             ),
             encoding="utf-8",
         )

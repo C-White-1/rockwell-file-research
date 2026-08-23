@@ -24,6 +24,7 @@ _CONTROLLED_SUBROUTINE_OPERAND = re.compile(r"^U:\d+$", re.IGNORECASE)
 _CONTROLLED_TIMER_OPERAND = re.compile(r"^T\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_RESET_OPERAND = re.compile(r"^[TC]\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_INTEGER = re.compile(r"^\d+$")
+_CONTROLLED_BRANCH_CLASS = b"\xff\xff\x80\x00\x07\x00CBranch"
 _SIMPLE_BIT_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-bit/v1"
 _ONS_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/ons/v1"
 _OSR_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/osr/v1"
@@ -464,9 +465,15 @@ def scan_controlled_simple_bit_instructions(
         if identity is None:
             continue
         mnemonic, profile, role = identity
-        if payload[selector_offset + 1 : selector_offset + 8] != (
+        ordinary_successor = payload[selector_offset + 1 : selector_offset + 8] == (
             b"\x00\x00\x00\x00\x00\x0b\x80"
-        ):
+        )
+        branch_successor = payload[
+            selector_offset + 1 : selector_offset + 6
+        ] == b"\x00\x00\x00\x00\x00" and payload.startswith(
+            _CONTROLLED_BRANCH_CLASS, selector_offset + 6
+        )
+        if not ordinary_successor and not branch_successor:
             continue
         evidence.append(
             InstructionEvidence(

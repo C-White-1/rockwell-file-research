@@ -6,6 +6,9 @@ import csv
 import io
 from dataclasses import dataclass
 
+from rockwell_file_research.integration.configuration_impact import (
+    ConfigurationAddressImpact,
+)
 from rockwell_file_research.rss.binary_values import corroborate_binary_data_file
 from rockwell_file_research.rss.integer_values import corroborate_integer_data_file
 from rockwell_file_research.rss.models import RSSInventory
@@ -22,6 +25,14 @@ FIELDNAMES = [
     "left_interpretation",
     "right_interpretation",
     "semantic_evidence",
+    "left_hmi_tags",
+    "right_hmi_tags",
+    "left_consumer_reference_count",
+    "right_consumer_reference_count",
+    "left_ladder_occurrence_count",
+    "right_ladder_occurrence_count",
+    "left_ladder_rungs",
+    "right_ladder_rungs",
     "left_decimal_value",
     "right_decimal_value",
     "left_hex_value",
@@ -199,6 +210,8 @@ def render_data_value_comparison_csv(
     left_profile: SemanticValueProfile | None = None,
     right_profile: SemanticValueProfile | None = None,
     semantic_only: bool = False,
+    left_impacts: dict[str, ConfigurationAddressImpact] | None = None,
+    right_impacts: dict[str, ConfigurationAddressImpact] | None = None,
 ) -> str:
     """Render deterministic comparison rows suitable for private or redacted use."""
 
@@ -235,6 +248,10 @@ def render_data_value_comparison_csv(
             semantic_status = "semantic_changed"
         if semantic_only and semantic_status == "unprofiled":
             continue
+        left_impact = None if left_impacts is None else left_impacts.get(item.address)
+        right_impact = (
+            None if right_impacts is None else right_impacts.get(item.address)
+        )
         writer.writerow(
             {
                 "data_type": item.data_type,
@@ -251,6 +268,32 @@ def render_data_value_comparison_csv(
                     "" if right_rule is None else right_rule.interpretation
                 ),
                 "semantic_evidence": "; ".join(sorted(evidence)),
+                "left_hmi_tags": (
+                    "" if left_impact is None else "; ".join(left_impact.hmi_tags)
+                ),
+                "right_hmi_tags": (
+                    "" if right_impact is None else "; ".join(right_impact.hmi_tags)
+                ),
+                "left_consumer_reference_count": (
+                    "" if left_impact is None else left_impact.consumer_reference_count
+                ),
+                "right_consumer_reference_count": (
+                    ""
+                    if right_impact is None
+                    else right_impact.consumer_reference_count
+                ),
+                "left_ladder_occurrence_count": (
+                    "" if left_impact is None else left_impact.ladder_occurrence_count
+                ),
+                "right_ladder_occurrence_count": (
+                    "" if right_impact is None else right_impact.ladder_occurrence_count
+                ),
+                "left_ladder_rungs": (
+                    "" if left_impact is None else "; ".join(left_impact.ladder_rungs)
+                ),
+                "right_ladder_rungs": (
+                    "" if right_impact is None else "; ".join(right_impact.ladder_rungs)
+                ),
                 "left_decimal_value": ""
                 if item.left_value is None
                 else item.left_value,
@@ -285,6 +328,8 @@ def render_data_value_comparison_markdown(
     left_profile: SemanticValueProfile | None = None,
     right_profile: SemanticValueProfile | None = None,
     semantic_only: bool = False,
+    left_impacts: dict[str, ConfigurationAddressImpact] | None = None,
+    right_impacts: dict[str, ConfigurationAddressImpact] | None = None,
 ) -> str:
     """Render the same comparison evidence as a concise engineering report."""
 
@@ -293,6 +338,8 @@ def render_data_value_comparison_markdown(
         left_profile=left_profile,
         right_profile=right_profile,
         semantic_only=semantic_only,
+        left_impacts=left_impacts,
+        right_impacts=right_impacts,
     )
     rows = list(csv.DictReader(io.StringIO(csv_text)))
     semantic_changes = sum(row["semantic_status"] == "semantic_changed" for row in rows)
@@ -336,6 +383,53 @@ def render_data_value_comparison_markdown(
         [
             "<!-- markdownlint-enable MD013 -->",
             "",
+            "## Usage evidence",
+            "",
+            "The following entries are correlations, not claims of runtime causality.",
+            "Rung indexes are zero-based.",
+            "",
+        ]
+    )
+    impact_rows = [
+        row
+        for row in rows
+        if row["semantic_status"] == "semantic_changed"
+        and any(
+            row[field]
+            for field in (
+                "left_hmi_tags",
+                "right_hmi_tags",
+                "left_ladder_rungs",
+                "right_ladder_rungs",
+            )
+        )
+    ]
+    if not impact_rows:
+        lines.extend(["No correlated HMI or ladder usage was supplied.", ""])
+    for row in impact_rows:
+        lines.extend(
+            [
+                f"### {_markdown_cell(row['semantic_name'].replace('_', ' ').title())} (`{row['address']}`)",
+                "",
+            ]
+        )
+        for side, label in (("left", "Left"), ("right", "Right")):
+            tags = [tag for tag in row[f"{side}_hmi_tags"].split("; ") if tag]
+            if tags:
+                lines.append(f"- {label} HMI tags ({len(tags)}):")
+                lines.extend(f"  - `{tag}`" for tag in tags)
+            else:
+                lines.append(f"- {label} HMI tags: none")
+            occurrence_count = row[f"{side}_ladder_occurrence_count"] or "0"
+            rungs = [rung for rung in row[f"{side}_ladder_rungs"].split("; ") if rung]
+            lines.append(f"- {label} ladder occurrences: {occurrence_count}")
+            if rungs:
+                lines.extend(f"  - `{rung}`" for rung in rungs)
+            else:
+                lines.append("  - No corroborated rung")
+        lines.append("")
+    lines.extend(
+        [
             "## Evidence boundary",
             "",
             "Semantic names and interpretations come only from supplied evidence",

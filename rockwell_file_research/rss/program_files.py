@@ -86,6 +86,213 @@ class ProgramRungRecord:
     indirect_operand_count: int
     application_text_candidate_count: int
     application_text_candidates: list[ProgramTextRegion]
+    topology: ControlledRungTopology | None
+
+
+@dataclass(frozen=True)
+class TopologyInstruction:
+    """Reference to an independently decoded instruction."""
+
+    mnemonic: str
+    selector_offset: int
+
+
+@dataclass(frozen=True)
+class TopologyParallel:
+    """One controlled-profile parallel branch containing ordered legs."""
+
+    offset: int
+    legs: tuple[tuple[TopologyItem, ...], ...]
+
+
+TopologyItem = TopologyInstruction | TopologyParallel
+
+
+@dataclass(frozen=True)
+class ControlledRungTopology:
+    """Evidence-backed topology for one simple controlled-profile rung."""
+
+    kind: str
+    items: tuple[TopologyItem, ...]
+    evidence_profile: str
+
+
+_RUNG_CLASS = b"\xff\xff\x80\x00\x05\x00CRung"
+_RUNG_LEG_CLASS = b"\xff\xff\x80\x00\x0a\x00CBranchLeg"
+_INSTRUCTION_CLASS = b"\xff\xff\x80\x00\x04\x00CIns"
+_BRANCH_CLASS = b"\xff\xff\x80\x00\x07\x00CBranch"
+_NESTED_BRANCH_REFERENCE = b"\x0d\x80\x04\x00"
+_BRANCH_LEG_END = b"\x0b\x80\x00\x00\x00\x00\x05\x00\x00\x00\x00"
+_BRANCH_END = b"\x0b\x80\x00\x00\x00\x00\x03\x00\x00\x00\x00"
+_TOPOLOGY_PROFILE = "rslogix-micro-starter-lite/ml1100-series-b/simple-topology/v1"
+
+
+def _topology_instruction(item: InstructionEvidence) -> TopologyInstruction:
+    return TopologyInstruction(item.mnemonic, item.selector_offset)
+
+
+@dataclass
+class _OpenBranch:
+    """Mutable construction state for one nested branch."""
+
+    offset: int
+    legs: list[list[TopologyItem]]
+    current_leg: list[TopologyItem] | None = None
+
+
+def _decode_parallel(
+    payload: bytes,
+    branch_offset: int,
+    ordered: list[InstructionEvidence],
+    marker_length: int,
+    end_offset: int,
+) -> tuple[TopologyParallel, int, set[int]] | None:
+    """Decode balanced leg and nested-branch records from one root branch."""
+
+    stack = [_OpenBranch(branch_offset, [])]
+    consumed: set[int] = set()
+    instructions = {item.selector_offset: item for item in ordered}
+    cursor = branch_offset + marker_length
+    while cursor < end_offset:
+        current = stack[-1]
+        instruction = instructions.get(cursor)
+        if instruction is not None:
+            if current.current_leg is None:
+                return None
+            current.current_leg.append(_topology_instruction(instruction))
+            consumed.add(cursor)
+        elif payload.startswith(_NESTED_BRANCH_REFERENCE, cursor):
+            if current.current_leg is None:
+                return None
+            stack.append(_OpenBranch(cursor, []))
+            cursor += len(_NESTED_BRANCH_REFERENCE)
+            continue
+        elif (
+            payload[cursor : cursor + 2] == b"\x09\x80"
+            and cursor + 3 < len(payload)
+            and payload[cursor + 2] >= 3
+            and payload[cursor + 3] == 0
+        ):
+            if current.current_leg is not None:
+                return None
+            current.current_leg = []
+            current.legs.append(current.current_leg)
+            cursor += 4
+            continue
+        elif payload.startswith(_BRANCH_LEG_END, cursor):
+            if current.current_leg is None:
+                return None
+            current.current_leg = None
+            cursor += len(_BRANCH_LEG_END)
+            continue
+        elif payload.startswith(_BRANCH_END, cursor):
+            if current.current_leg is not None or len(current.legs) < 2:
+                return None
+            closed = TopologyParallel(
+                current.offset,
+                tuple(tuple(leg) for leg in current.legs),
+            )
+            stack.pop()
+            if not stack:
+                return closed, cursor + len(_BRANCH_END), consumed
+            parent = stack[-1]
+            if parent.current_leg is None:
+                return None
+            parent.current_leg.append(closed)
+            cursor += len(_BRANCH_END)
+            continue
+        cursor += 1
+    return None
+
+
+def decode_controlled_rung_topology(
+    payload: bytes,
+    instructions: list[InstructionEvidence],
+    *,
+    start_offset: int = 0,
+    end_offset: int | None = None,
+) -> ControlledRungTopology | None:
+    """Decode proven topology within one validated rung byte range."""
+
+    classes = (_RUNG_CLASS, _RUNG_LEG_CLASS, _INSTRUCTION_CLASS)
+    if any(payload.count(marker) != 1 for marker in classes):
+        return None
+    limit = len(payload) if end_offset is None else end_offset
+    if start_offset < 0 or limit > len(payload) or start_offset >= limit:
+        return None
+    ordered = sorted(
+        (item for item in instructions if start_offset <= item.selector_offset < limit),
+        key=lambda item: item.selector_offset,
+    )
+    if not ordered:
+        return None
+    branch_class = payload.find(_BRANCH_CLASS, start_offset, limit)
+    branch_reference = payload.find(_NESTED_BRANCH_REFERENCE, start_offset, limit)
+    branch_candidates = [
+        (offset, marker_length)
+        for offset, marker_length in (
+            (branch_class, len(_BRANCH_CLASS)),
+            (branch_reference, len(_NESTED_BRANCH_REFERENCE)),
+        )
+        if offset >= 0
+    ]
+    if not branch_candidates:
+        return ControlledRungTopology(
+            "series",
+            tuple(_topology_instruction(item) for item in ordered),
+            _TOPOLOGY_PROFILE,
+        )
+    branch_offset, marker_length = min(branch_candidates)
+    decoded = _decode_parallel(
+        payload,
+        branch_offset,
+        ordered,
+        marker_length,
+        limit,
+    )
+    if decoded is None:
+        return None
+    parallel, cursor, consumed = decoded
+    prefix = [item for item in ordered if item.selector_offset < branch_offset]
+    consumed.update(item.selector_offset for item in prefix)
+    items: list[TopologyItem] = [
+        *(_topology_instruction(item) for item in prefix),
+        parallel,
+    ]
+    while True:
+        remaining = [
+            item
+            for item in ordered
+            if item.selector_offset >= cursor and item.selector_offset not in consumed
+        ]
+        if not remaining:
+            break
+        instruction = remaining[0]
+        branch_reference = payload.find(
+            _NESTED_BRANCH_REFERENCE,
+            cursor,
+            instruction.selector_offset,
+        )
+        if branch_reference >= 0:
+            decoded = _decode_parallel(
+                payload,
+                branch_reference,
+                ordered,
+                len(_NESTED_BRANCH_REFERENCE),
+                limit,
+            )
+            if decoded is None:
+                return None
+            parallel, cursor, branch_consumed = decoded
+            items.append(parallel)
+            consumed.update(branch_consumed)
+            continue
+        items.append(_topology_instruction(instruction))
+        consumed.add(instruction.selector_offset)
+        cursor = instruction.selector_offset + 1
+    if consumed != {item.selector_offset for item in ordered}:
+        return None
+    return ControlledRungTopology("series_parallel", tuple(items), _TOPOLOGY_PROFILE)
 
 
 @dataclass(frozen=True)
@@ -213,6 +420,32 @@ def scan_program_file_records(
     candidates = sorted(
         candidates_by_offset.values(), key=lambda candidate: candidate[0]
     )
+    if not candidates:
+        anonymous_marker = payload.find(b"\x03\x80\x00\x00")
+        repeated_marker = anonymous_marker + 21
+        if (
+            anonymous_marker >= 0
+            and repeated_marker + 21 <= len(payload)
+            and payload[repeated_marker : repeated_marker + 2] == b"\x03\x80"
+        ):
+            file_number_bytes = payload[anonymous_marker + 4 : anonymous_marker + 6]
+            declared_count_bytes = payload[repeated_marker + 2 : repeated_marker + 4]
+            if (
+                payload[repeated_marker + 4 : repeated_marker + 6] == b"\x01\x00"
+                and payload[anonymous_marker + 37 : anonymous_marker + 39]
+                == file_number_bytes
+                and payload[anonymous_marker + 40 : anonymous_marker + 42]
+                == declared_count_bytes
+            ):
+                candidates.append(
+                    (
+                        anonymous_marker,
+                        int.from_bytes(file_number_bytes, "little"),
+                        int.from_bytes(declared_count_bytes, "little"),
+                        "",
+                        "",
+                    )
+                )
     records: list[ProgramFileRecord] = []
     rung_marker = b"\x07\x80\x09\x80"
     rung_declaration = b"\xff\xff\x80\x00\x05\x00CRung"
@@ -238,7 +471,7 @@ def scan_program_file_records(
                 header_numeric_candidate=numeric_candidate,
                 name_sha256=_sha256_text(name),
                 description_sha256=_sha256_text(description),
-                name=name if include_private_text else None,
+                name=name if include_private_text and name else None,
                 description=description if include_private_text else None,
                 rung_reference_marker_offsets=rung_offsets,
                 declared_rung_count=numeric_candidate,
@@ -317,6 +550,10 @@ def inspect_program_file_section(
         section.payload,
         include_private_text=include_private_text,
     )
+    instructions = scan_controlled_instructions(
+        section.payload,
+        include_private_text=include_private_text,
+    )
     rung_records: list[ProgramRungRecord] = []
     for record in public_records:
         if not record.rung_boundaries_validated:
@@ -360,6 +597,12 @@ def inspect_program_file_section(
                     ),
                     application_text_candidate_count=len(rung_text_candidates),
                     application_text_candidates=rung_text_candidates,
+                    topology=decode_controlled_rung_topology(
+                        section.payload,
+                        instructions,
+                        start_offset=start_offset,
+                        end_offset=end_offset,
+                    ),
                 )
             )
     return ProgramFileSection(
@@ -371,10 +614,7 @@ def inspect_program_file_section(
         uncompressed_sha256=section.uncompressed_sha256,
         text_regions=text_regions,
         operands=operands,
-        instructions=scan_controlled_instructions(
-            section.payload,
-            include_private_text=include_private_text,
-        ),
+        instructions=instructions,
         program_file_records=public_records,
         rung_records=rung_records,
     )

@@ -850,6 +850,32 @@ Confidence meanings:
 The parser must continue to emit unknown records. Registry growth must refine
 preserved evidence rather than replace or discard it.
 
+## Controlled rung-topology evidence
+
+Fixtures `p07` through `p10` and `p128` establish the first topology profile:
+
+- `p07` and `p08` preserve selector-offset order for series instructions;
+- `p09` introduces one `CBranch` object with two independently framed legs;
+- `p10` swaps the two branch operands while preserving the branch framing;
+- `p128` proves that one branch leg can own an ordered sequence of two
+  instructions while the other leg owns one instruction;
+- both parallel fixtures place the OTE after the branch-closing record.
+
+In `p128`, the upper-leg reference changes from `09 80 03 00` to
+`09 80 04 00`. Its third byte varies with the serialized leg contents and is
+not a fixed signature. The decoded order is upper `XIC B3:0/0`, upper
+`XIC B3:0/1`, lower `XIC B3:0/2`, then downstream `OTE B3:0/3`.
+
+Subsequent controlled fixtures establish balanced recursive branches,
+consecutive top-level branches, series instructions surrounding a branch, and
+output instructions owned by parallel legs. Apparent extended branches are
+normalized by RSLogix into recursive two-leg structures. The decoder preserves
+that source structure and rejects malformed or unbalanced records.
+
+Schema `rss-inventory/v10` applies the decoder independently to each validated
+rung range. Resolved topology is recursive and ordered; empty terminal rungs
+and unsupported structures carry an explicit `null` topology.
+
 ## Acceptance criteria for one instruction
 
 Promote an RSS record to a confirmed mnemonic only when:

@@ -1,6 +1,8 @@
 """Typed, JSON-compatible models for RSS structural evidence."""
 
-from typing import TypedDict
+from __future__ import annotations
+
+from typing import Literal, TypedDict
 
 
 class RSSSourceEvidence(TypedDict):
@@ -195,6 +197,30 @@ class RSSProgramFileRecordEvidence(TypedDict):
     rung_start_offsets: list[int]
 
 
+class RSSRungTopologyInstruction(TypedDict):
+    """One instruction node in an evidence-backed rung topology."""
+
+    kind: Literal["instruction"]
+    mnemonic: str
+    selector_offset: int
+
+
+class RSSRungTopologyParallel(TypedDict):
+    """One recursive parallel node containing ordered legs."""
+
+    kind: Literal["parallel"]
+    offset: int
+    legs: list[list[RSSRungTopologyInstruction | RSSRungTopologyParallel]]
+
+
+class RSSRungTopologyEvidence(TypedDict):
+    """Resolved controlled-profile topology for one validated rung."""
+
+    kind: str
+    evidence_profile: str
+    items: list[RSSRungTopologyInstruction | RSSRungTopologyParallel]
+
+
 class RSSProgramRungEvidence(TypedDict):
     """One corroborated rung range and privacy-safe content evidence."""
 
@@ -211,6 +237,7 @@ class RSSProgramRungEvidence(TypedDict):
     indirect_operand_count: int
     application_text_candidate_count: int
     application_text_candidates: list[RSSProgramTextRegion]
+    topology: RSSRungTopologyEvidence | None
 
 
 class RSSProgramFileEvidence(TypedDict):
