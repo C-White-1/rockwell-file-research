@@ -92,6 +92,7 @@ from rockwell_file_research.rss.instruction_evidence import (
     scan_controlled_uie_instructions,
     scan_controlled_uif_instructions,
     scan_controlled_xor_instructions,
+    scan_ml1400_simple_bit_candidates,
 )
 from rockwell_file_research.rss.program_files import inspect_program_file_section
 
@@ -106,6 +107,47 @@ def _record(*, operand: str, selector: int) -> bytes:
         + bytes([selector])
         + b"\x00\x00\x00\x00\x00\x0b\x80"
         + bytes(36)
+    )
+
+
+def _ml1400_record(*, operand: str, selector: int) -> bytes:
+    encoded = operand.encode("ascii")
+    return (
+        b"\x01\x00"
+        + bytes([len(encoded)])
+        + encoded
+        + b"\x01\x00"
+        + bytes([selector])
+        + b"\x00\x00\x00\x00\x00\x07\x00"
+    )
+
+
+def test_ml1400_candidates_preserve_probable_access_evidence() -> None:
+    payload = _ml1400_record(operand="I:0/0", selector=0x39) + _ml1400_record(
+        operand="O:0/0", selector=0x2F
+    )
+    candidates = scan_ml1400_simple_bit_candidates(payload, include_private_text=True)
+    assert [item.proposed_mnemonic for item in candidates] == ["XIC", "OTE"]
+    assert [item.confidence for item in candidates] == ["probable", "probable"]
+    assert candidates[0].operands[0].access == "read"
+    assert candidates[0].operands[0].address_family == "input"
+    assert candidates[1].operands[0].access == "write"
+    assert candidates[1].operands[0].address_family == "output"
+
+
+def test_ml1400_candidate_flags_write_to_input_and_redacts_value() -> None:
+    candidates = scan_ml1400_simple_bit_candidates(
+        _ml1400_record(operand="I:0/1", selector=0x30)
+    )
+    assert len(candidates) == 1
+    assert candidates[0].operands[0].value is None
+    assert "manual verification" in candidates[0].diagnostics[-1]
+
+
+def test_ml1400_candidate_rejects_controlled_ml1100_framing() -> None:
+    assert (
+        scan_ml1400_simple_bit_candidates(_record(operand="B3:0/0", selector=0x39))
+        == []
     )
 
 

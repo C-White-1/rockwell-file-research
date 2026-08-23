@@ -41,7 +41,7 @@ from rockwell_file_research.rss.program_files import (
     inspect_program_file_section,
 )
 
-SCHEMA_VERSION = "rss-inventory/v10"
+SCHEMA_VERSION = "rss-inventory/v11"
 RSS_FORMAT = "RSLogix 500 RSS OLE Compound File"
 
 # These names are observed container-level section identifiers. Payload
@@ -321,6 +321,7 @@ def build_inventory(
             "text_regions": [],
             "operands": [],
             "instructions": [],
+            "instruction_candidates": [],
             "program_file_records": [],
             "rung_records": [],
             "diagnostics": [],
@@ -384,6 +385,29 @@ def build_inventory(
                     "evidence_profile": instruction.evidence_profile,
                 }
                 for instruction in inspected_program.instructions
+            ],
+            "instruction_candidates": [
+                {
+                    "proposed_mnemonic": candidate.proposed_mnemonic,
+                    "selector": candidate.selector,
+                    "selector_offset": candidate.selector_offset,
+                    "confidence": candidate.confidence,
+                    "evidence_profile": candidate.evidence_profile,
+                    "operands": [
+                        {
+                            "role": operand.role,
+                            "access": operand.access,
+                            "address_family": operand.address_family,
+                            "offset": operand.offset,
+                            "length": operand.length,
+                            "sha256": operand.sha256,
+                            "value": operand.value,
+                        }
+                        for operand in candidate.operands
+                    ],
+                    "diagnostics": list(candidate.diagnostics),
+                }
+                for candidate in inspected_program.instruction_candidates
             ],
             "program_file_records": [
                 {

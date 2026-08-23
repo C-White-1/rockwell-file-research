@@ -9,8 +9,10 @@ from dataclasses import dataclass
 
 from rockwell_file_research.rss.compressed_section import decompress_section
 from rockwell_file_research.rss.instruction_evidence import (
+    InstructionCandidateEvidence,
     InstructionEvidence,
     scan_controlled_instructions,
+    scan_ml1400_simple_bit_candidates,
 )
 from rockwell_file_research.rss.processor import inspect_processor_text
 
@@ -308,6 +310,7 @@ class ProgramFileSection:
     text_regions: list[ProgramTextRegion]
     operands: list[ProgramOperand]
     instructions: list[InstructionEvidence]
+    instruction_candidates: list[InstructionCandidateEvidence]
     program_file_records: list[ProgramFileRecord]
     rung_records: list[ProgramRungRecord]
 
@@ -554,6 +557,10 @@ def inspect_program_file_section(
         section.payload,
         include_private_text=include_private_text,
     )
+    instruction_candidates = scan_ml1400_simple_bit_candidates(
+        section.payload,
+        include_private_text=include_private_text,
+    )
     rung_records: list[ProgramRungRecord] = []
     for record in public_records:
         if not record.rung_boundaries_validated:
@@ -615,6 +622,7 @@ def inspect_program_file_section(
         text_regions=text_regions,
         operands=operands,
         instructions=instructions,
+        instruction_candidates=instruction_candidates,
         program_file_records=public_records,
         rung_records=rung_records,
     )

@@ -155,7 +155,7 @@ sections produce the same ordered identities and count candidates. Names and
 descriptions remain private-text fields; their hashes allow comparison in the
 redacted inventory.
 
-Inventory schema `rss-inventory/v10` retains structurally verified signed 16-bit
+Inventory schema `rss-inventory/v11` retains structurally verified signed 16-bit
 integer arrays to each data-file section. Element counts, byte offsets, and
 value-array SHA-256 digests are emitted by default; actual values remain
 `null`. Use `--include-private-values` only for a controlled private output.
@@ -277,6 +277,13 @@ Schema v10 exposes resolved topology on each validated `rung_record`. Nodes are
 ordered instructions or recursive parallel branches with ordered legs. A
 `null` topology means the rung is empty or its structure is not supported by
 the controlled evidence profile; TwinForge does not invent missing structure.
+Schema v11 separately exposes `instruction_candidates` for exact, observed
+MicroLogix 1400 simple-bit framing. Each candidate retains the raw selector,
+byte offsets, operand hash, proposed mnemonic, confidence, evidence profile,
+address family, and read/write access interpretation. These candidates remain
+`probable`: they do not populate confirmed `instructions` or rung `topology`.
+An incompatible write to an input-family address is preserved with a diagnostic
+rather than silently accepted or discarded.
 The available documentation, Laddis binary-ladder findings, controlled
 differential procedure, and acceptance criteria for an evidence-backed opcode
 registry are documented in

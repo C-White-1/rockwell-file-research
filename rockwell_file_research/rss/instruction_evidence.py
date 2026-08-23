@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 
 _CONTROLLED_BIT_OPERAND = re.compile(r"^B\d+:\d+/\d+$", re.IGNORECASE)
+_SLC_BIT_OPERAND = re.compile(r"^[A-Z]+\d*:\d+(?:\.\d+)?/[A-Z0-9]+$", re.IGNORECASE)
 _CONTROLLED_WORD_OPERAND = re.compile(r"^N\d+:\d+$", re.IGNORECASE)
 _CONTROLLED_MASK_OPERAND = re.compile(
     r"^(?:N\d+:\d+|\d+|[0-9A-F]+H)$",
@@ -412,6 +413,130 @@ class InstructionEvidence:
     selector_offset: int
     operands: tuple[InstructionOperandEvidence, ...]
     evidence_profile: str
+
+
+@dataclass(frozen=True)
+class InstructionCandidateOperandEvidence:
+    """One operand interpretation attached to a probable instruction."""
+
+    role: str
+    access: str
+    address_family: str
+    offset: int
+    length: int
+    sha256: str
+    value: str | None
+
+
+@dataclass(frozen=True)
+class InstructionCandidateEvidence:
+    """Processor-specific instruction hypothesis that is not yet confirmed."""
+
+    proposed_mnemonic: str
+    selector: int
+    selector_offset: int
+    confidence: str
+    evidence_profile: str
+    operands: tuple[InstructionCandidateOperandEvidence, ...]
+    diagnostics: tuple[str, ...]
+
+
+_ML1400_SIMPLE_BIT_CANDIDATES = {
+    0x2F: ("OTE", "destination", "write"),
+    0x30: ("OTL", "destination", "write"),
+    0x31: ("OTU", "destination", "write"),
+    0x39: ("XIC", "condition", "read"),
+    0x3A: ("XIO", "condition", "read"),
+}
+_ML1400_SIMPLE_BIT_CANDIDATE_PROFILE = "rslogix500/ml1400/simple-bit-candidate/v1"
+
+
+def _address_family(operand: str) -> str:
+    """Classify an SLC-style operand without claiming device semantics."""
+
+    match = re.match(r"[A-Z]+", operand.lstrip("#"), re.IGNORECASE)
+    family = match.group(0).upper() if match is not None else ""
+    return {
+        "I": "input",
+        "O": "output",
+        "B": "binary",
+        "T": "timer",
+        "C": "counter",
+        "S": "status",
+    }.get(family, "other")
+
+
+def scan_ml1400_simple_bit_candidates(
+    payload: bytes,
+    *,
+    include_private_text: bool = False,
+) -> list[InstructionCandidateEvidence]:
+    """Find probable ML1400 simple-bit records using exact observed framing."""
+
+    candidates: list[InstructionCandidateEvidence] = []
+    for operand_offset in range(3, len(payload)):
+        operand_length = payload[operand_offset - 1]
+        if not operand_length or operand_offset + operand_length + 9 > len(payload):
+            continue
+        if payload[operand_offset - 3 : operand_offset - 1] != b"\x01\x00":
+            continue
+        operand_bytes = payload[operand_offset : operand_offset + operand_length]
+        try:
+            operand = operand_bytes.decode("ascii")
+        except UnicodeDecodeError:
+            continue
+        if _SLC_BIT_OPERAND.fullmatch(operand) is None:
+            continue
+        selector_offset = operand_offset + operand_length + 2
+        if payload[operand_offset + operand_length : selector_offset] != b"\x01\x00":
+            continue
+        identity = _ML1400_SIMPLE_BIT_CANDIDATES.get(payload[selector_offset])
+        if identity is None:
+            continue
+        if payload[selector_offset + 1 : selector_offset + 8] != (
+            b"\x00\x00\x00\x00\x00\x07\x00"
+        ):
+            continue
+        mnemonic, role, access = identity
+        family = _address_family(operand)
+        diagnostics = [
+            (
+                "Selector correlates with the controlled ML1100 corpus but "
+                "ML1400 instruction identity remains probable."
+            )
+        ]
+        if access == "write" and family == "input":
+            diagnostics.append(
+                "Candidate writes an input-family address; preserve for manual "
+                "verification."
+            )
+        else:
+            diagnostics.append(
+                f"{access.title()} access is compatible with the {family} "
+                "address family."
+            )
+        candidates.append(
+            InstructionCandidateEvidence(
+                proposed_mnemonic=mnemonic,
+                selector=payload[selector_offset],
+                selector_offset=selector_offset,
+                confidence="probable",
+                evidence_profile=_ML1400_SIMPLE_BIT_CANDIDATE_PROFILE,
+                operands=(
+                    InstructionCandidateOperandEvidence(
+                        role=role,
+                        access=access,
+                        address_family=family,
+                        offset=operand_offset,
+                        length=len(operand_bytes),
+                        sha256=hashlib.sha256(operand_bytes).hexdigest(),
+                        value=operand if include_private_text else None,
+                    ),
+                ),
+                diagnostics=tuple(diagnostics),
+            )
+        )
+    return candidates
 
 
 def _operand(

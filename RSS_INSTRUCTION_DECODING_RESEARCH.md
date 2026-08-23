@@ -876,6 +876,27 @@ Schema `rss-inventory/v10` applies the decoder independently to each validated
 rung range. Resolved topology is recursive and ordered; empty terminal rungs
 and unsupported structures carry an explicit `null` topology.
 
+## Probable MicroLogix 1400 simple-bit evidence
+
+Observed MicroLogix 1400 projects use instruction framing that differs from the
+controlled MicroLogix 1100 Series B profile. Schema `rss-inventory/v11`
+therefore adds a separate `instruction_candidates` collection; it does not
+weaken the acceptance criteria for confirmed `instructions`.
+
+The candidate recognizer requires all observed ML1400 framing bytes, a valid
+SLC-style bit operand, and one of five selectors correlated independently with
+the ML1100 controlled corpus. It proposes `XIC`, `XIO`, `OTE`, `OTL`, or `OTU`
+with `probable` confidence and records whether the operand is read or written.
+It also classifies the address family as input, output, binary, timer, counter,
+status, or other. Access direction corroborates a selector hypothesis but does
+not by itself distinguish XIC from XIO or OTE from OTL and OTU.
+
+Private validation found input-family reads and output-family writes consistent
+with the proposed access roles, without promoting candidate instructions to
+confirmed identities. Exact private measurements remain in ignored analysis
+outputs. Candidate instructions stay excluded from resolved topology until
+record completeness and processor-specific identity are independently proven.
+
 ## Acceptance criteria for one instruction
 
 Promote an RSS record to a confirmed mnemonic only when:

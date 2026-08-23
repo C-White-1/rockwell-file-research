@@ -180,6 +180,30 @@ class RSSProgramInstructionEvidence(TypedDict):
     evidence_profile: str
 
 
+class RSSProgramInstructionCandidateOperandEvidence(TypedDict):
+    """One access interpretation for a probable instruction operand."""
+
+    role: str
+    access: str
+    address_family: str
+    offset: int
+    length: int
+    sha256: str
+    value: str | None
+
+
+class RSSProgramInstructionCandidateEvidence(TypedDict):
+    """Processor-specific instruction hypothesis awaiting confirmation."""
+
+    proposed_mnemonic: str
+    selector: int
+    selector_offset: int
+    confidence: str
+    evidence_profile: str
+    operands: list[RSSProgramInstructionCandidateOperandEvidence]
+    diagnostics: list[str]
+
+
 class RSSProgramFileRecordEvidence(TypedDict):
     """One delimited ladder-file header with reference-marker evidence."""
 
@@ -255,6 +279,7 @@ class RSSProgramFileEvidence(TypedDict):
     text_regions: list[RSSProgramTextRegion]
     operands: list[RSSProgramOperandEvidence]
     instructions: list[RSSProgramInstructionEvidence]
+    instruction_candidates: list[RSSProgramInstructionCandidateEvidence]
     program_file_records: list[RSSProgramFileRecordEvidence]
     rung_records: list[RSSProgramRungEvidence]
     diagnostics: list[str]
