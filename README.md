@@ -5,7 +5,22 @@
 > [Private fixtures and publication policy](PRIVATE_FIXTURES.md) before adding
 > files to Git.
 
+This is an independent interoperability research project. It is not affiliated
+with, endorsed by, or sponsored by Rockwell Automation, Inc. Rockwell,
+RSLogix, Studio 5000, MicroLogix, PanelView, and other product names are
+trademarks of their respective owners and are used only to identify compatible
+formats and systems.
+
+Use these tools only with files and systems you are authorized to inspect. The
+project performs read-only structural analysis and does not grant permission to
+redistribute vendor, customer, or production material.
+
 This project keeps exploratory Rockwell tooling separate from TwinForge.
+
+Contributions are welcome, particularly independently created controlled RSS
+fixtures. Read [Contributing](CONTRIBUTING.md), the
+[controlled fixture specification](RSS_CONTROLLED_INSTRUCTION_FIXTURES.md),
+and the [security policy](SECURITY.md) before submitting material.
 
 ## ACD database extraction
 

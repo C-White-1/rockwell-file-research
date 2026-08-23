@@ -3,6 +3,7 @@ name = "rockwell-file-research"
 version = "0.1.0"
 description = "Private-fixture research tools for industrial project formats"
 readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.13"
 dependencies = [
     "acd-tools>=0.2a8",

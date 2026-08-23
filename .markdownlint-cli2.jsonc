@@ -1,0 +1,9 @@
+{
+  "ignores": [
+    ".venv/**",
+    "build/**",
+    "dist/**",
+    "private-fixtures/**",
+    "private-outputs/**"
+  ]
+}

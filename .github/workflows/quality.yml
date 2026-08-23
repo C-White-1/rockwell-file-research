@@ -37,6 +37,9 @@ jobs:
       - name: Check formatting
         run: uv run ruff format --check rockwell_file_research ccw_report.py convert.py main.py tests
 
+      - name: Lint Markdown
+        run: npx --yes markdownlint-cli2@0.23.2 "**/*.md"
+
       - name: Type check
         run: uv run pyright
 
