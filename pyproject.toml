@@ -17,6 +17,7 @@ validation = [
 
 [project.scripts]
 ccw-report = "rockwell_file_research.ccw.cli:main"
+ccwarc-inspect = "rockwell_file_research.ccw.archive_cli:main"
 publication-check = "rockwell_file_research.publication:main"
 rss-inventory = "rockwell_file_research.rss.cli:main"
 rss-fixture-check = "rockwell_file_research.rss.fixture_cli:main"
