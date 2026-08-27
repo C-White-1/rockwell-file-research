@@ -5,11 +5,14 @@ from rockwell_file_research.ccw.archive_markdown import render_ccw_archive_markd
 from rockwell_file_research.ccw.cross_reference import build_cross_reference
 from rockwell_file_research.ccw.export import export_report
 from rockwell_file_research.ccw.ladder import parse_stf, read_stf_program
+from rockwell_file_research.ccw.project_model import build_project_model
+from rockwell_file_research.ccw.project_validation import validate_project_model
 from rockwell_file_research.ccw.reporting import build_report
 from rockwell_file_research.ccw.variables import read_variable_catalogue
 
 __all__ = [
     "build_cross_reference",
+    "build_project_model",
     "build_report",
     "export_report",
     "inspect_ccwarc",
@@ -17,4 +20,5 @@ __all__ = [
     "read_stf_program",
     "read_variable_catalogue",
     "render_ccw_archive_markdown",
+    "validate_project_model",
 ]

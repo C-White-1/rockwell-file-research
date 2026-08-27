@@ -11,6 +11,11 @@ from rockwell_file_research.ccw.archive import (
 )
 from rockwell_file_research.ccw.archive_markdown import render_ccw_archive_markdown
 from rockwell_file_research.ccw.cross_reference import build_cross_reference
+from rockwell_file_research.ccw.project_model import (
+    build_project_model,
+    write_project_model,
+)
+from rockwell_file_research.ccw.project_validation import validate_project_model
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -21,6 +26,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--source-label")
+    parser.add_argument("--model-output", type=Path)
+    parser.add_argument(
+        "--validate-model",
+        action="store_true",
+        help="validate --model-output against the packaged JSON Schema",
+    )
     args = parser.parse_args(argv)
     try:
         inventory = inspect_ccwarc(args.source)
@@ -36,6 +47,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             ),
             encoding="utf-8",
         )
+    if args.model_output:
+        model = build_project_model(args.source, source_label=args.source_label)
+        if args.validate_model:
+            validate_project_model(model)
+        write_project_model(model, args.model_output)
     print(
         f"CCW {inventory.ccw_version or '?'} project "
         f"{inventory.project_name or '?'}: {inventory.entry_count} entries, "
